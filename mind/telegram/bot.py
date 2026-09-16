@@ -47,15 +47,18 @@ def init_bot(token: str) -> Application:
 
 async def setup_webhook(base_url: str, token: str) -> None:
     """
-    Registra el webhook en Telegram API.
+    Registra el webhook en Telegram API usando Bot directo.
     base_url debe ser la URL pública del servicio (Railway o ngrok).
     """
-    app = get_application()
     webhook_url = f"{base_url.rstrip('/')}/webhook"
-    await app.bot.set_webhook(
-        url=webhook_url,
-        allowed_updates=["message", "callback_query"],
-    )
+    # Usar Bot directo para evitar que Application interfiera con el webhook
+    bot = Bot(token=token)
+    async with bot:
+        await bot.set_webhook(
+            url=webhook_url,
+            allowed_updates=["message", "callback_query"],
+            drop_pending_updates=False,
+        )
     logger.info("Webhook registrado en: %s", webhook_url)
 
 
