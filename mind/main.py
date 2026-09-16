@@ -112,7 +112,6 @@ async def lifespan(app: FastAPI):
     try:
         from mind.telegram.bot import get_application
         tg_app = get_application()
-        await tg_app.bot.delete_webhook()
         await tg_app.shutdown()
     except Exception:
         pass
