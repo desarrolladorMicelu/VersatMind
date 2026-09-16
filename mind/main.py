@@ -189,6 +189,8 @@ async def health_check() -> JSONResponse:
 
 
 if __name__ == "__main__":
+    import os
     import uvicorn
     from mind.config import settings
-    uvicorn.run("mind.main:app", host="0.0.0.0", port=settings.PORT, reload=False)
+    port = int(os.environ.get("PORT", settings.PORT))
+    uvicorn.run("mind.main:app", host="0.0.0.0", port=port, reload=False)
