@@ -1,0 +1,43 @@
+# Mind by Versat — Docker Compose para desarrollo local
+# Uso: docker-compose up
+# Variables de entorno: crear un archivo .env basado en .env.example
+
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-mind}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mind_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-mind_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mind} -d ${POSTGRES_DB:-mind_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    ports:
+      - "5432:5432"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-mind}:${POSTGRES_PASSWORD:-mind_dev_password}@db:5432/${POSTGRES_DB:-mind_db}
+      DATABASE_URL_SYNC: postgresql://${POSTGRES_USER:-mind}:${POSTGRES_PASSWORD:-mind_dev_password}@db:5432/${POSTGRES_DB:-mind_db}
+      PORT: "8000"
+    ports:
+      - "${PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

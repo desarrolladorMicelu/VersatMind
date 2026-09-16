@@ -1,0 +1,168 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; }
+  html, body {
+    background-color: #111;
+    color: #f0f0f0;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: #1a1a1a; }
+  ::-webkit-scrollbar-thumb { background: #333; }
+  ::-webkit-scrollbar-thumb:hover { background: #00e5a0; }
+}
+
+@layer components {
+
+  /* ── Cards ─────────────────────────────────── */
+  .card {
+    background-color: #1a1a1a;
+    border: 1px solid #2a2a2a;
+  }
+
+  /* ── Buttons ────────────────────────────────── */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2;
+    background-color: #00e5a0;
+    color: #000;
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 10px 20px;
+    transition: background-color 0.15s;
+  }
+  .btn-primary:hover { background-color: #00ffb3; }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2;
+    background-color: transparent;
+    border: 1px solid #3a3a3a;
+    color: #aaa;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 9px 16px;
+    transition: all 0.15s;
+  }
+  .btn-secondary:hover { border-color: #00e5a0; color: #00e5a0; }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2;
+    background-color: transparent;
+    border: 1px solid #5a1a1a;
+    color: #f87171;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 9px 16px;
+    transition: border-color 0.15s;
+  }
+  .btn-danger:hover { border-color: #f87171; }
+
+  /* ── Inputs ─────────────────────────────────── */
+  .input {
+    @apply w-full text-sm;
+    background-color: #1a1a1a;
+    border: 1px solid #333;
+    color: #f0f0f0;
+    padding: 10px 12px;
+    font-family: 'Space Grotesk', sans-serif;
+    transition: border-color 0.15s;
+  }
+  .input::placeholder { color: #555; }
+  .input:focus { outline: none; border-color: #00e5a0; }
+
+  select.input option {
+    background-color: #1a1a1a;
+    color: #f0f0f0;
+  }
+
+  .label {
+    display: block;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: #777;
+    margin-bottom: 8px;
+  }
+
+  /* ── Badges ─────────────────────────────────── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    border: 1px solid;
+  }
+  .badge-green  { border-color: #00e5a060; color: #00e5a0; background-color: #00e5a010; }
+  .badge-red    { border-color: #f8717160; color: #f87171; background-color: #f8717110; }
+  .badge-amber  { border-color: #fbbf2460; color: #fbbf24; background-color: #fbbf2410; }
+  .badge-indigo { border-color: #3a3a3a; color: #e0e0e0; background-color: #252525; }
+  .badge-slate  { border-color: #3a3a3a;   color: #888;    background-color: #222; }
+
+  /* ── Nav sidebar ─────────────────────────────── */
+  .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #666;
+    transition: color 0.15s;
+    white-space: nowrap;
+  }
+  .nav-link:hover { color: #ccc; }
+  .nav-link.active { color: #00e5a0; }
+
+  /* ── Section tag ─────────────────────────────── */
+  .section-tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: #00e5a0;
+  }
+
+  /* ── Table helpers ───────────────────────────── */
+  .th {
+    padding: 10px 20px;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: #666;
+    border-bottom: 1px solid #2a2a2a;
+    text-align: left;
+  }
+  .td {
+    padding: 12px 20px;
+    font-size: 13px;
+    color: #d0d0d0;
+    border-bottom: 1px solid #222;
+  }
+
+  /* ── Mono utility ────────────────────────────── */
+  .mono { font-family: 'Space Mono', monospace; }
+}
