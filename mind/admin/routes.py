@@ -1,13 +1,14 @@
 """
 API REST del panel de administración — /api/admin/*
-Todos los endpoints retornan JSON. El frontend React consume esta API.
+Multi-tenant: los endpoints de datos aceptan ?tenant_id= para filtrar.
+Los endpoints de tenants permiten CRUD completo de tenants.
 """
 from __future__ import annotations
 
 import logging
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from sqlalchemy import delete, select, func as sqlfunc
@@ -39,6 +40,31 @@ class RolePermissionsUpdate(BaseModel):
 class NewRole(BaseModel):
     name: str
     description: str = ""
+    tenant_id: int
+
+class TenantCreate(BaseModel):
+    name: str
+    slug: str
+    bot_token: str
+    webhook_url: str
+    admin_chat_id: int
+    sqlserver_host: str = ""
+    sqlserver_db: str = ""
+    sqlserver_user: str = ""
+    sqlserver_password: str = ""
+    sqlserver_driver: str = "ODBC Driver 18 for SQL Server"
+
+class TenantUpdate(BaseModel):
+    name: str | None = None
+    bot_token: str | None = None
+    webhook_url: str | None = None
+    admin_chat_id: int | None = None
+    sqlserver_host: str | None = None
+    sqlserver_db: str | None = None
+    sqlserver_user: str | None = None
+    sqlserver_password: str | None = None
+    sqlserver_driver: str | None = None
+    is_active: bool | None = None
 
 
 # ── AUTH ─────────────────────────────────────────────────────────────────────
@@ -67,38 +93,185 @@ async def me(admin=Depends(require_admin)):
     return {"username": admin.get("sub")}
 
 
+# ── TENANTS ──────────────────────────────────────────────────────────────────
+
+@router.get("/tenants")
+async def tenants_list(
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+):
+    from mind.db.models import Tenant
+    tenants = (await session.execute(
+        select(Tenant).order_by(Tenant.created_at.desc())
+    )).scalars().all()
+    return [
+        {
+            "id": t.id,
+            "name": t.name,
+            "slug": t.slug,
+            "is_active": t.is_active,
+            "bot_token_hint": f"...{t.bot_token[-6:]}",
+            "webhook_url": t.webhook_url,
+            "admin_chat_id": t.admin_chat_id,
+            "sqlserver_host": t.sqlserver_host,
+            "sqlserver_db": t.sqlserver_db,
+            "sqlserver_user": t.sqlserver_user,
+            "sqlserver_driver": t.sqlserver_driver,
+            "created_at": t.created_at.isoformat() if t.created_at else None,
+        }
+        for t in tenants
+    ]
+
+
+@router.post("/tenants")
+async def tenant_create(
+    body: TenantCreate,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+):
+    from mind.db.models import Tenant
+    tenant = Tenant(**body.model_dump())
+    session.add(tenant)
+    await session.commit()
+    await session.refresh(tenant)
+
+    # Inicializar el bot en memoria y registrar webhook
+    try:
+        from mind.telegram.bot import init_bot, setup_webhook
+        bot_app = init_bot(tenant.bot_token)
+        await bot_app.initialize()
+        await setup_webhook(tenant.webhook_url, tenant.bot_token)
+    except Exception as exc:
+        logger.warning("No se pudo inicializar bot para nuevo tenant %s: %s", tenant.slug, exc)
+
+    # Recargar caché de tenants
+    from mind.tenants.resolver import reload_tenant
+    await reload_tenant(tenant.id, session)
+
+    logger.info("Tenant creado: %s por %s", tenant.slug, admin.get("sub"))
+    return {"id": tenant.id, "slug": tenant.slug}
+
+
+@router.put("/tenants/{tenant_id}")
+async def tenant_update(
+    tenant_id: int,
+    body: TenantUpdate,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+):
+    from mind.db.models import Tenant
+    tenant = (await session.execute(
+        select(Tenant).where(Tenant.id == tenant_id)
+    )).scalar_one_or_none()
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant no encontrado")
+
+    old_token = tenant.bot_token
+    updates = body.model_dump(exclude_none=True)
+    for key, val in updates.items():
+        setattr(tenant, key, val)
+    await session.commit()
+
+    # Si cambió el token, re-inicializar el bot
+    new_token = tenant.bot_token
+    if "bot_token" in updates and old_token != new_token:
+        from mind.telegram.bot import teardown_bot, init_bot, setup_webhook
+        await teardown_bot(old_token)
+        bot_app = init_bot(new_token)
+        await bot_app.initialize()
+        try:
+            await setup_webhook(tenant.webhook_url, new_token)
+        except Exception as exc:
+            logger.warning("No se pudo registrar webhook tras cambio de token tenant %s: %s", tenant.slug, exc)
+
+    # Recargar caché
+    from mind.tenants.resolver import reload_tenant
+    await reload_tenant(tenant.id, session)
+
+    logger.info("Tenant %s actualizado por %s", tenant.slug, admin.get("sub"))
+    return {"ok": True}
+
+
+@router.delete("/tenants/{tenant_id}")
+async def tenant_delete(
+    tenant_id: int,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+):
+    from mind.db.models import Tenant
+    tenant = (await session.execute(
+        select(Tenant).where(Tenant.id == tenant_id)
+    )).scalar_one_or_none()
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant no encontrado")
+
+    # Apagar el bot antes de eliminar
+    from mind.telegram.bot import teardown_bot
+    await teardown_bot(tenant.bot_token)
+
+    await session.execute(delete(Tenant).where(Tenant.id == tenant_id))
+    await session.commit()
+
+    # Limpiar caché
+    from mind.tenants import resolver as _res
+    _res._token_map.pop(tenant.bot_token, None)
+    _res._id_map.pop(tenant_id, None)
+
+    logger.info("Tenant %s eliminado por %s", tenant.slug, admin.get("sub"))
+    return {"ok": True}
+
+
 # ── DASHBOARD ────────────────────────────────────────────────────────────────
 
 @router.get("/dashboard")
 async def dashboard(
     admin=Depends(require_admin),
     session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
 ):
-    from mind.db.models import User, AuditLog, AccessRequest, ScheduledTask
+    from mind.db.models import User, AuditLog, AccessRequest, ScheduledTask, Tenant
+
+    def _where(stmt, model):
+        if tenant_id:
+            return stmt.where(model.tenant_id == tenant_id)
+        return stmt
 
     total_users = (await session.execute(
-        select(sqlfunc.count()).select_from(User)
+        _where(select(sqlfunc.count()).select_from(User), User)
     )).scalar()
     pending_requests = (await session.execute(
-        select(sqlfunc.count()).select_from(AccessRequest)
-        .where(AccessRequest.status == "pending")
+        _where(
+            select(sqlfunc.count()).select_from(AccessRequest)
+            .where(AccessRequest.status == "pending"),
+            AccessRequest,
+        )
     )).scalar()
     total_interactions = (await session.execute(
-        select(sqlfunc.count()).select_from(AuditLog)
-        .where(AuditLog.event_type == "interaction")
+        _where(
+            select(sqlfunc.count()).select_from(AuditLog)
+            .where(AuditLog.event_type == "interaction"),
+            AuditLog,
+        )
     )).scalar()
     active_tasks = (await session.execute(
-        select(sqlfunc.count()).select_from(ScheduledTask)
-        .where(ScheduledTask.status == "active")
+        _where(
+            select(sqlfunc.count()).select_from(ScheduledTask)
+            .where(ScheduledTask.status == "active"),
+            ScheduledTask,
+        )
     )).scalar()
     errors_today = (await session.execute(
-        select(sqlfunc.count()).select_from(AuditLog)
-        .where(AuditLog.status == "error")
+        _where(
+            select(sqlfunc.count()).select_from(AuditLog)
+            .where(AuditLog.status == "error"),
+            AuditLog,
+        )
     )).scalar()
 
-    recent_logs = (await session.execute(
-        select(AuditLog).order_by(AuditLog.timestamp_utc.desc()).limit(10)
-    )).scalars().all()
+    logs_stmt = select(AuditLog).order_by(AuditLog.timestamp_utc.desc()).limit(10)
+    if tenant_id:
+        logs_stmt = logs_stmt.where(AuditLog.tenant_id == tenant_id)
+    recent_logs = (await session.execute(logs_stmt)).scalars().all()
 
     return {
         "stats": {
@@ -111,6 +284,7 @@ async def dashboard(
         "recent_logs": [
             {
                 "id": log.id,
+                "tenant_id": log.tenant_id,
                 "event_type": log.event_type,
                 "chat_id": log.chat_id,
                 "request_content": (log.request_content or "")[:100],
@@ -129,9 +303,12 @@ async def dashboard(
 async def agente_get(
     admin=Depends(require_admin),
     session: AsyncSession = Depends(get_session),
+    tenant_id: int = Query(...),
 ):
     from mind.db.models import AgentConfig
-    cfg = (await session.execute(select(AgentConfig).limit(1))).scalar_one_or_none()
+    cfg = (await session.execute(
+        select(AgentConfig).where(AgentConfig.tenant_id == tenant_id).limit(1)
+    )).scalar_one_or_none()
     if not cfg:
         return {
             "system_prompt": "",
@@ -156,9 +333,12 @@ async def agente_update(
     body: AgentConfigUpdate,
     admin=Depends(require_admin),
     session: AsyncSession = Depends(get_session),
+    tenant_id: int = Query(...),
 ):
     from mind.db.models import AgentConfig
-    cfg = (await session.execute(select(AgentConfig).limit(1))).scalar_one_or_none()
+    cfg = (await session.execute(
+        select(AgentConfig).where(AgentConfig.tenant_id == tenant_id).limit(1)
+    )).scalar_one_or_none()
     if cfg:
         cfg.system_prompt = body.system_prompt
         cfg.model = body.model
@@ -166,9 +346,9 @@ async def agente_update(
         cfg.conversation_window = max(1, min(100, body.conversation_window))
         cfg.max_tool_cycles = max(1, min(20, body.max_tool_cycles))
     else:
-        session.add(AgentConfig(**body.model_dump()))
+        session.add(AgentConfig(tenant_id=tenant_id, **body.model_dump()))
     await session.commit()
-    logger.info("AgentConfig actualizado por %s", admin.get("sub"))
+    logger.info("AgentConfig tenant_id=%s actualizado por %s", tenant_id, admin.get("sub"))
     return {"ok": True}
 
 
@@ -178,14 +358,17 @@ async def agente_update(
 async def usuarios_list(
     admin=Depends(require_admin),
     session: AsyncSession = Depends(get_session),
+    tenant_id: int = Query(...),
 ):
     from mind.db.models import User, Role
     users = (await session.execute(
-        select(User).order_by(User.created_at.desc())
+        select(User).where(User.tenant_id == tenant_id).order_by(User.created_at.desc())
     )).scalars().all()
     roles_map = {
         r.id: r.name
-        for r in (await session.execute(select(Role))).scalars().all()
+        for r in (await session.execute(
+            select(Role).where(Role.tenant_id == tenant_id)
+        )).scalars().all()
     }
     return [
         {
@@ -206,10 +389,11 @@ async def usuario_toggle(
     chat_id: int,
     admin=Depends(require_admin),
     session: AsyncSession = Depends(get_session),
+    tenant_id: int = Query(...),
 ):
     from mind.db.models import User
     user = (await session.execute(
-        select(User).where(User.chat_id == chat_id)
+        select(User).where(User.chat_id == chat_id, User.tenant_id == tenant_id)
     )).scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
@@ -224,10 +408,11 @@ async def usuario_cambiar_rol(
     body: dict,
     admin=Depends(require_admin),
     session: AsyncSession = Depends(get_session),
+    tenant_id: int = Query(...),
 ):
     from mind.db.models import User
     user = (await session.execute(
-        select(User).where(User.chat_id == chat_id)
+        select(User).where(User.chat_id == chat_id, User.tenant_id == tenant_id)
     )).scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
@@ -241,9 +426,12 @@ async def usuario_eliminar(
     chat_id: int,
     admin=Depends(require_admin),
     session: AsyncSession = Depends(get_session),
+    tenant_id: int = Query(...),
 ):
     from mind.db.models import User
-    await session.execute(delete(User).where(User.chat_id == chat_id))
+    await session.execute(
+        delete(User).where(User.chat_id == chat_id, User.tenant_id == tenant_id)
+    )
     await session.commit()
     return {"ok": True}
 
@@ -254,10 +442,13 @@ async def usuario_eliminar(
 async def accesos_list(
     admin=Depends(require_admin),
     session: AsyncSession = Depends(get_session),
+    tenant_id: int = Query(...),
 ):
     from mind.db.models import AccessRequest
     reqs = (await session.execute(
-        select(AccessRequest).order_by(AccessRequest.created_at.desc())
+        select(AccessRequest)
+        .where(AccessRequest.tenant_id == tenant_id)
+        .order_by(AccessRequest.created_at.desc())
     )).scalars().all()
     return [
         {
@@ -278,9 +469,10 @@ async def acceso_aprobar(
     chat_id: int,
     admin=Depends(require_admin),
     session: AsyncSession = Depends(get_session),
+    tenant_id: int = Query(...),
 ):
     from mind.auth.access_requests import approve_user
-    user = await approve_user(chat_id, session)
+    user = await approve_user(chat_id, tenant_id, session)
     await session.commit()
     if not user:
         raise HTTPException(status_code=404, detail="Solicitud no encontrada o ya procesada")
@@ -292,9 +484,10 @@ async def acceso_rechazar(
     chat_id: int,
     admin=Depends(require_admin),
     session: AsyncSession = Depends(get_session),
+    tenant_id: int = Query(...),
 ):
     from mind.auth.access_requests import reject_request
-    ok = await reject_request(chat_id, session)
+    ok = await reject_request(chat_id, tenant_id, session)
     await session.commit()
     return {"ok": ok}
 
@@ -305,9 +498,12 @@ async def acceso_rechazar(
 async def roles_list(
     admin=Depends(require_admin),
     session: AsyncSession = Depends(get_session),
+    tenant_id: int = Query(...),
 ):
     from mind.db.models import Role, RolePermission
-    roles = (await session.execute(select(Role))).scalars().all()
+    roles = (await session.execute(
+        select(Role).where(Role.tenant_id == tenant_id)
+    )).scalars().all()
     perms = (await session.execute(select(RolePermission))).scalars().all()
     perms_by_role: dict[int, list[str]] = {}
     for p in perms:
@@ -349,7 +545,7 @@ async def rol_crear(
     session: AsyncSession = Depends(get_session),
 ):
     from mind.db.models import Role
-    role = Role(name=body.name, description=body.description)
+    role = Role(name=body.name, description=body.description, tenant_id=body.tenant_id)
     session.add(role)
     await session.commit()
     return {"id": role.id, "name": role.name}
@@ -361,18 +557,22 @@ async def rol_crear(
 async def historial_list(
     admin=Depends(require_admin),
     session: AsyncSession = Depends(get_session),
+    tenant_id: int = Query(...),
     chat_id: int | None = None,
 ):
     from mind.db.models import ConversationMessage, User
     users = (await session.execute(
-        select(User).where(User.is_active == True)
+        select(User).where(User.tenant_id == tenant_id, User.is_active == True)
     )).scalars().all()
 
     messages = []
     if chat_id:
         msgs = (await session.execute(
             select(ConversationMessage)
-            .where(ConversationMessage.chat_id == chat_id)
+            .where(
+                ConversationMessage.chat_id == chat_id,
+                ConversationMessage.tenant_id == tenant_id,
+            )
             .order_by(ConversationMessage.created_at.asc())
             .limit(200)
         )).scalars().all()
@@ -401,10 +601,14 @@ async def historial_limpiar(
     chat_id: int,
     admin=Depends(require_admin),
     session: AsyncSession = Depends(get_session),
+    tenant_id: int = Query(...),
 ):
     from mind.db.models import ConversationMessage
     await session.execute(
-        delete(ConversationMessage).where(ConversationMessage.chat_id == chat_id)
+        delete(ConversationMessage).where(
+            ConversationMessage.chat_id == chat_id,
+            ConversationMessage.tenant_id == tenant_id,
+        )
     )
     await session.commit()
     return {"ok": True}
@@ -416,12 +620,15 @@ async def historial_limpiar(
 async def auditoria_list(
     admin=Depends(require_admin),
     session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
     event_type: str = "",
     status_filter: str = "",
     limit: int = 100,
 ):
     from mind.db.models import AuditLog
     stmt = select(AuditLog).order_by(AuditLog.timestamp_utc.desc())
+    if tenant_id:
+        stmt = stmt.where(AuditLog.tenant_id == tenant_id)
     if event_type:
         stmt = stmt.where(AuditLog.event_type == event_type)
     if status_filter:
@@ -431,6 +638,7 @@ async def auditoria_list(
     return [
         {
             "id": log.id,
+            "tenant_id": log.tenant_id,
             "event_type": log.event_type,
             "timestamp_utc": log.timestamp_utc.isoformat() if log.timestamp_utc else None,
             "chat_id": log.chat_id,
@@ -449,10 +657,13 @@ async def auditoria_list(
 async def tareas_list(
     admin=Depends(require_admin),
     session: AsyncSession = Depends(get_session),
+    tenant_id: int = Query(...),
 ):
     from mind.db.models import ScheduledTask
     tasks = (await session.execute(
-        select(ScheduledTask).order_by(ScheduledTask.created_at.desc())
+        select(ScheduledTask)
+        .where(ScheduledTask.tenant_id == tenant_id)
+        .order_by(ScheduledTask.created_at.desc())
     )).scalars().all()
     return [
         {

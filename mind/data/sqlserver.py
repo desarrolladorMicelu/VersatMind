@@ -1,6 +1,9 @@
 """
 Conector a SQL Server OFIMA — solo lectura, mediante pyodbc.
 
+Las funciones reciben un objeto TenantCredentials con las credenciales
+del tenant activo, en lugar de leer directamente del settings global.
+
 Requiere que el servidor tenga instalado el Microsoft ODBC Driver 18
 (en el Dockerfile se instala vía msodbcsql18).
 
@@ -9,6 +12,7 @@ Las funciones son síncronas; llámelas desde async con asyncio.to_thread().
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Any
@@ -19,19 +23,56 @@ logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
+# Credenciales del tenant
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class TenantCredentials:
+    host: str
+    database: str
+    user: str
+    password: str
+    driver: str = "ODBC Driver 18 for SQL Server"
+
+    @classmethod
+    def from_tenant(cls, tenant: Any) -> "TenantCredentials":
+        """Construye las credenciales desde un objeto Tenant del ORM."""
+        return cls(
+            host=tenant.sqlserver_host or "",
+            database=tenant.sqlserver_db or "",
+            user=tenant.sqlserver_user or "",
+            password=tenant.sqlserver_password or "",
+            driver=tenant.sqlserver_driver or "ODBC Driver 18 for SQL Server",
+        )
+
+    @classmethod
+    def from_settings(cls) -> "TenantCredentials":
+        """Construye las credenciales desde settings (fallback / testing)."""
+        from mind.config import settings
+        return cls(
+            host=settings.SQLSERVER_HOST,
+            database=settings.SQLSERVER_DB,
+            user=settings.SQLSERVER_USER,
+            password=settings.SQLSERVER_PASSWORD,
+            driver=settings.SQLSERVER_DRIVER,
+        )
+
+    def is_configured(self) -> bool:
+        return bool(self.host and self.password)
+
+
+# ---------------------------------------------------------------------------
 # Conexión
 # ---------------------------------------------------------------------------
 
-def _get_connection() -> pyodbc.Connection:
-    """Abre una conexión al SQL Server OFIMA con los settings del .env."""
-    from mind.config import settings
-
+def _get_connection(creds: TenantCredentials) -> pyodbc.Connection:
+    """Abre una conexión al SQL Server con las credenciales del tenant."""
     conn_str = (
-        f"DRIVER={{{settings.SQLSERVER_DRIVER}}};"
-        f"SERVER={settings.SQLSERVER_HOST};"
-        f"DATABASE={settings.SQLSERVER_DB};"
-        f"UID={settings.SQLSERVER_USER};"
-        f"PWD={settings.SQLSERVER_PASSWORD};"
+        f"DRIVER={{{creds.driver}}};"
+        f"SERVER={creds.host};"
+        f"DATABASE={creds.database};"
+        f"UID={creds.user};"
+        f"PWD={creds.password};"
         "TrustServerCertificate=yes;"
         "Encrypt=no;"
         "Connection Timeout=30;"
@@ -60,7 +101,7 @@ def _rows_to_dicts(cursor: pyodbc.Cursor) -> list[dict[str, Any]]:
 # Ventas — tabla MvTrade
 # ---------------------------------------------------------------------------
 
-def get_sales(start: date, end: date) -> list[dict[str, Any]]:
+def get_sales(start: date, end: date, creds: TenantCredentials) -> list[dict[str, Any]]:
     """Detalle transaccional de ventas del período (hasta 500 filas)."""
     sql = """
         SELECT TOP 500
@@ -76,13 +117,13 @@ def get_sales(start: date, end: date) -> list[dict[str, Any]]:
         WHERE fhcompra >= ? AND fhcompra < ?
         ORDER BY fhcompra DESC
     """
-    with _get_connection() as conn:
+    with _get_connection(creds) as conn:
         cur = conn.cursor()
         cur.execute(sql, str(start), str(end))
         return _rows_to_dicts(cur)
 
 
-def get_sales_summary(start: date, end: date) -> list[dict[str, Any]]:
+def get_sales_summary(start: date, end: date, creds: TenantCredentials) -> list[dict[str, Any]]:
     """Resumen mensual de ventas: totales, costo y utilidad bruta."""
     sql = """
         SELECT
@@ -98,7 +139,7 @@ def get_sales_summary(start: date, end: date) -> list[dict[str, Any]]:
         GROUP BY DATEADD(month, DATEDIFF(month, 0, fhcompra), 0)
         ORDER BY periodo DESC
     """
-    with _get_connection() as conn:
+    with _get_connection(creds) as conn:
         cur = conn.cursor()
         cur.execute(sql, str(start), str(end))
         return _rows_to_dicts(cur)
@@ -108,7 +149,7 @@ def get_sales_summary(start: date, end: date) -> list[dict[str, Any]]:
 # Cuentas por pagar — vista/tabla VCxP
 # ---------------------------------------------------------------------------
 
-def get_cuentas_por_pagar(start: date, end: date) -> list[dict[str, Any]]:
+def get_cuentas_por_pagar(start: date, end: date, creds: TenantCredentials) -> list[dict[str, Any]]:
     """CxP del período (hasta 500 filas)."""
     sql = """
         SELECT TOP 500
@@ -123,7 +164,7 @@ def get_cuentas_por_pagar(start: date, end: date) -> list[dict[str, Any]]:
         WHERE fecha >= ? AND fecha < ?
         ORDER BY fecha DESC
     """
-    with _get_connection() as conn:
+    with _get_connection(creds) as conn:
         cur = conn.cursor()
         cur.execute(sql, str(start), str(end))
         return _rows_to_dicts(cur)
@@ -133,7 +174,7 @@ def get_cuentas_por_pagar(start: date, end: date) -> list[dict[str, Any]]:
 # Abonos — vista/tabla VAbonos
 # ---------------------------------------------------------------------------
 
-def get_abonos(start: date, end: date) -> list[dict[str, Any]]:
+def get_abonos(start: date, end: date, creds: TenantCredentials) -> list[dict[str, Any]]:
     """Abonos recibidos en el período (hasta 500 filas)."""
     sql = """
         SELECT TOP 500
@@ -145,7 +186,7 @@ def get_abonos(start: date, end: date) -> list[dict[str, Any]]:
           AND valor IS NOT NULL AND CAST(valor AS DECIMAL(18,2)) <> 0
         ORDER BY fecha DESC
     """
-    with _get_connection() as conn:
+    with _get_connection(creds) as conn:
         cur = conn.cursor()
         cur.execute(sql, str(start), str(end))
         return _rows_to_dicts(cur)
@@ -155,7 +196,7 @@ def get_abonos(start: date, end: date) -> list[dict[str, Any]]:
 # Cuadre de caja — vista/tabla MvCuadre
 # ---------------------------------------------------------------------------
 
-def get_cuadre_caja(start: date, end: date) -> list[dict[str, Any]]:
+def get_cuadre_caja(start: date, end: date, creds: TenantCredentials) -> list[dict[str, Any]]:
     """Movimientos de caja del período (hasta 500 filas)."""
     sql = """
         SELECT TOP 500
@@ -167,7 +208,7 @@ def get_cuadre_caja(start: date, end: date) -> list[dict[str, Any]]:
           AND valor IS NOT NULL AND CAST(valor AS DECIMAL(18,2)) <> 0
         ORDER BY fecha DESC
     """
-    with _get_connection() as conn:
+    with _get_connection(creds) as conn:
         cur = conn.cursor()
         cur.execute(sql, str(start), str(end))
         return _rows_to_dicts(cur)
@@ -177,7 +218,7 @@ def get_cuadre_caja(start: date, end: date) -> list[dict[str, Any]]:
 # Productos — tabla MtMercia
 # ---------------------------------------------------------------------------
 
-def get_productos(filtro: str = "") -> list[dict[str, Any]]:
+def get_productos(filtro: str = "", *, creds: TenantCredentials) -> list[dict[str, Any]]:
     """Catálogo de productos (hasta 500 filas). Filtra por descripción si se pasa filtro."""
     if filtro:
         sql = """
@@ -201,7 +242,7 @@ def get_productos(filtro: str = "") -> list[dict[str, Any]]:
         """
         params = ()
 
-    with _get_connection() as conn:
+    with _get_connection(creds) as conn:
         cur = conn.cursor()
         cur.execute(sql, *params)
         return _rows_to_dicts(cur)
@@ -211,7 +252,7 @@ def get_productos(filtro: str = "") -> list[dict[str, Any]]:
 # Series de utilidad — vista/tabla VSeriesUtilidad
 # ---------------------------------------------------------------------------
 
-def get_series_utilidad(start: date, end: date) -> list[dict[str, Any]]:
+def get_series_utilidad(start: date, end: date, creds: TenantCredentials) -> list[dict[str, Any]]:
     """Series de utilidad del período (hasta 1000 filas)."""
     sql = """
         SELECT TOP 1000
@@ -222,7 +263,7 @@ def get_series_utilidad(start: date, end: date) -> list[dict[str, Any]]:
         WHERE fecha_inicial BETWEEN ? AND ?
         ORDER BY fecha_inicial DESC
     """
-    with _get_connection() as conn:
+    with _get_connection(creds) as conn:
         cur = conn.cursor()
         cur.execute(sql, str(start), str(end))
         return _rows_to_dicts(cur)

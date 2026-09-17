@@ -9,6 +9,7 @@ Agente de IA conversacional para miembros de juntas directivas. Se comunica por 
 - Token de Telegram Bot (obtener via [@BotFather](https://t.me/BotFather))
 - API Key de OpenAI
 - URL pública con HTTPS (Railway, ngrok, etc.)
+- https://api.telegram.org/bot8719026384:AAHGT29cLz_pvaoSljAofSE7fOed6eIdpQs/setWebhook?url=https://web-production-b405d.up.railway.app/webhook
 
 ## Configuración rápida
 

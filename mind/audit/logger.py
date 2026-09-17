@@ -62,6 +62,7 @@ class AuditRecord:
     event_type: str  # 'interaction' | 'unauthorized' | 'tool_failure' | 'scheduler'
     chat_id: int | None = None
     user_id: int | None = None
+    tenant_id: int | None = None
     request_content: str | None = None
     tool_invoked: str | None = None
     tool_params: dict | None = None
@@ -101,6 +102,7 @@ async def _write_record(record: AuditRecord) -> None:
             timestamp_utc=record.timestamp_utc,
             chat_id=record.chat_id,
             user_id=record.user_id,
+            tenant_id=record.tenant_id,
             request_content=record.request_content,
             tool_invoked=record.tool_invoked,
             tool_params=record.tool_params,
@@ -141,12 +143,13 @@ async def log_interaction(record: AuditRecord) -> None:
     _write_to_stderr(last_error, record.event_type)
 
 
-async def log_unauthorized(chat_id: int, user_id: int | None, content: str) -> None:
-    """Registra un intento de acceso no autorizado. Requisitos: 2.3, 8.3"""
+async def log_unauthorized(chat_id: int, user_id: int | None, content: str, tenant_id: int | None = None) -> None:
+    """Registra un intento de acceso no autorizado."""
     record = AuditRecord(
         event_type="unauthorized",
         chat_id=chat_id,
         user_id=user_id,
+        tenant_id=tenant_id,
         request_content=content,
         status="error",
         error_description="Acceso no autorizado",
@@ -159,11 +162,13 @@ async def log_tool_failure(
     params: dict,
     error: str,
     chat_id: int | None = None,
+    tenant_id: int | None = None,
 ) -> None:
-    """Registra el fallo de una herramienta. Requisito: 8.4"""
+    """Registra el fallo de una herramienta."""
     record = AuditRecord(
         event_type="tool_failure",
         chat_id=chat_id,
+        tenant_id=tenant_id,
         tool_invoked=tool_name,
         tool_params=params,
         status="error",

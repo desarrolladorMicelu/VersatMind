@@ -86,17 +86,19 @@ def build_prompt(history: list[Message], n: int) -> PromptContext:
 
 async def load_history(
     chat_id: int,
+    tenant_id: int,
     n: int,
     session: AsyncSession,
 ) -> list[Message]:
     """
-    Carga los últimos n mensajes del chat_id desde PostgreSQL.
-    Retorna lista vacía si la DB no está disponible.
-    Requisitos: 4.1, 4.2, 4.5
+    Carga los últimos n mensajes del chat_id+tenant_id desde PostgreSQL.
     """
     stmt = (
         select(ConversationMessage)
-        .where(ConversationMessage.chat_id == chat_id)
+        .where(
+            ConversationMessage.chat_id == chat_id,
+            ConversationMessage.tenant_id == tenant_id,
+        )
         .order_by(ConversationMessage.created_at.desc())
         .limit(n)
     )
@@ -118,17 +120,16 @@ async def load_history(
 
 async def append_messages(
     chat_id: int,
+    tenant_id: int,
     messages: list[Message],
     session: AsyncSession,
 ) -> None:
-    """
-    Persiste nuevos mensajes. Trunca content a MAX_CONTENT_CHARS.
-    Requisitos: 4.4, 4.7
-    """
+    """Persiste nuevos mensajes. Trunca content a MAX_CONTENT_CHARS."""
     for msg in messages:
         content = msg.content[:MAX_CONTENT_CHARS]
         row = ConversationMessage(
             chat_id=chat_id,
+            tenant_id=tenant_id,
             role=msg.role,
             content=content,
             tool_name=msg.tool_name,

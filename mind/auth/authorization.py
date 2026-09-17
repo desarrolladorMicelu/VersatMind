@@ -1,8 +1,7 @@
 """
 Sistema de autorización de Mind by Versat.
-Verifica whitelist (tabla users) y permisos por rol.
+Verifica whitelist (tabla users) filtrada por tenant_id.
 Cache LRU de 60 s para propagar cambios sin redespliegue.
-Requisitos: 2.1, 2.4, 2.5, 2.6, 2.7, 2.8
 """
 from __future__ import annotations
 
@@ -18,7 +17,6 @@ from mind.db.models import Role, RolePermission, User
 
 
 class Permission(str, Enum):
-    """Permisos disponibles en el sistema."""
     READ_SALES = "READ_SALES"
     READ_KPI = "READ_KPI"
     READ_FINANCE = "READ_FINANCE"
@@ -28,18 +26,16 @@ class Permission(str, Enum):
 
 @dataclass
 class AuthResult:
-    """Resultado de la verificación de acceso."""
     allowed: bool
     user: User | None = None
     role: Role | None = None
 
 
 class WhitelistUnavailableError(Exception):
-    """La whitelist no está disponible (timeout o DB caída)."""
     pass
 
 
-# --- Cache de permisos por rol (TTL 60 s) ---
+# Cache de permisos por rol (TTL 60 s)
 _permissions_cache: dict[int, tuple[frozenset[str], float]] = {}
 _CACHE_TTL_SECONDS = 60
 
@@ -60,24 +56,24 @@ def _set_cached_permissions(role_id: int, permissions: frozenset[str]) -> None:
 
 
 def _invalidate_permissions_cache() -> None:
-    """Limpia la caché. Útil en tests."""
     _permissions_cache.clear()
 
 
 async def check_access(
     chat_id: int,
+    tenant_id: int,
     session: AsyncSession,
     timeout_seconds: float = 5.0,
 ) -> AuthResult:
     """
-    Verifica que el chat_id esté en la whitelist y activo.
+    Verifica que el chat_id esté en la whitelist del tenant y activo.
     Timeout de 5 s — lanza WhitelistUnavailableError si se agota.
-    Requisitos: 2.1, 2.4, 2.7, 2.8
     """
     try:
         async with asyncio.timeout(timeout_seconds):
             stmt = select(User).where(
                 User.chat_id == chat_id,
+                User.tenant_id == tenant_id,
                 User.is_active.is_(True),
             )
             result = await session.execute(stmt)
@@ -94,7 +90,7 @@ async def check_access(
 
     except asyncio.TimeoutError as exc:
         raise WhitelistUnavailableError(
-            f"Timeout al consultar whitelist para chat_id={chat_id}"
+            f"Timeout al consultar whitelist para chat_id={chat_id} tenant_id={tenant_id}"
         ) from exc
     except Exception as exc:
         raise WhitelistUnavailableError(
@@ -107,10 +103,6 @@ async def has_permission(
     tool_name: str,
     session: AsyncSession,
 ) -> bool:
-    """
-    Verifica si el rol puede ejecutar la herramienta.
-    Usa cache de 60 s. Requisitos: 2.5, 2.6
-    """
     cached = _get_cached_permissions(role.id)
     if cached is not None:
         return tool_name in cached
@@ -125,8 +117,5 @@ async def has_permission(
 
 
 def is_authorized(chat_id: int, whitelist: frozenset[int]) -> bool:
-    """
-    Versión pura (sin DB) para property-based testing.
-    Propiedad 4 — Valida: Requisito 2.1
-    """
+    """Versión pura (sin DB) para property-based testing."""
     return chat_id in whitelist

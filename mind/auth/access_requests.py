@@ -1,6 +1,7 @@
 """
 Gestión de solicitudes de acceso para Mind by Versat.
 Flujo: usuario solicita → admin aprueba/rechaza con botones Telegram.
+Scoped por tenant_id.
 """
 from __future__ import annotations
 
@@ -17,6 +18,7 @@ ALL_PERMISSIONS = ["READ_SALES", "READ_KPI", "READ_FINANCE", "GENERATE_REPORT", 
 
 async def get_or_create_request(
     chat_id: int,
+    tenant_id: int,
     user_id: int,
     username: str | None,
     first_name: str | None,
@@ -24,9 +26,12 @@ async def get_or_create_request(
 ) -> tuple[AccessRequest, bool]:
     """
     Retorna (request, is_new).
-    Si ya existe una solicitud pendiente, retorna la existente con is_new=False.
+    Si ya existe una solicitud pendiente para este tenant+chat_id, retorna la existente.
     """
-    stmt = select(AccessRequest).where(AccessRequest.chat_id == chat_id)
+    stmt = select(AccessRequest).where(
+        AccessRequest.chat_id == chat_id,
+        AccessRequest.tenant_id == tenant_id,
+    )
     result = await session.execute(stmt)
     existing = result.scalar_one_or_none()
 
@@ -35,6 +40,7 @@ async def get_or_create_request(
 
     req = AccessRequest(
         chat_id=chat_id,
+        tenant_id=tenant_id,
         user_id=user_id,
         username=username,
         first_name=first_name,
@@ -45,14 +51,14 @@ async def get_or_create_request(
     return req, True
 
 
-async def approve_user(chat_id: int, session: AsyncSession) -> User | None:
+async def approve_user(chat_id: int, tenant_id: int, session: AsyncSession) -> User | None:
     """
     Aprueba una solicitud: crea el usuario con rol board_member y todos los permisos.
     Retorna el User creado, o None si no había solicitud pendiente.
     """
-    # Verificar que existe la solicitud
     stmt = select(AccessRequest).where(
         AccessRequest.chat_id == chat_id,
+        AccessRequest.tenant_id == tenant_id,
         AccessRequest.status == "pending",
     )
     result = await session.execute(stmt)
@@ -60,21 +66,22 @@ async def approve_user(chat_id: int, session: AsyncSession) -> User | None:
     if req is None:
         return None
 
-    # Obtener o crear rol board_member
-    role_stmt = select(Role).where(Role.name == "board_member")
+    # Obtener o crear rol board_member para este tenant
+    role_stmt = select(Role).where(
+        Role.name == "board_member",
+        Role.tenant_id == tenant_id,
+    )
     role_result = await session.execute(role_stmt)
     role = role_result.scalar_one_or_none()
 
     if role is None:
-        role = Role(name="board_member", description="Miembro de junta directiva")
+        role = Role(name="board_member", description="Miembro de junta directiva", tenant_id=tenant_id)
         session.add(role)
         await session.flush()
-        # Agregar permisos al rol
         for perm in ALL_PERMISSIONS:
             session.add(RolePermission(role_id=role.id, permission_name=perm))
         await session.flush()
     else:
-        # Verificar que el rol tiene permisos, si no agregarlos
         perm_stmt = select(RolePermission).where(RolePermission.role_id == role.id)
         perm_result = await session.execute(perm_stmt)
         existing_perms = {p.permission_name for p in perm_result.scalars().all()}
@@ -83,9 +90,9 @@ async def approve_user(chat_id: int, session: AsyncSession) -> User | None:
                 session.add(RolePermission(role_id=role.id, permission_name=perm))
         await session.flush()
 
-    # Crear el usuario
     user = User(
         chat_id=req.chat_id,
+        tenant_id=tenant_id,
         user_id=req.user_id,
         username=req.username,
         role_id=role.id,
@@ -93,21 +100,27 @@ async def approve_user(chat_id: int, session: AsyncSession) -> User | None:
     )
     session.add(user)
 
-    # Actualizar estado de la solicitud
     await session.execute(
         update(AccessRequest)
-        .where(AccessRequest.chat_id == chat_id)
+        .where(
+            AccessRequest.chat_id == chat_id,
+            AccessRequest.tenant_id == tenant_id,
+        )
         .values(status="approved")
     )
     await session.flush()
     return user
 
 
-async def reject_request(chat_id: int, session: AsyncSession) -> bool:
+async def reject_request(chat_id: int, tenant_id: int, session: AsyncSession) -> bool:
     """Marca la solicitud como rechazada. Retorna True si existía."""
     result = await session.execute(
         update(AccessRequest)
-        .where(AccessRequest.chat_id == chat_id, AccessRequest.status == "pending")
+        .where(
+            AccessRequest.chat_id == chat_id,
+            AccessRequest.tenant_id == tenant_id,
+            AccessRequest.status == "pending",
+        )
         .values(status="rejected")
     )
     return result.rowcount > 0
