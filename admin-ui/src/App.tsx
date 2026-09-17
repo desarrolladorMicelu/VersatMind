@@ -5,6 +5,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import Tenants from "./pages/Tenants";
 import Agente from "./pages/Agente";
 import Usuarios from "./pages/Usuarios";
 import Accesos from "./pages/Accesos";
@@ -33,6 +34,7 @@ export default function App() {
               }
             >
               <Route index element={<Dashboard />} />
+              <Route path="tenants" element={<Tenants />} />
               <Route path="agente" element={<Agente />} />
               <Route path="usuarios" element={<Usuarios />} />
               <Route path="accesos" element={<Accesos />} />

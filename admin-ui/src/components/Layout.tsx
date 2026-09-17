@@ -2,11 +2,12 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import {
   LayoutDashboard, Bot, Users, KeyRound,
-  Shield, Clock, MessageSquare, Activity, LogOut,
+  Shield, Clock, MessageSquare, Activity, LogOut, Building2,
 } from "lucide-react";
 
 const NAV = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
+  { to: "/tenants", icon: Building2, label: "Clientes" },
   { to: "/agente", icon: Bot, label: "Agente" },
   { to: "/usuarios", icon: Users, label: "Usuarios" },
   { to: "/accesos", icon: KeyRound, label: "Accesos" },

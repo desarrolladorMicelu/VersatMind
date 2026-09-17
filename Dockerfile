@@ -1,3 +1,10 @@
+FROM node:20-slim AS frontend
+WORKDIR /frontend
+COPY admin-ui/package*.json ./
+RUN npm ci
+COPY admin-ui/ ./
+RUN npm run build
+
 FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -28,6 +35,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY mind/ ./mind/
 COPY alembic/ ./alembic/
 COPY alembic.ini ./
+
+# Copiar el build del frontend al lugar donde FastAPI lo sirve
+COPY --from=frontend /frontend/dist/ ./mind/admin/static/
 
 RUN groupadd --gid 1001 appgroup && \
     useradd --uid 1001 --gid appgroup --shell /bin/bash --create-home appuser && \
