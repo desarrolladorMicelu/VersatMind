@@ -116,7 +116,7 @@ async def process(
             "menos condiciones) antes de rendirte.\n\n"
             "PATRONES COMUNES PARA CONSULTAS DE NEGOCIO:\n"
             "- Ventas/Cobros: SELECT SUM(total_amount) FROM orders WHERE status IN "
-            "('Confirmado','Completado') AND created_at BETWEEN 'YYYY-MM-DD' AND 'YYYY-MM-DD'\n"
+            "('CONFIRMED','COMPLETED') AND created_at BETWEEN 'YYYY-MM-DD' AND 'YYYY-MM-DD'\n"
             "- Usuarios registrados: SELECT COUNT(*) FROM users WHERE "
             "created_at BETWEEN 'YYYY-MM-DD' AND 'YYYY-MM-DD'\n"
             "- Total usuarios: SELECT COUNT(*) FROM users\n"
@@ -126,8 +126,12 @@ async def process(
             "- Órdenes por estado: SELECT status, COUNT(*) FROM orders "
             "GROUP BY status\n"
             "- Ingresos por período: SELECT DATE_TRUNC('month', created_at) AS mes, "
-            "SUM(total_amount) FROM orders WHERE status IN ('Confirmado','Completado') "
+            "SUM(total_amount) FROM orders WHERE status IN ('CONFIRMED','COMPLETED') "
             "GROUP BY mes ORDER BY mes\n\n"
+            "IMPORTANTE sobre valores de columnas: Los valores en la BD están en INGLÉS y "
+            "MAYÚSCULAS. Por ejemplo el status de órdenes usa 'CONFIRMED', 'PENDING', "
+            "'COMPLETED', 'CANCELLED' — NO uses traducciones al español. "
+            "Siempre usa los valores exactos que aparecen en la base de datos.\n"
             "Limita resultados con LIMIT."
         )
 
