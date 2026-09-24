@@ -4,10 +4,11 @@ import { Plus } from "lucide-react";
 import api from "../lib/api";
 import PageHeader from "../components/PageHeader";
 
-const ALL_PERMISSIONS = ["READ_SALES","READ_KPI","READ_FINANCE","GENERATE_REPORT","MANAGE_TASKS"];
+const ALL_PERMISSIONS = ["READ_SALES","READ_KPI","READ_FINANCE","GENERATE_REPORT","MANAGE_TASKS","READ_EXTERNAL_DB"];
 const PERM_LABELS: Record<string, string> = {
   READ_SALES: "VER VENTAS", READ_KPI: "VER KPIS",
   READ_FINANCE: "VER FINANZAS", GENERATE_REPORT: "INFORMES", MANAGE_TASKS: "TAREAS",
+  READ_EXTERNAL_DB: "DATOS EXTERNOS",
 };
 
 export default function Roles() {

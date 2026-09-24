@@ -13,7 +13,7 @@ from mind.db.models import AccessRequest, Role, RolePermission, User
 
 logger = logging.getLogger(__name__)
 
-ALL_PERMISSIONS = ["READ_SALES", "READ_KPI", "READ_FINANCE", "GENERATE_REPORT", "MANAGE_TASKS"]
+ALL_PERMISSIONS = ["READ_SALES", "READ_KPI", "READ_FINANCE", "GENERATE_REPORT", "MANAGE_TASKS", "READ_EXTERNAL_DB"]
 
 
 async def get_or_create_request(

@@ -1,10 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plus, Pencil, Trash2, Power, X, Eye, EyeOff, Database, Bot } from "lucide-react";
+import { Plus, Pencil, Trash2, Power, X, Eye, EyeOff, Database, Bot, FileSpreadsheet } from "lucide-react";
 import { tenantsApi } from "../lib/api";
 import type { Tenant, TenantPayload } from "../lib/api";
 import { fmtDateShort } from "../lib/utils";
 import PageHeader from "../components/PageHeader";
+import ExternalDbConfig from "../components/ExternalDbConfig";
+import ExternalSheetsConfig from "../components/ExternalSheetsConfig";
 
 const EMPTY: TenantPayload = {
   name: "",
@@ -220,6 +222,20 @@ function TenantModal({
             </div>
           </div>
 
+          {/* Base de datos externa */}
+          <ExternalDbConfig
+            value={form.external_db ?? null}
+            onChange={(v) => setForm((f) => ({ ...f, external_db: v ?? undefined }))}
+            tenantId={form.id}
+          />
+
+          {/* Google Sheets */}
+          <ExternalSheetsConfig
+            value={form.external_sheets ?? null}
+            onChange={(v) => setForm((f) => ({ ...f, external_sheets: v ?? undefined }))}
+            tenantId={form.id}
+          />
+
         </div>
 
         {/* Footer */}
@@ -303,10 +319,43 @@ export default function Tenants() {
       sqlserver_user: t.sqlserver_user ?? "",
       sqlserver_password: "",   // nunca pre-rellenamos la contraseña
       sqlserver_driver: t.sqlserver_driver ?? "ODBC Driver 18 for SQL Server",
+      external_db: t.external_db_configured && t.external_db
+        ? {
+            engine: t.external_db.engine ?? "postgresql",
+            host: t.external_db.host ?? "",
+            port: t.external_db.port ?? 5432,
+            database: t.external_db.database ?? "",
+            user: t.external_db.user ?? "",
+            password: "", // nunca pre-rellenamos la contraseña
+            schema_description: t.external_db.schema_description,
+          }
+        : undefined,
+      external_sheets: t.external_sheets_configured && t.external_sheets
+        ? {
+            spreadsheet_url: t.external_sheets.spreadsheet_url ?? "",
+            credentials: undefined, // nunca pre-rellenamos las credenciales
+            schema_description: t.external_sheets.schema_description,
+          }
+        : undefined,
     });
   };
 
   const saving = create.isPending || update.isPending;
+
+  const saveError =
+    (create.isError &&
+      (create.error as unknown as {
+        response?: { data?: { detail?: string } };
+      })?.response?.data?.detail) ||
+    (update.isError &&
+      (update.error as unknown as {
+        response?: { data?: { detail?: string } };
+      })?.response?.data?.detail) ||
+    (remove.isError &&
+      (remove.error as unknown as {
+        response?: { data?: { detail?: string } };
+      })?.response?.data?.detail) ||
+    "";
 
   return (
     <div>
@@ -327,18 +376,20 @@ export default function Tenants() {
         {/* Error de mutación */}
         {(create.isError || update.isError || remove.isError) && (
           <div className="mb-4 px-4 py-3 border border-red-900 bg-red-950/30 font-mono text-xs text-red-400">
-            Error al guardar. Verifica los datos e intenta de nuevo.
+            {saveError || "Error al guardar. Verifica los datos e intenta de nuevo."}
           </div>
         )}
 
         <div className="border border-[#1a1a1a]">
 
           {/* Cabecera tabla */}
-          <div className="grid grid-cols-12 bg-[#050505] border-b border-[#1a1a1a]">
+          <div className="grid grid-cols-[repeat(14,minmax(0,1fr))] bg-[#050505] border-b border-[#1a1a1a]">
             <div className="col-span-3 th">Cliente</div>
             <div className="col-span-2 th">Bot</div>
             <div className="col-span-2 th">SQL Server</div>
-            <div className="col-span-2 th">Webhook</div>
+            <div className="col-span-2 th">DB Externa</div>
+            <div className="col-span-1 th">Sheets</div>
+            <div className="col-span-1 th">Webhook</div>
             <div className="col-span-1 th">Estado</div>
             <div className="col-span-1 th">Creado</div>
             <div className="col-span-1 th" />
@@ -354,7 +405,7 @@ export default function Tenants() {
           {!isLoading && tenants.map((t) => (
             <div
               key={t.id}
-              className="grid grid-cols-12 border-b border-[#111] hover:bg-[#050505] transition-colors"
+              className="grid grid-cols-[repeat(14,minmax(0,1fr))] border-b border-[#111] hover:bg-[#050505] transition-colors"
             >
               {/* Cliente */}
               <div className="col-span-3 td">
@@ -382,16 +433,44 @@ export default function Tenants() {
               <div className="col-span-2 td">
                 {t.sqlserver_host ? (
                   <div>
-                    <p className="font-mono text-[11px] text-[#888]">{t.sqlserver_host}</p>
-                    <p className="font-mono text-[10px] text-[#333]">{t.sqlserver_db}</p>
+                    <p className="font-mono text-[11px] text-[#888] truncate" title={t.sqlserver_host}>{t.sqlserver_host}</p>
+                    <p className="font-mono text-[10px] text-[#333] truncate" title={t.sqlserver_db}>{t.sqlserver_db}</p>
                   </div>
                 ) : (
                   <span className="font-mono text-[11px] text-[#2a2a2a]">— sin configurar</span>
                 )}
               </div>
 
-              {/* Webhook */}
+              {/* DB Externa */}
               <div className="col-span-2 td">
+                {t.external_db_configured ? (
+                  <div>
+                    <p className="font-mono text-[11px] text-[#888]">
+                      {t.external_db_engine ?? "postgresql"}
+                    </p>
+                    <p className="font-mono text-[10px] text-[#00e5a0]">✓ configurada</p>
+                  </div>
+                ) : (
+                  <span className="font-mono text-[11px] text-[#2a2a2a]">— no configurada</span>
+                )}
+              </div>
+
+              {/* Sheets */}
+              <div className="col-span-1 td">
+                {t.external_sheets_configured ? (
+                  <div>
+                    <p className="font-mono text-[10px] text-[#888] truncate" title={t.external_sheets_spreadsheet}>
+                      Sheets
+                    </p>
+                    <p className="font-mono text-[10px] text-[#00e5a0]">✓ configurada</p>
+                  </div>
+                ) : (
+                  <span className="font-mono text-[11px] text-[#2a2a2a]">— no config</span>
+                )}
+              </div>
+
+              {/* Webhook */}
+              <div className="col-span-1 td">
                 <span
                   className="font-mono text-[10px] text-[#444] truncate block max-w-full"
                   title={t.webhook_url}

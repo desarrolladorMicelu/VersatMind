@@ -5,6 +5,7 @@ Los endpoints de tenants permiten CRUD completo de tenants.
 """
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Any
 
@@ -42,6 +43,18 @@ class NewRole(BaseModel):
     description: str = ""
     tenant_id: int
 
+class ExternalDbPayload(BaseModel):
+    engine: str = "postgresql"
+    host: str = ""
+    port: int = 5432
+    database: str = ""
+    user: str = ""
+    password: str = ""
+
+class ExternalSheetsPayload(BaseModel):
+    spreadsheet_url: str = ""
+    credentials: dict | None = None
+
 class TenantCreate(BaseModel):
     name: str
     slug: str
@@ -53,6 +66,8 @@ class TenantCreate(BaseModel):
     sqlserver_user: str = ""
     sqlserver_password: str = ""
     sqlserver_driver: str = "ODBC Driver 18 for SQL Server"
+    external_db: dict | None = None
+    external_sheets: dict | None = None
 
 class TenantUpdate(BaseModel):
     name: str | None = None
@@ -65,6 +80,8 @@ class TenantUpdate(BaseModel):
     sqlserver_password: str | None = None
     sqlserver_driver: str | None = None
     is_active: bool | None = None
+    external_db: dict | None = None
+    external_sheets: dict | None = None
 
 
 # ── AUTH ─────────────────────────────────────────────────────────────────────
@@ -117,6 +134,31 @@ async def tenants_list(
             "sqlserver_db": t.sqlserver_db,
             "sqlserver_user": t.sqlserver_user,
             "sqlserver_driver": t.sqlserver_driver,
+            "external_db_configured": t.external_db is not None,
+            "external_db_engine": (t.external_db or {}).get("engine"),
+            "external_db": (
+                {
+                    "engine": t.external_db.get("engine", "postgresql"),
+                    "host": t.external_db.get("host") or "",
+                    "port": t.external_db.get("port") or 5432,
+                    "database": t.external_db.get("database") or "",
+                    "user": t.external_db.get("user") or "",
+                    "schema_description": t.external_db.get("schema_description"),
+                }
+                if t.external_db
+                else None
+            ),
+            "external_sheets_configured": t.external_sheets is not None,
+            "external_sheets_spreadsheet": (t.external_sheets or {}).get("spreadsheet_url", ""),
+            "external_sheets": (
+                {
+                    "spreadsheet_url": t.external_sheets.get("spreadsheet_url", ""),
+                    "spreadsheet_id": t.external_sheets.get("spreadsheet_id", ""),
+                    "schema_description": t.external_sheets.get("schema_description"),
+                }
+                if t.external_sheets
+                else None
+            ),
             "created_at": t.created_at.isoformat() if t.created_at else None,
         }
         for t in tenants
@@ -130,7 +172,59 @@ async def tenant_create(
     session: AsyncSession = Depends(get_session),
 ):
     from mind.db.models import Tenant
-    tenant = Tenant(**body.model_dump())
+    payload = body.model_dump()
+
+    # Base de datos externa: validar conexión antes de crear el tenant
+    ext = payload.get("external_db")
+    if ext:
+        from mind.data.external.postgresql import test_connection
+        creds = {
+            "engine": ext.get("engine", "postgresql"),
+            "host": ext.get("host", ""),
+            "port": ext.get("port", 5432),
+            "database": ext.get("database", ""),
+            "user": ext.get("user", ""),
+            "password": ext.get("password", ""),
+        }
+        try:
+            await asyncio.wait_for(test_connection(creds), timeout=15)
+        except asyncio.TimeoutError:
+            raise HTTPException(
+                status_code=400,
+                detail="No se pudo crear: timeout conectando a la base de datos externa (15 s).",
+            ) from None
+        except Exception as exc:
+            raise HTTPException(
+                status_code=400,
+                detail=f"No se pudo crear: error de conexión a la base externa — {exc}",
+            ) from exc
+
+    # Google Sheets: validar conexión antes de crear el tenant
+    sheets = payload.get("external_sheets")
+    if sheets:
+        from mind.data.sheets.google_sheets import (
+            test_connection as test_sheets_connection,
+            _extract_spreadsheet_id,
+            _validate_conf,
+        )
+        conf = dict(sheets)
+        sid = _extract_spreadsheet_id(conf.get("spreadsheet_url") or "")
+        conf["spreadsheet_id"] = sid
+        _validate_conf(conf)
+        try:
+            await asyncio.wait_for(test_sheets_connection(conf), timeout=15)
+        except asyncio.TimeoutError:
+            raise HTTPException(
+                status_code=400,
+                detail="No se pudo crear: timeout conectando a Google Sheets (15 s).",
+            ) from None
+        except Exception as exc:
+            raise HTTPException(
+                status_code=400,
+                detail=f"No se pudo crear: error de conexión a Google Sheets — {exc}",
+            ) from exc
+
+    tenant = Tenant(**payload)
     session.add(tenant)
     await session.commit()
     await session.refresh(tenant)
@@ -168,6 +262,48 @@ async def tenant_update(
 
     old_token = tenant.bot_token
     updates = body.model_dump(exclude_none=True)
+
+    # external_db: merge sobre lo almacenado — los campos vacíos conservan
+    # los valores guardados (password incluido); engine null desconfigura
+    if body.external_db is not None:
+        if body.external_db.get("engine") is None:
+            tenant.external_db = None
+        else:
+            stored = tenant.external_db or {}
+            merged = dict(stored)
+            for key in ("engine", "host", "port", "database", "user", "password", "schema_description"):
+                val = body.external_db.get(key)
+                if val:
+                    merged[key] = int(val) if key == "port" else val
+            tenant.external_db = merged
+        updates.pop("external_db", None)
+
+    # external_sheets: merge sobre lo almacenado
+    if body.external_sheets is not None:
+        stored = tenant.external_sheets or {}
+        merged = dict(stored)
+        url = body.external_sheets.get("spreadsheet_url") or ""
+        creds = body.external_sheets.get("credentials")
+        schema_desc = body.external_sheets.get("schema_description")
+
+        if not url.strip() and not creds:
+            # Si no hay URL y no hay credenciales → desconfigurar
+            if not stored.get("spreadsheet_url"):
+                tenant.external_sheets = None
+        else:
+            if url.strip():
+                from mind.data.sheets.google_sheets import _extract_spreadsheet_id
+                merged["spreadsheet_url"] = url.strip()
+                merged["spreadsheet_id"] = _extract_spreadsheet_id(url)
+            if creds:
+                merged["credentials"] = creds
+            elif "credentials" in stored:
+                merged["credentials"] = stored["credentials"]
+            if schema_desc:
+                merged["schema_description"] = schema_desc
+            tenant.external_sheets = merged
+        updates.pop("external_sheets", None)
+
     for key, val in updates.items():
         setattr(tenant, key, val)
     await session.commit()
@@ -219,6 +355,163 @@ async def tenant_delete(
 
     logger.info("Tenant %s eliminado por %s", tenant.slug, admin.get("sub"))
     return {"ok": True}
+
+
+# ── BASE DE DATOS EXTERNA ────────────────────────────────────────────────────
+
+def _resolve_external_creds(body: ExternalDbPayload, stored: dict | None) -> dict:
+    """Combina el body recibido con lo almacenado (password vacío → stored)."""
+    creds = body.model_dump()
+    if not creds.get("password") and stored:
+        creds["password"] = stored.get("password") or ""
+    return creds
+
+
+def _resolve_external_sheets(body: ExternalSheetsPayload, stored: dict | None) -> dict:
+    """Combina el body recibido con lo almacenado (credentials vacío → stored)."""
+    from mind.data.sheets.google_sheets import _extract_spreadsheet_id
+    conf: dict = {}
+    url = body.spreadsheet_url.strip()
+    if url:
+        conf["spreadsheet_url"] = url
+        conf["spreadsheet_id"] = _extract_spreadsheet_id(url)
+    if body.credentials:
+        conf["credentials"] = body.credentials
+    elif stored and stored.get("credentials"):
+        conf["credentials"] = stored["credentials"]
+    if stored and stored.get("schema_description"):
+        conf["schema_description"] = stored["schema_description"]
+    return conf if conf else {}
+
+
+@router.post("/tenants/{tenant_id}/test-external-db")
+async def tenant_test_external_db(
+    tenant_id: int,
+    body: ExternalDbPayload,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+):
+    from mind.db.models import Tenant
+    tenant = (await session.execute(
+        select(Tenant).where(Tenant.id == tenant_id)
+    )).scalar_one_or_none()
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant no encontrado")
+
+    creds = _resolve_external_creds(body, tenant.external_db)
+    from mind.data.external.postgresql import test_connection
+    try:
+        await asyncio.wait_for(test_connection(creds), timeout=15)
+        return {"ok": True}
+    except asyncio.TimeoutError:
+        return {"ok": False, "error": "Timeout conectando a la base de datos externa (15 s)."}
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)}
+
+
+@router.post("/tenants/{tenant_id}/discover-schema")
+async def tenant_discover_schema(
+    tenant_id: int,
+    body: ExternalDbPayload,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+):
+    from mind.db.models import Tenant
+    tenant = (await session.execute(
+        select(Tenant).where(Tenant.id == tenant_id)
+    )).scalar_one_or_none()
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant no encontrado")
+
+    creds = _resolve_external_creds(body, tenant.external_db)
+    from mind.data.external.schema_discovery import (
+        introspect_schema,
+        generate_schema_description,
+    )
+
+    async def _discover() -> tuple[str | None, bool]:
+        raw = await introspect_schema(creds)
+        if not raw:
+            return None, True
+        return (await generate_schema_description(raw)), False
+
+    try:
+        description, empty = await asyncio.wait_for(_discover(), timeout=90)
+        if empty:
+            return {"schema_description": "", "empty": True}
+        return {"schema_description": description}
+    except asyncio.TimeoutError:
+        return {"error": "Timeout del descubrimiento de esquema (90 s)."}
+    except Exception as exc:
+        return {"error": str(exc)}
+
+
+# ── GOOGLE SHEETS EXTERNA ──────────────────────────────────────────────────────
+
+@router.post("/tenants/{tenant_id}/test-sheets")
+async def tenant_test_sheets(
+    tenant_id: int,
+    body: ExternalSheetsPayload,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+):
+    from mind.db.models import Tenant
+    tenant = (await session.execute(
+        select(Tenant).where(Tenant.id == tenant_id)
+    )).scalar_one_or_none()
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant no encontrado")
+
+    conf = _resolve_external_sheets(body, tenant.external_sheets)
+    from mind.data.sheets.google_sheets import test_connection, _validate_conf
+    try:
+        _validate_conf(conf)
+        sheets = await asyncio.wait_for(test_connection(conf), timeout=15)
+        return {"ok": True, "sheets": sheets}
+    except asyncio.TimeoutError:
+        return {"ok": False, "error": "Timeout conectando a Google Sheets (15 s)."}
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)}
+
+
+@router.post("/tenants/{tenant_id}/discover-sheets")
+async def tenant_discover_sheets(
+    tenant_id: int,
+    body: ExternalSheetsPayload,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+):
+    from mind.db.models import Tenant
+    tenant = (await session.execute(
+        select(Tenant).where(Tenant.id == tenant_id)
+    )).scalar_one_or_none()
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant no encontrado")
+
+    conf = _resolve_external_sheets(body, tenant.external_sheets)
+
+    from mind.data.sheets.google_sheets import _validate_conf
+    from mind.data.sheets.schema_discovery import (
+        introspect_sheets,
+        generate_sheets_description,
+    )
+
+    try:
+        _validate_conf(conf)
+        raw = await asyncio.wait_for(introspect_sheets(conf), timeout=30)
+        if not raw:
+            return {"sheets": [], "schema_description": "", "empty": True}
+        description = await asyncio.wait_for(
+            generate_sheets_description(raw), timeout=60
+        )
+        return {
+            "schema_description": description,
+            "sheets": raw,
+        }
+    except asyncio.TimeoutError:
+        return {"error": "Timeout del descubrimiento de hojas (90 s)."}
+    except Exception as exc:
+        return {"error": str(exc)}
 
 
 # ── DASHBOARD ────────────────────────────────────────────────────────────────

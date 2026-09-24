@@ -49,6 +49,14 @@ class Tenant(Base):
         Text, nullable=False, default="ODBC Driver 18 for SQL Server"
     )
 
+    # Base de datos externa del cliente (JSONB): engine, host, port, database,
+    # user, password y schema_description generado por IA
+    external_db: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+
+    # Google Sheets externa del cliente (JSONB): spreadsheet_url,
+    # spreadsheet_id, credentials (service account JSON) y schema_description
+    external_sheets: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(
         nullable=False, server_default=func.now()
     )

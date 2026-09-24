@@ -8,7 +8,7 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Any
 
 from openai import AsyncOpenAI, APIError, APITimeoutError
@@ -92,6 +92,32 @@ async def process(
             active_max_cycles = cfg.max_tool_cycles
     except Exception:
         pass
+
+    # Inyectar el esquema de la base de datos externa del cliente si existe
+    ext_db = getattr(tenant, "external_db", None)
+    schema_description = (ext_db or {}).get("schema_description")
+    if schema_description:
+        active_system_prompt += (
+            "\n\n## Base de datos externa del cliente\n\n"
+            "Tienes disponible una base de datos externa con el siguiente esquema:\n\n"
+            f"{schema_description}\n\n"
+            "Para consultarla usa la herramienta 'ejecutar_consulta' con sentencias SQL SELECT. "
+            "Explica qué consulta vas a ejecutar. "
+            "Limita resultados con LIMIT."
+        )
+
+    # Inyectar la descripción de Google Sheets del cliente si existe
+    ext_sheets = getattr(tenant, "external_sheets", None)
+    sheets_description = (ext_sheets or {}).get("schema_description")
+    if sheets_description:
+        active_system_prompt += (
+            "\n\n## Google Sheets del cliente\n\n"
+            "Tienes disponible una hoja de cálculo de Google Sheets con este contenido:\n\n"
+            f"{sheets_description}\n\n"
+            "Para consultarla usa la herramienta 'consultar_sheet' con el nombre exacto de la hoja. "
+            "Aplica 'filtros' por columna cuando el usuario pida un subconjunto. "
+            "Usa 'limite' para acotar (default 1000)."
+        )
 
     client = AsyncOpenAI(
         api_key=settings.OPENAI_API_KEY,

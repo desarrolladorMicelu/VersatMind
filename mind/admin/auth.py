@@ -3,7 +3,7 @@ Autenticación del panel de administración — JWT en cookie httpOnly.
 """
 from __future__ import annotations
 
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, timedelta, timezone
 
 from fastapi import Cookie, HTTPException, Request, status
 from jose import JWTError, jwt
@@ -20,7 +20,7 @@ def _secret() -> str:
 def create_access_token(username: str) -> str:
     payload = {
         "sub": username,
-        "exp": datetime.now(UTC) + timedelta(hours=TOKEN_EXPIRE_HOURS),
+        "exp": datetime.now(timezone.utc) + timedelta(hours=TOKEN_EXPIRE_HOURS),
     }
     return jwt.encode(payload, _secret(), algorithm=ALGORITHM)
 

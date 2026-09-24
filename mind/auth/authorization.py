@@ -22,6 +22,7 @@ class Permission(str, Enum):
     READ_FINANCE = "READ_FINANCE"
     GENERATE_REPORT = "GENERATE_REPORT"
     MANAGE_TASKS = "MANAGE_TASKS"
+    READ_EXTERNAL_DB = "READ_EXTERNAL_DB"
 
 
 @dataclass

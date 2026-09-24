@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from typing import Any
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -54,7 +54,7 @@ def validate_cron_expression(expr: str) -> dict[str, Any]:
 def validate_cron_min_interval(expr: str) -> dict[str, Any]:
     try:
         trigger = CronTrigger.from_crontab(expr.strip())
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         t1 = trigger.get_next_fire_time(None, now)
         t2 = trigger.get_next_fire_time(t1, t1)
         if t1 is None or t2 is None:
@@ -311,7 +311,7 @@ async def _execute_task(task_id: str, tenant_id: int) -> None:
             await session.execute(
                 update(ScheduledTask)
                 .where(ScheduledTask.id == task_id)
-                .values(last_execution_at=datetime.now(UTC))
+                .values(last_execution_at=datetime.now(timezone.utc))
             )
             await session.commit()
 

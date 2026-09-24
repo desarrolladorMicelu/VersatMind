@@ -6,7 +6,7 @@ Requisitos: 4.1 - 4.7
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from sqlalchemy import delete, select
@@ -26,7 +26,7 @@ class Message:
     content: str
     tool_name: str | None = None
     tool_call_id: str | None = None
-    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     def to_openai_dict(self) -> dict[str, Any]:
         """Convierte a formato de mensaje de OpenAI."""

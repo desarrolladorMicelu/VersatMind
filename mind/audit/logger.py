@@ -11,7 +11,7 @@ import os
 import re
 import sys
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from sqlalchemy import insert
@@ -70,7 +70,7 @@ class AuditRecord:
     response_content: str | None = None
     status: str | None = None  # 'success' | 'error'
     error_description: str | None = None
-    timestamp_utc: datetime = field(default_factory=lambda: datetime.now(UTC).replace(tzinfo=None))
+    timestamp_utc: datetime = field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
     def __post_init__(self) -> None:
         if self.request_content:

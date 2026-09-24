@@ -73,6 +73,8 @@ def _register_all_tools() -> None:
         eliminar_tarea,
         modificar_tarea,
     )
+    from mind.agent.tools.external_db_tool import ejecutar_consulta
+    from mind.agent.tools.sheets_tool import consultar_sheet
 
     TOOL_REGISTRY["consultar_ventas"] = ToolDefinition(
         fn=consultar_ventas,
@@ -241,6 +243,53 @@ def _register_all_tools() -> None:
                     "nueva_expresion_cron": {"type": "string"},
                 },
                 "required": ["task_id", "chat_id"],
+            },
+        },
+    )
+    TOOL_REGISTRY["ejecutar_consulta"] = ToolDefinition(
+        fn=ejecutar_consulta,
+        permission=Permission.READ_EXTERNAL_DB,
+        schema={
+            "name": "ejecutar_consulta",
+            "description": "Ejecuta una consulta SQL SELECT en la base de datos externa del cliente.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "sql": {
+                        "type": "string",
+                        "description": "Consulta SQL SELECT. Ej: SELECT * FROM clientes LIMIT 10"
+                    }
+                },
+                "required": ["sql"],
+            },
+        },
+    )
+    TOOL_REGISTRY["consultar_sheet"] = ToolDefinition(
+        fn=consultar_sheet,
+        permission=Permission.READ_EXTERNAL_DB,
+        schema={
+            "name": "consultar_sheet",
+            "description": "Consulta datos de una hoja de Google Sheets del cliente (símil de SQL SELECT). "
+                           "Usa 'hoja' con el nombre exacto de la pestaña detectada. "
+                           "'filtros' filtra por columnas {'Columna': 'valor'} (coincidencia sin importar mayúsculas).",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "hoja": {
+                        "type": "string",
+                        "description": "Nombre exacto de la pestaña a consultar. Ej: 'Clientes', 'Ventas'",
+                    },
+                    "filtros": {
+                        "type": "object",
+                        "additionalProperties": {"type": "string"},
+                        "description": "Filtros columna → valor. Coincidencia case-insensitive. Ej: {'Ciudad': 'Bogotá'}",
+                    },
+                    "limite": {
+                        "type": "integer",
+                        "description": "Máximo de filas a retornar (default 1000, techo 5000)",
+                    },
+                },
+                "required": ["hoja"],
             },
         },
     )
