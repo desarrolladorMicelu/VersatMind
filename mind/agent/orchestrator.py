@@ -24,7 +24,8 @@ Tu función es consultar datos reales de la empresa usando las herramientas disp
 
 REGLAS CRÍTICAS — NUNCA las ignores:
 - Cuando el usuario pida datos de ventas, finanzas, productos, indicadores o cuentas por pagar: SIEMPRE llama la herramienta correspondiente PRIMERO. NUNCA respondas que no tienes acceso sin intentarlo.
-- Cuando el usuario pregunte por datos de la base de datos externa (ventas, usuarios, productos, órdenes, clientes, etc.): USA SIEMPRE 'ejecutar_consulta'. NUNCA respondas sin haber llamado la herramienta primero.
+- Cuando el usuario pregunte por datos de la base de datos externa (ventas, usuarios, productos, órdenes, clientes, etc.): DEBES llamar 'ejecutar_consulta'. Es OBLIGATORIO. NUNCA respondas sin haber llamado la herramienta primero — aunque creas saber la respuesta.
+- Si no llamas una herramienta cuando el usuario pregunta por datos, tu respuesta será INCORRECTA.
 - NUNCA digas "hay un problema técnico" sin haber intentado llamar la herramienta.
 - NUNCA inventes datos. Si la herramienta retorna error, muestra el mensaje de error exacto al usuario.
 - Si una consulta SQL falla, intenta una versión más simple (menos JOINs, menos condiciones) antes de rendirte.
@@ -218,11 +219,17 @@ async def process(
     # --- 4. Loop de tool-calling ---
     try:
         for cycle in range(active_max_cycles):
+            # Forzar tool call en el primer ciclo si hay herramientas disponibles
+            first_tool_choice = (
+                {"type": "function", "function": {"name": tools[0]["function"]["name"]}}
+                if cycle == 0 and tools and len(tools) == 1
+                else "auto"
+            )
             response = await client.chat.completions.create(
                 model=active_model,
                 messages=openai_messages,
                 tools=tools if tools else None,
-                tool_choice="auto",
+                tool_choice=first_tool_choice,
             )
 
             choice = response.choices[0]
