@@ -107,12 +107,14 @@ def _validate_and_clamp(sql: str) -> str:
     """Valida SELECT único y asegura un LIMIT 200 como techo de filas."""
     if not sql or not sql.strip():
         raise InvalidQueryError("La consulta está vacía.")
-    stripped = _strip_literals(sql)
-    if not stripped.strip():
+    stripped = _strip_literals(sql).strip()
+    if not stripped:
         raise InvalidQueryError("La consulta está vacía.")
     if not _SELECT_RE.match(stripped):
         raise InvalidQueryError("Solo se permiten consultas SELECT.")
-    if ";" in stripped:
+    # Permitir un solo ; al final (terminador SQL estándar)
+    stripped_no_semi = stripped.rstrip(";").strip()
+    if ";" in stripped_no_semi:
         raise InvalidQueryError("No se permiten múltiples sentencias SQL.")
     if _LIMIT_RE.search(stripped):
         return sql
