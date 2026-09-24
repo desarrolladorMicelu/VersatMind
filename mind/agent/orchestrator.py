@@ -108,6 +108,10 @@ async def process(
             "en lugar de product_variant_id muestra variant_name; en lugar de user_id muestra "
             "first_name + last_name; en lugar de category_id muestra category_name; en lugar de "
             "order_id muestra order_number. Aplica esto a TODAS las columnas que sean FK. "
+            "Usa SOLO los nombres de columna exactos que aparecen en el esquema — no los traduzcas "
+            "ni inventes alias con espacios o caracteres especiales. Por ejemplo, usa "
+            "total_amount (no 'Ventas Totales'), created_at (no 'Fecha'), etc. "
+            "No uses comillas dobles en los alias. "
             "Limita resultados con LIMIT."
         )
 
