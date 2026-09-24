@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plus, Pencil, Trash2, Power, X, Eye, EyeOff, Database, Bot, FileSpreadsheet } from "lucide-react";
+import { Plus, Pencil, Trash2, Power, X, Eye, EyeOff, Database, Bot } from "lucide-react";
 import { tenantsApi } from "../lib/api";
 import type { Tenant, TenantPayload } from "../lib/api";
 import { fmtDateShort } from "../lib/utils";
