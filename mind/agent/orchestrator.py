@@ -189,10 +189,14 @@ async def process(
         "consultar_ventas", "consultar_ventas_detalle", "consultar_indicadores",
         "consultar_finanzas", "consultar_productos", "consultar_cxp", "generar_informe",
     }
+    # Tools de tareas programadas — solo si el tenant tiene OFIMA
+    task_tools = {"crear_tarea_programada", "listar_tareas", "eliminar_tarea", "modificar_tarea"}
     filtered_tools = []
     for t in tools:
         name = t["function"]["name"]
         if name in ofima_tools and not tenant_ofima:
+            continue
+        if name in task_tools and not tenant_ofima:
             continue
         if name == "ejecutar_consulta" and not tenant_ext_db:
             continue
