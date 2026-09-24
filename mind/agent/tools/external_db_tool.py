@@ -18,6 +18,7 @@ async def ejecutar_consulta(sql: str) -> dict:
     from mind.data.external.postgresql import execute_query
 
     tenant = get_tenant()
+    logger.info("SQL ejecutada tenant=%s: %.400s", tenant.slug, sql)
     if not getattr(tenant, "external_db", None):
         return {
             "error": True,
