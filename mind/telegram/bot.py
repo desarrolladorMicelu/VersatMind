@@ -51,11 +51,12 @@ async def setup_webhook(webhook_url: str, bot_token: str) -> None:
     """Registra el webhook para el bot del tenant."""
     app = get_application(bot_token)
     full_url = f"{webhook_url.rstrip('/')}/webhook/{bot_token}"
-    await app.bot.set_webhook(
+    result = await app.bot.set_webhook(
         url=full_url,
         allowed_updates=["message", "callback_query"],
+        drop_pending_updates=True,
     )
-    logger.info("Webhook registrado para bot ...%s → %s", bot_token[-6:], full_url)
+    logger.info("Webhook registrado para bot ...%s → %s (ok=%s)", bot_token[-6:], full_url, result)
 
 
 async def teardown_bot(bot_token: str) -> None:
@@ -77,14 +78,48 @@ async def process_update(update_data: dict, bot_token: str) -> None:
     await app.process_update(update)
 
 
+_TELEGRAM_MAX_CHARS = 4096
+
+
 async def send_text(
     chat_id: int,
     text: str,
     bot_token: str,
     parse_mode: str = "Markdown",
 ) -> None:
-    """Envía un mensaje de texto via el bot del tenant."""
+    """Envía un mensaje de texto via el bot del tenant. Divide en partes si excede 4096 caracteres."""
     app = get_application(bot_token)
+
+    if len(text) <= _TELEGRAM_MAX_CHARS:
+        await _send_single(chat_id, text, bot_token, app, parse_mode)
+        return
+
+    # Dividir en partes de hasta 4096 caracteres, cortando en \n
+    parts: list[str] = []
+    while text:
+        if len(text) <= _TELEGRAM_MAX_CHARS:
+            parts.append(text)
+            break
+        # Buscar el último \n antes del límite
+        cut = text.rfind("\n", 0, _TELEGRAM_MAX_CHARS)
+        if cut == -1:
+            cut = _TELEGRAM_MAX_CHARS
+        parts.append(text[:cut])
+        text = text[cut:].lstrip("\n")
+
+    for i, part in enumerate(parts):
+        prefix = f"[{i+1}/{len(parts)}]\n" if len(parts) > 1 else ""
+        try:
+            await _send_single(chat_id, prefix + part, bot_token, app, parse_mode)
+        except Exception as exc:
+            logger.error(
+                "send_text parte %d/%d fallido chat_id=%s: %s",
+                i + 1, len(parts), chat_id, exc,
+            )
+
+
+async def _send_single(chat_id: int, text: str, bot_token: str, app, parse_mode: str) -> None:
+    """Intenta enviar un mensaje con hasta 3 reintentos. Si falla por parse_mode, reintenta sin formato."""
     for attempt in range(3):
         try:
             await app.bot.send_message(
@@ -94,6 +129,9 @@ async def send_text(
             )
             return
         except Exception as exc:
+            if "can't parse entities" in str(exc).lower() and attempt == 0:
+                # Reintentar sin Markdown si falla el parseo
+                return await _send_single(chat_id, text, bot_token, app, "")
             if attempt < 2:
                 await asyncio.sleep(2 ** attempt)
             else:
