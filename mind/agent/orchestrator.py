@@ -103,6 +103,11 @@ async def process(
             f"{schema_description}\n\n"
             "Para consultarla usa la herramienta 'ejecutar_consulta' con sentencias SQL SELECT. "
             "Explica qué consulta vas a ejecutar. "
+            "IMPORTANTE: NUNCA devuelvas IDs numéricos al usuario. Siempre haz JOIN entre "
+            "tablas relacionadas (FK) para mostrar nombres legibles. Por ejemplo: "
+            "en lugar de product_variant_id muestra variant_name; en lugar de user_id muestra "
+            "first_name + last_name; en lugar de category_id muestra category_name; en lugar de "
+            "order_id muestra order_number. Aplica esto a TODAS las columnas que sean FK. "
             "Limita resultados con LIMIT."
         )
 
