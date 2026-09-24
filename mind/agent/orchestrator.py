@@ -157,6 +157,25 @@ async def process(
     openai_messages.append({"role": "user", "content": message})
 
     tools = get_tool_schemas()
+    # Filtrar tools no configuradas para este tenant
+    tenant_ofima = bool(tenant.sqlserver_host)
+    tenant_ext_db = bool(tenant.external_db)
+    tenant_ext_sheets = bool(tenant.external_sheets)
+    ofima_tools = {
+        "consultar_ventas", "consultar_ventas_detalle", "consultar_indicadores",
+        "consultar_finanzas", "consultar_productos", "consultar_cxp", "generar_informe",
+    }
+    filtered_tools = []
+    for t in tools:
+        name = t["function"]["name"]
+        if name in ofima_tools and not tenant_ofima:
+            continue
+        if name == "ejecutar_consulta" and not tenant_ext_db:
+            continue
+        if name == "consultar_sheet" and not tenant_ext_sheets:
+            continue
+        filtered_tools.append(t)
+    tools = filtered_tools
     logger.info(
         "tenant=%s chat_id=%s permisos=%s tools=%s",
         tenant.slug, chat_id, user_permissions,
