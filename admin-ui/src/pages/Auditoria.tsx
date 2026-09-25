@@ -3,38 +3,41 @@ import { useState } from "react";
 import api from "../lib/api";
 import { fmtDate } from "../lib/utils";
 import PageHeader from "../components/PageHeader";
+import { useTenant } from "../contexts/TenantContext";
 
 const EVENT_TYPES = ["", "interaction", "unauthorized", "tool_failure", "scheduler"];
 const STATUS_OPTIONS = ["", "success", "error"];
-
 const EVENT_BADGE: Record<string, string> = {
   interaction: "badge-indigo", tool_failure: "badge-red",
   unauthorized: "badge-amber", scheduler: "badge-slate",
 };
 
 export default function Auditoria() {
+  const { tenantId } = useTenant();
   const [eventType, setEventType] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [limit, setLimit] = useState(100);
 
   const { data: logs = [], isLoading, refetch } = useQuery({
-    queryKey: ["auditoria", eventType, statusFilter, limit],
-    queryFn: () => api.get("/auditoria", { params: { event_type: eventType, status_filter: statusFilter, limit } }).then((r) => r.data),
+    queryKey: ["auditoria", tenantId, eventType, statusFilter, limit],
+    queryFn: () => api.get("/auditoria", {
+      params: {
+        ...(tenantId ? { tenant_id: tenantId } : {}),
+        event_type: eventType,
+        status_filter: statusFilter,
+        limit,
+      }
+    }).then((r) => r.data),
   });
 
   return (
     <div>
       <PageHeader
-        tag="LOGS"
-        title="Auditoría"
-        description="Registro completo de actividad"
-        action={
-          <button className="btn-secondary" onClick={() => refetch()}>↺ ACTUALIZAR</button>
-        }
+        tag="LOGS" title="Auditoría" description="Registro completo de actividad"
+        action={<button className="btn-secondary" onClick={() => refetch()}>↺ ACTUALIZAR</button>}
       />
       <div className="px-8 py-8 space-y-5">
 
-        {/* Filters */}
         <div className="border border-[#1a1a1a] bg-[#050505] px-5 py-4 flex flex-wrap gap-5 items-end">
           <div>
             <label className="label">Tipo de evento</label>
@@ -54,12 +57,9 @@ export default function Auditoria() {
               {[50, 100, 200, 500].map((n) => <option key={n} value={n}>{n}</option>)}
             </select>
           </div>
-          <div className="font-mono text-[10px] text-[#333] pb-2">
-            {logs.length} registros
-          </div>
+          <div className="font-mono text-[10px] text-[#333] pb-2">{logs.length} registros</div>
         </div>
 
-        {/* Table */}
         <div className="border border-[#1a1a1a]">
           <div className="grid grid-cols-12 bg-[#050505] border-b border-[#1a1a1a]">
             <div className="col-span-2 th">Evento</div>

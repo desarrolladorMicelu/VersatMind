@@ -3,30 +3,44 @@ import { Check, X } from "lucide-react";
 import api from "../lib/api";
 import { fmtDate } from "../lib/utils";
 import PageHeader from "../components/PageHeader";
+import { useTenant } from "../contexts/TenantContext";
 
 export default function Accesos() {
   const qc = useQueryClient();
+  const { tenantId } = useTenant();
+  const p = tenantId ? { tenant_id: tenantId } : undefined;
 
   const { data: requests = [], isLoading } = useQuery({
-    queryKey: ["accesos"],
-    queryFn: () => api.get("/accesos").then((r) => r.data),
+    queryKey: ["accesos", tenantId],
+    queryFn: () => api.get("/accesos", { params: p }).then((r) => r.data),
     refetchInterval: 15000,
+    enabled: tenantId !== null,
   });
 
   const aprobar = useMutation({
-    mutationFn: (chat_id: number) => api.post(`/accesos/${chat_id}/aprobar`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["accesos"] }),
+    mutationFn: (chat_id: number) => api.post(`/accesos/${chat_id}/aprobar`, null, { params: p }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["accesos", tenantId] }),
   });
 
   const rechazar = useMutation({
-    mutationFn: (chat_id: number) => api.post(`/accesos/${chat_id}/rechazar`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["accesos"] }),
+    mutationFn: (chat_id: number) => api.post(`/accesos/${chat_id}/rechazar`, null, { params: p }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["accesos", tenantId] }),
   });
 
   const pending = requests.filter((r: any) => r.status === "pending").length;
-
   const STATUS: Record<string, string> = { pending: "PENDIENTE", approved: "APROBADO", rejected: "RECHAZADO" };
   const STATUS_BADGE: Record<string, string> = { pending: "badge-amber", approved: "badge-green", rejected: "badge-red" };
+
+  if (!tenantId) {
+    return (
+      <div>
+        <PageHeader tag="ACCESO" title="Solicitudes" description="Selecciona un cliente" />
+        <div className="px-8 py-16 text-center">
+          <p className="font-mono text-xs text-[#333] uppercase tracking-widest">Selecciona un cliente en el panel izquierdo</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -56,16 +70,12 @@ export default function Accesos() {
                 <div className="col-span-2 td">
                   {r.status === "pending" ? (
                     <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => aprobar.mutate(r.chat_id)}
-                        className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-widest text-[#00e5a0] border border-[#00e5a0]/30 px-2 py-1 hover:bg-[#00e5a0]/10 transition-colors"
-                      >
+                      <button onClick={() => aprobar.mutate(r.chat_id)}
+                        className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-widest text-[#00e5a0] border border-[#00e5a0]/30 px-2 py-1 hover:bg-[#00e5a0]/10 transition-colors">
                         <Check className="w-3 h-3" /> OK
                       </button>
-                      <button
-                        onClick={() => rechazar.mutate(r.chat_id)}
-                        className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-widest text-red-500 border border-red-900/40 px-2 py-1 hover:bg-red-900/10 transition-colors"
-                      >
+                      <button onClick={() => rechazar.mutate(r.chat_id)}
+                        className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-widest text-red-500 border border-red-900/40 px-2 py-1 hover:bg-red-900/10 transition-colors">
                         <X className="w-3 h-3" /> NO
                       </button>
                     </div>

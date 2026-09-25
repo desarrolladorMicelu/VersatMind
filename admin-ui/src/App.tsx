@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { TenantProvider } from "./contexts/TenantContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
@@ -21,32 +22,34 @@ const qc = new QueryClient({
 export default function App() {
   return (
     <QueryClientProvider client={qc}>
-      <AuthProvider>
-        <BrowserRouter basename="/admin">
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <Layout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<Dashboard />} />
-              <Route path="tenants" element={<Tenants />} />
-              <Route path="agente" element={<Agente />} />
-              <Route path="usuarios" element={<Usuarios />} />
-              <Route path="accesos" element={<Accesos />} />
-              <Route path="roles" element={<Roles />} />
-              <Route path="tareas" element={<Tareas />} />
-              <Route path="historial" element={<Historial />} />
-              <Route path="auditoria" element={<Auditoria />} />
-            </Route>
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </BrowserRouter>
-      </AuthProvider>
+      <TenantProvider>
+        <AuthProvider>
+          <BrowserRouter basename="/admin">
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <Layout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<Dashboard />} />
+                <Route path="tenants" element={<Tenants />} />
+                <Route path="agente" element={<Agente />} />
+                <Route path="usuarios" element={<Usuarios />} />
+                <Route path="accesos" element={<Accesos />} />
+                <Route path="roles" element={<Roles />} />
+                <Route path="tareas" element={<Tareas />} />
+                <Route path="historial" element={<Historial />} />
+                <Route path="auditoria" element={<Auditoria />} />
+              </Route>
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </BrowserRouter>
+        </AuthProvider>
+      </TenantProvider>
     </QueryClientProvider>
   );
 }

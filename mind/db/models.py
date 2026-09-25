@@ -282,6 +282,33 @@ class AgentConfig(Base):
 # Solicitudes de acceso
 # ---------------------------------------------------------------------------
 
+class TenantAdmin(Base):
+    """
+    Cuentas de administrador propias de un tenant.
+    El superadmin las crea desde el panel; el dueño del tenant
+    las usa para acceder al panel y ver únicamente su tenant.
+    """
+    __tablename__ = "tenant_admins"
+    __table_args__ = (
+        Index("idx_tenant_admins_tenant", "tenant_id"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    tenant_id: Mapped[int] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
+    )
+    username: Mapped[str] = mapped_column(Text, nullable=False)
+    # bcrypt hash de la contraseña
+    password_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        nullable=False, server_default=func.now()
+    )
+
+    def __repr__(self) -> str:
+        return f"<TenantAdmin id={self.id} tenant_id={self.tenant_id} username={self.username!r}>"
+
+
 class AccessRequest(Base):
     """Solicitudes de acceso pendientes — scoped por tenant."""
     __tablename__ = "access_requests"

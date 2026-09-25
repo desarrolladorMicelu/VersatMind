@@ -2,28 +2,27 @@ import { useQuery } from "@tanstack/react-query";
 import api from "../lib/api";
 import { fmtDate } from "../lib/utils";
 import PageHeader from "../components/PageHeader";
+import { useTenant } from "../contexts/TenantContext";
 
 const EVENT_BADGE: Record<string, string> = {
-  interaction: "badge-indigo",
-  tool_failure: "badge-red",
-  unauthorized: "badge-amber",
-  scheduler: "badge-slate",
+  interaction: "badge-indigo", tool_failure: "badge-red",
+  unauthorized: "badge-amber", scheduler: "badge-slate",
 };
 
 export default function Dashboard() {
+  const { tenantId } = useTenant();
+
   const { data, isLoading } = useQuery({
-    queryKey: ["dashboard"],
-    queryFn: () => api.get("/dashboard").then((r) => r.data),
+    queryKey: ["dashboard", tenantId],
+    queryFn: () => api.get("/dashboard", { params: tenantId ? { tenant_id: tenantId } : {} }).then((r) => r.data),
     refetchInterval: 30000,
   });
 
   return (
     <div>
       <PageHeader tag="SISTEMA" title="Dashboard" description="Estado general en tiempo real" />
-
       <div className="px-8 py-8 space-y-8">
 
-        {/* Stats */}
         <div className="grid grid-cols-2 xl:grid-cols-5 gap-px bg-[#1a1a1a]">
           {isLoading
             ? Array(5).fill(0).map((_, i) => <div key={i} className="bg-black p-6 h-24 animate-pulse" />)
@@ -42,11 +41,9 @@ export default function Dashboard() {
           }
         </div>
 
-        {/* Recent logs */}
         <div>
           <p className="section-tag mb-4">// Actividad reciente</p>
           <div className="border border-[#1a1a1a]">
-            {/* Header */}
             <div className="grid grid-cols-12 border-b border-[#1a1a1a] bg-[#050505]">
               <div className="col-span-2 th">Evento</div>
               <div className="col-span-6 th">Mensaje</div>
@@ -54,9 +51,7 @@ export default function Dashboard() {
               <div className="col-span-2 th">Hora</div>
             </div>
             {isLoading
-              ? Array(5).fill(0).map((_, i) => (
-                  <div key={i} className="h-10 border-b border-[#111] bg-[#050505] animate-pulse" />
-                ))
+              ? Array(5).fill(0).map((_, i) => <div key={i} className="h-10 border-b border-[#111] bg-[#050505] animate-pulse" />)
               : data?.recent_logs?.length === 0
               ? <p className="px-5 py-8 font-mono text-xs text-[#333] text-center">SIN ACTIVIDAD</p>
               : data?.recent_logs?.map((log: any) => (

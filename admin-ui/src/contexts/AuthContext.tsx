@@ -1,9 +1,11 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
-import api from "../lib/api";
+import api, { tenantsApi } from "../lib/api";
+import { useTenant } from "./TenantContext";
 
 interface AuthState {
   username: string | null;
   loading: boolean;
+  role: "superadmin" | "tenant_admin" | null;
 }
 
 interface AuthContextType extends AuthState {
@@ -14,22 +16,66 @@ interface AuthContextType extends AuthState {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<AuthState>({ username: null, loading: true });
+  const [state, setState] = useState<AuthState>({ username: null, loading: true, role: null });
+  const { setTenants, setActiveTenant, setIsSuperAdmin, setJwtTenantId, tenants } = useTenant();
+
+  const _loadTenants = async (role: string, jwtTenantId: number | null) => {
+    if (role === "superadmin") {
+      try {
+        const list = await tenantsApi.list();
+        setTenants(list);
+        setIsSuperAdmin(true);
+        setJwtTenantId(null);
+      } catch {
+        setTenants([]);
+      }
+    } else {
+      // tenant_admin: construir tenant mínimo desde el /me
+      setIsSuperAdmin(false);
+      setJwtTenantId(jwtTenantId);
+      // Cargar info del tenant desde BD para tener el nombre
+      try {
+        const list = await tenantsApi.list().catch(() => []);
+        if (list.length > 0) {
+          setTenants(list);
+        } else if (jwtTenantId) {
+          // fallback: crear tenant mínimo con solo el id
+          setTenants([{ id: jwtTenantId } as any]);
+          setActiveTenant({ id: jwtTenantId } as any);
+        }
+      } catch {
+        if (jwtTenantId) {
+          setTenants([{ id: jwtTenantId } as any]);
+          setActiveTenant({ id: jwtTenantId } as any);
+        }
+      }
+    }
+  };
 
   useEffect(() => {
     api.get("/me")
-      .then((r) => setState({ username: r.data.username, loading: false }))
-      .catch(() => setState({ username: null, loading: false }));
+      .then((r) => {
+        const { username, role, tenant_id } = r.data;
+        setState({ username, loading: false, role: role ?? "superadmin" });
+        _loadTenants(role ?? "superadmin", tenant_id ?? null);
+      })
+      .catch(() => setState({ username: null, loading: false, role: null }));
   }, []);
 
   const login = async (username: string, password: string) => {
     const r = await api.post("/login", { username, password });
-    setState({ username: r.data.username, loading: false });
+    const { username: uname, role, tenant_id } = r.data;
+    setState({ username: uname, loading: false, role: role ?? "superadmin" });
+    await _loadTenants(role ?? "superadmin", tenant_id ?? null);
   };
 
   const logout = async () => {
     await api.post("/logout");
-    setState({ username: null, loading: false });
+    setState({ username: null, loading: false, role: null });
+    setTenants([]);
+    setActiveTenant(null);
+    setIsSuperAdmin(true);
+    setJwtTenantId(null);
   };
 
   return (

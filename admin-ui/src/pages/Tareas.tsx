@@ -3,26 +3,41 @@ import { Power, Trash2 } from "lucide-react";
 import api from "../lib/api";
 import { fmtDate } from "../lib/utils";
 import PageHeader from "../components/PageHeader";
+import { useTenant } from "../contexts/TenantContext";
 
 export default function Tareas() {
   const qc = useQueryClient();
+  const { tenantId } = useTenant();
+  const p = tenantId ? { tenant_id: tenantId } : undefined;
 
   const { data: tasks = [], isLoading } = useQuery({
-    queryKey: ["tareas"],
-    queryFn: () => api.get("/tareas").then((r) => r.data),
+    queryKey: ["tareas", tenantId],
+    queryFn: () => api.get("/tareas", { params: p }).then((r) => r.data),
+    enabled: tenantId !== null,
   });
 
   const toggle = useMutation({
     mutationFn: (id: string) => api.patch(`/tareas/${id}/toggle`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["tareas"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["tareas", tenantId] }),
   });
 
   const remove = useMutation({
     mutationFn: (id: string) => api.delete(`/tareas/${id}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["tareas"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["tareas", tenantId] }),
   });
 
   const active = tasks.filter((t: any) => t.status === "active").length;
+
+  if (!tenantId) {
+    return (
+      <div>
+        <PageHeader tag="SCHEDULER" title="Tareas" description="Selecciona un cliente" />
+        <div className="px-8 py-16 text-center">
+          <p className="font-mono text-xs text-[#333] uppercase tracking-widest">Selecciona un cliente en el panel izquierdo</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -60,10 +75,8 @@ export default function Tareas() {
                 <div className="col-span-2 td font-mono text-[11px] text-[#333]">{fmtDate(t.last_execution_at)}</div>
                 <div className="col-span-1 td">
                   <div className="flex items-center gap-1.5 justify-end">
-                    <button
-                      onClick={() => toggle.mutate(t.id)}
-                      className={`p-1.5 transition-colors ${t.status === "active" ? "text-[#333] hover:text-yellow-500" : "text-[#333] hover:text-[#00e5a0]"}`}
-                    >
+                    <button onClick={() => toggle.mutate(t.id)}
+                      className={`p-1.5 transition-colors ${t.status === "active" ? "text-[#333] hover:text-yellow-500" : "text-[#333] hover:text-[#00e5a0]"}`}>
                       <Power className="w-3.5 h-3.5" />
                     </button>
                     <button onClick={() => window.confirm("¿Eliminar?") && remove.mutate(t.id)}

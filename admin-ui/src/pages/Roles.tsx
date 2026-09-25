@@ -3,34 +3,38 @@ import { useState } from "react";
 import { Plus } from "lucide-react";
 import api from "../lib/api";
 import PageHeader from "../components/PageHeader";
+import { useTenant } from "../contexts/TenantContext";
 
-const ALL_PERMISSIONS = ["READ_SALES","READ_KPI","READ_FINANCE","GENERATE_REPORT","MANAGE_TASKS","READ_EXTERNAL_DB"];
+const ALL_PERMISSIONS = ["READ_SALES","READ_KPI","READ_FINANCE","GENERATE_REPORT","MANAGE_TASKS"];
 const PERM_LABELS: Record<string, string> = {
   READ_SALES: "VER VENTAS", READ_KPI: "VER KPIS",
   READ_FINANCE: "VER FINANZAS", GENERATE_REPORT: "INFORMES", MANAGE_TASKS: "TAREAS",
-  READ_EXTERNAL_DB: "DATOS EXTERNOS",
 };
 
 export default function Roles() {
   const qc = useQueryClient();
+  const { tenantId } = useTenant();
+  const p = tenantId ? { tenant_id: tenantId } : undefined;
   const [newRole, setNewRole] = useState({ name: "", description: "" });
   const [creating, setCreating] = useState(false);
 
   const { data: roles = [], isLoading } = useQuery({
-    queryKey: ["roles"],
-    queryFn: () => api.get("/roles").then((r) => r.data),
+    queryKey: ["roles", tenantId],
+    queryFn: () => api.get("/roles", { params: p }).then((r) => r.data),
+    enabled: tenantId !== null,
   });
 
   const updatePerms = useMutation({
     mutationFn: ({ role_id, permissions }: { role_id: number; permissions: string[] }) =>
       api.put(`/roles/${role_id}/permisos`, { permissions }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["roles"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["roles", tenantId] }),
   });
 
   const createRole = useMutation({
-    mutationFn: (body: { name: string; description: string }) => api.post("/roles", body),
+    mutationFn: (body: { name: string; description: string }) =>
+      api.post("/roles", body, { params: p }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["roles"] });
+      qc.invalidateQueries({ queryKey: ["roles", tenantId] });
       setNewRole({ name: "", description: "" });
       setCreating(false);
     },
@@ -44,12 +48,21 @@ export default function Roles() {
     });
   };
 
+  if (!tenantId) {
+    return (
+      <div>
+        <PageHeader tag="PERMISOS" title="Roles" description="Selecciona un cliente" />
+        <div className="px-8 py-16 text-center">
+          <p className="font-mono text-xs text-[#333] uppercase tracking-widest">Selecciona un cliente en el panel izquierdo</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <PageHeader
-        tag="PERMISOS"
-        title="Roles"
-        description="Controla qué puede hacer cada rol"
+        tag="PERMISOS" title="Roles" description="Controla qué puede hacer cada rol"
         action={
           <button className="btn-primary flex items-center gap-2" onClick={() => setCreating(!creating)}>
             <Plus className="w-3 h-3" /> NUEVO ROL
@@ -95,16 +108,11 @@ export default function Roles() {
                 {ALL_PERMISSIONS.map((perm) => {
                   const active = (role.permissions ?? []).includes(perm);
                   return (
-                    <button
-                      key={perm}
-                      onClick={() => toggle(role, perm)}
+                    <button key={perm} onClick={() => toggle(role, perm)}
                       className={`font-mono text-[10px] uppercase tracking-widest px-3 py-1.5 border transition-all ${
-                        active
-                          ? "border-[#00e5a0] text-[#00e5a0] bg-[#00e5a0]/5"
-                          : "border-[#2a2a2a] text-[#444] hover:border-[#444]"
-                      }`}
-                    >
-                      {active ? "✓ " : ""}{PERM_LABELS[perm]}
+                        active ? "border-[#00e5a0] text-[#00e5a0] bg-[#00e5a0]/5" : "border-[#2a2a2a] text-[#444] hover:border-[#444]"
+                      }`}>
+                      {active ? "✓ " : ""}{PERM_LABELS[perm] ?? perm}
                     </button>
                   );
                 })}
@@ -112,6 +120,9 @@ export default function Roles() {
             </div>
           ))
         }
+        {!isLoading && roles.length === 0 && (
+          <p className="text-center font-mono text-xs text-[#333] py-10">SIN ROLES — CREA UNO</p>
+        )}
       </div>
     </div>
   );
