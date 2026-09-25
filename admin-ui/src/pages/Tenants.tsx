@@ -91,10 +91,10 @@ function TenantModal({
                   value={form.slug}
                   onChange={(e) => handleSlug(e.target.value)}
                 />
-                <p className="font-mono text-[10px] text-white mt-1.5">Solo letras, números y guiones</p>
+                <p className="font-mono text-[10px] text-[#555] mt-1.5">Solo letras, números y guiones</p>
               </div>
               <div>
-                <label className="label">Admin Chat ID <span className="text-white">(Telegram)</span></label>
+                <label className="label">Admin Chat ID <span className="text-[#555]">(Telegram)</span></label>
                 <input
                   className="input font-mono"
                   placeholder="123456789"
@@ -102,7 +102,7 @@ function TenantModal({
                   value={form.admin_chat_id || ""}
                   onChange={(e) => set("admin_chat_id", parseInt(e.target.value) || 0)}
                 />
-                <p className="font-mono text-[10px] text-white mt-1.5">Chat ID del administrador del tenant</p>
+                <p className="font-mono text-[10px] text-[#555] mt-1.5">Chat ID del administrador del tenant</p>
               </div>
             </div>
           </div>
@@ -135,7 +135,7 @@ function TenantModal({
                     {showToken ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   </button>
                 </div>
-                <p className="font-mono text-[10px] text-white mt-1.5">
+                <p className="font-mono text-[10px] text-[#555] mt-1.5">
                   Obtenlo de @BotFather → /newbot
                 </p>
               </div>
@@ -147,9 +147,9 @@ function TenantModal({
                   value={form.webhook_url}
                   onChange={(e) => set("webhook_url", e.target.value)}
                 />
-                <p className="font-mono text-[10px] text-white mt-1.5">
+                <p className="font-mono text-[10px] text-[#555] mt-1.5">
                   El webhook se registra automáticamente en{" "}
-                  <span className="text-white">{form.webhook_url || "https://…"}/webhook/&#60;token&#62;</span>
+                  <span className="text-[#444]">{form.webhook_url || "https://…"}/webhook/&#60;token&#62;</span>
                 </p>
               </div>
             </div>
@@ -544,15 +544,12 @@ export default function Tenants() {
         <div className="border border-[#1a1a1a]">
 
           {/* Cabecera tabla */}
-          <div className="grid grid-cols-[repeat(14,minmax(0,1fr))] bg-[#050505] border-b border-[#1a1a1a]">
+          <div className="grid grid-cols-[repeat(11,minmax(0,1fr))] bg-[#050505] border-b border-[#1a1a1a]">
             <div className="col-span-3 th">Cliente</div>
             <div className="col-span-2 th">Bot</div>
             <div className="col-span-2 th">SQL Server</div>
             <div className="col-span-2 th">DB Externa</div>
-            <div className="col-span-1 th">Sheets</div>
-            <div className="col-span-1 th">Webhook</div>
             <div className="col-span-1 th">Estado</div>
-            <div className="col-span-1 th">Creado</div>
             <div className="col-span-1 th" />
           </div>
 
@@ -565,7 +562,7 @@ export default function Tenants() {
           {/* Filas */}
           {!isLoading && tenants.map((t) => (
             <div key={t.id}>
-              <div className="grid grid-cols-[repeat(14,minmax(0,1fr))] border-b border-[#111] hover:bg-[#050505] transition-colors">
+              <div className="grid grid-cols-[repeat(11,minmax(0,1fr))] border-b border-[#111] hover:bg-[#050505] transition-colors">
               {/* Cliente */}
               <div className="col-span-3 td">
                 <div className="flex items-center gap-3">
@@ -614,40 +611,11 @@ export default function Tenants() {
                 )}
               </div>
 
-              {/* Sheets */}
-              <div className="col-span-1 td">
-                {t.external_sheets_configured ? (
-                  <div>
-                    <p className="font-mono text-[10px] text-white truncate" title={t.external_sheets_spreadsheet}>
-                      Sheets
-                    </p>
-                    <p className="font-mono text-[10px] text-[#00e5a0]">✓ configurada</p>
-                  </div>
-                ) : (
-                  <span className="font-mono text-[11px] text-white">— no config</span>
-                )}
-              </div>
-
-              {/* Webhook */}
-              <div className="col-span-1 td">
-                <span
-                  className="font-mono text-[10px] text-white truncate block max-w-full"
-                  title={t.webhook_url}
-                >
-                  {t.webhook_url.replace(/^https?:\/\//, "")}
-                </span>
-              </div>
-
               {/* Estado */}
               <div className="col-span-1 td">
                 <span className={`badge ${t.is_active ? "badge-green" : "badge-slate"}`}>
                   {t.is_active ? "ON" : "OFF"}
                 </span>
-              </div>
-
-              {/* Fecha */}
-              <div className="col-span-1 td font-mono text-[11px] text-white">
-                {fmtDateShort(t.created_at)}
               </div>
 
               {/* Acciones */}

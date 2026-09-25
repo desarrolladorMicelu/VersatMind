@@ -55,6 +55,19 @@
   }
   .btn-secondary:hover { border-color: #00e5a0; color: #00e5a0; }
 
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2;
+    background-color: transparent;
+    color: #555;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 9px 16px;
+    transition: color 0.15s;
+  }
+  .btn-ghost:hover { color: #888; }
+
   .btn-danger {
     @apply inline-flex items-center justify-center gap-2;
     background-color: transparent;
@@ -79,7 +92,8 @@
     font-family: 'Space Grotesk', sans-serif;
     transition: border-color 0.15s;
   }
-  .input::placeholder { color: #ffffff; }
+  /* Placeholder en gris medio — claramente distinto del texto escrito */
+  .input::placeholder { color: #4a4a4a; }
   .input:focus { outline: none; border-color: #00e5a0; }
 
   select.input option {
@@ -87,6 +101,7 @@
     color: #ffffff;
   }
 
+  /* Labels en gris claro — jerárquicamente por debajo de los títulos blancos */
   .label {
     display: block;
     font-family: 'Space Mono', monospace;
@@ -94,7 +109,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.18em;
-    color: #ffffff;
+    color: #666;
     margin-bottom: 8px;
   }
 
@@ -113,8 +128,8 @@
   .badge-green  { border-color: #00e5a060; color: #00e5a0; background-color: #00e5a010; }
   .badge-red    { border-color: #f8717160; color: #f87171; background-color: #f8717110; }
   .badge-amber  { border-color: #fbbf2460; color: #fbbf24; background-color: #fbbf2410; }
-  .badge-indigo { border-color: #3a3a3a; color: #ffffff; background-color: #252525; }
-  .badge-slate  { border-color: #3a3a3a;   color: #ffffff;    background-color: #222; }
+  .badge-indigo { border-color: #3a3a3a; color: #aaaaaa; background-color: #252525; }
+  .badge-slate  { border-color: #3a3a3a; color: #888888; background-color: #222; }
 
   /* ── Nav sidebar ─────────────────────────────── */
   .nav-link {
@@ -127,11 +142,11 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.12em;
-    color: #ffffff;
+    color: #666;
     transition: color 0.15s;
     white-space: nowrap;
   }
-  .nav-link:hover { color: #ffffff; }
+  .nav-link:hover { color: #aaa; }
   .nav-link.active { color: #00e5a0; }
 
   /* ── Section tag ─────────────────────────────── */
@@ -152,14 +167,14 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.15em;
-    color: #ffffff;
+    color: #555;
     border-bottom: 1px solid #2a2a2a;
     text-align: left;
   }
   .td {
     padding: 12px 20px;
     font-size: 13px;
-    color: #ffffff;
+    color: #ccc;
     border-bottom: 1px solid #222;
   }
 
