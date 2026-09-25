@@ -564,10 +564,8 @@ export default function Tenants() {
 
           {/* Filas */}
           {!isLoading && tenants.map((t) => (
-            <div
-              key={t.id}
-              className="grid grid-cols-[repeat(14,minmax(0,1fr))] border-b border-[#111] hover:bg-[#050505] transition-colors"
-            >
+            <div key={t.id}>
+              <div className="grid grid-cols-[repeat(14,minmax(0,1fr))] border-b border-[#111] hover:bg-[#050505] transition-colors">
               {/* Cliente */}
               <div className="col-span-3 td">
                 <div className="flex items-center gap-3">
@@ -697,6 +695,7 @@ export default function Tenants() {
             {expandedId === t.id && (
               <TenantAdmins tenantId={t.id} tenantName={t.name} />
             )}
+          </div>
           ))}
 
           {!isLoading && tenants.length === 0 && (
