@@ -48,15 +48,35 @@ def init_bot(bot_token: str) -> Application:
 
 
 async def setup_webhook(webhook_url: str, bot_token: str) -> None:
-    """Registra el webhook para el bot del tenant."""
+    """Registra el webhook para el bot del tenant y verifica que esté activo."""
+    import asyncio
     app = get_application(bot_token)
     full_url = f"{webhook_url.rstrip('/')}/webhook/{bot_token}"
-    result = await app.bot.set_webhook(
-        url=full_url,
-        allowed_updates=["message", "callback_query"],
-        drop_pending_updates=True,
-    )
-    logger.info("Webhook registrado para bot ...%s → %s (ok=%s)", bot_token[-6:], full_url, result)
+
+    # Intentar registrar hasta 3 veces
+    for attempt in range(3):
+        result = await app.bot.set_webhook(url=full_url)
+        if result:
+            break
+        logger.warning(
+            "Intento %d/3 — setWebhook falló para bot ...%s", attempt + 1, bot_token[-6:],
+        )
+        await asyncio.sleep(2)
+
+    # Verificar que el webhook esté activo
+    webhook_info = await app.bot.get_webhook_info()
+    if webhook_info.url == full_url:
+        logger.info(
+            "Webhook OK para bot ...%s → %s (pendientes=%d)",
+            bot_token[-6:], full_url, webhook_info.pending_update_count or 0,
+        )
+    else:
+        logger.warning(
+            "Webhook no coincide para bot ...%s — esperado=%s actual=%s",
+            bot_token[-6:], full_url, webhook_info.url,
+        )
+        await app.bot.set_webhook(url=full_url)
+        logger.info("Webhook re-registrado para bot ...%s", bot_token[-6:])
 
 
 async def teardown_bot(bot_token: str) -> None:
