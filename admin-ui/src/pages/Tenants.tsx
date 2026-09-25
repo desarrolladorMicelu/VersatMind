@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Plus, Pencil, Trash2, Power, X, Eye, EyeOff, Database, Bot, Users, KeyRound } from "lucide-react";
 import api, { tenantsApi } from "../lib/api";
 import type { Tenant, TenantPayload } from "../lib/api";
-import { fmtDateShort } from "../lib/utils";
 import PageHeader from "../components/PageHeader";
 import ExternalDbConfig from "../components/ExternalDbConfig";
 import ExternalSheetsConfig from "../components/ExternalSheetsConfig";
