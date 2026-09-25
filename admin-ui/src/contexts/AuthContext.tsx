@@ -17,37 +17,24 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({ username: null, loading: true, role: null });
-  const { setTenants, setActiveTenant, setIsSuperAdmin, setJwtTenantId, tenants } = useTenant();
+  const { setTenants, setActiveTenant, setIsSuperAdmin, setJwtTenantId } = useTenant();
 
   const _loadTenants = async (role: string, jwtTenantId: number | null) => {
     if (role === "superadmin") {
+      setIsSuperAdmin(true);
+      setJwtTenantId(null);
       try {
         const list = await tenantsApi.list();
         setTenants(list);
-        setIsSuperAdmin(true);
-        setJwtTenantId(null);
+        if (list.length > 0) setActiveTenant(list[0]);
       } catch {
         setTenants([]);
       }
     } else {
-      // tenant_admin: construir tenant mínimo desde el /me
       setIsSuperAdmin(false);
       setJwtTenantId(jwtTenantId);
-      // Cargar info del tenant desde BD para tener el nombre
-      try {
-        const list = await tenantsApi.list().catch(() => []);
-        if (list.length > 0) {
-          setTenants(list);
-        } else if (jwtTenantId) {
-          // fallback: crear tenant mínimo con solo el id
-          setTenants([{ id: jwtTenantId } as any]);
-          setActiveTenant({ id: jwtTenantId } as any);
-        }
-      } catch {
-        if (jwtTenantId) {
-          setTenants([{ id: jwtTenantId } as any]);
-          setActiveTenant({ id: jwtTenantId } as any);
-        }
+      if (jwtTenantId) {
+        setActiveTenant({ id: jwtTenantId } as any);
       }
     }
   };
