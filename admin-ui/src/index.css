@@ -8,7 +8,7 @@
   * { box-sizing: border-box; }
   html, body {
     background-color: #111;
-    color: #f0f0f0;
+    color: #ffffff;
     font-family: 'Space Grotesk', sans-serif;
   }
   ::-webkit-scrollbar { width: 4px; height: 4px; }
@@ -45,7 +45,7 @@
     @apply inline-flex items-center justify-center gap-2;
     background-color: transparent;
     border: 1px solid #3a3a3a;
-    color: #aaa;
+    color: #ffffff;
     font-family: 'Space Mono', monospace;
     font-size: 11px;
     letter-spacing: 0.1em;
@@ -74,17 +74,17 @@
     @apply w-full text-sm;
     background-color: #1a1a1a;
     border: 1px solid #333;
-    color: #f0f0f0;
+    color: #ffffff;
     padding: 10px 12px;
     font-family: 'Space Grotesk', sans-serif;
     transition: border-color 0.15s;
   }
-  .input::placeholder { color: #555; }
+  .input::placeholder { color: #ffffff; }
   .input:focus { outline: none; border-color: #00e5a0; }
 
   select.input option {
     background-color: #1a1a1a;
-    color: #f0f0f0;
+    color: #ffffff;
   }
 
   .label {
@@ -94,7 +94,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.18em;
-    color: #777;
+    color: #ffffff;
     margin-bottom: 8px;
   }
 
@@ -113,8 +113,8 @@
   .badge-green  { border-color: #00e5a060; color: #00e5a0; background-color: #00e5a010; }
   .badge-red    { border-color: #f8717160; color: #f87171; background-color: #f8717110; }
   .badge-amber  { border-color: #fbbf2460; color: #fbbf24; background-color: #fbbf2410; }
-  .badge-indigo { border-color: #3a3a3a; color: #e0e0e0; background-color: #252525; }
-  .badge-slate  { border-color: #3a3a3a;   color: #888;    background-color: #222; }
+  .badge-indigo { border-color: #3a3a3a; color: #ffffff; background-color: #252525; }
+  .badge-slate  { border-color: #3a3a3a;   color: #ffffff;    background-color: #222; }
 
   /* ── Nav sidebar ─────────────────────────────── */
   .nav-link {
@@ -127,11 +127,11 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.12em;
-    color: #666;
+    color: #ffffff;
     transition: color 0.15s;
     white-space: nowrap;
   }
-  .nav-link:hover { color: #ccc; }
+  .nav-link:hover { color: #ffffff; }
   .nav-link.active { color: #00e5a0; }
 
   /* ── Section tag ─────────────────────────────── */
@@ -152,14 +152,14 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.15em;
-    color: #666;
+    color: #ffffff;
     border-bottom: 1px solid #2a2a2a;
     text-align: left;
   }
   .td {
     padding: 12px 20px;
     font-size: 13px;
-    color: #d0d0d0;
+    color: #ffffff;
     border-bottom: 1px solid #222;
   }
 

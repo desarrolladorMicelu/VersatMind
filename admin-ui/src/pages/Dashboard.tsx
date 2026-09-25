@@ -34,7 +34,7 @@ export default function Dashboard() {
                 { label: "Errores", value: data?.stats.errors_today, accent: data?.stats.errors_today > 0 },
               ].map(({ label, value, accent }) => (
                 <div key={label} className="bg-black p-6">
-                  <p className="font-mono text-[10px] uppercase tracking-widest text-[#999] mb-3">{label}</p>
+                  <p className="font-mono text-[10px] uppercase tracking-widest text-white mb-3">{label}</p>
                   <p className={`text-3xl font-bold ${accent ? "text-[#00e5a0]" : "text-white"}`}>{value ?? "—"}</p>
                 </div>
               ))
@@ -53,13 +53,13 @@ export default function Dashboard() {
             {isLoading
               ? Array(5).fill(0).map((_, i) => <div key={i} className="h-10 border-b border-[#111] bg-[#050505] animate-pulse" />)
               : data?.recent_logs?.length === 0
-              ? <p className="px-5 py-8 font-mono text-xs text-[#333] text-center">SIN ACTIVIDAD</p>
+              ? <p className="px-5 py-8 font-mono text-xs text-white text-center">SIN ACTIVIDAD</p>
               : data?.recent_logs?.map((log: any) => (
                   <div key={log.id} className="grid grid-cols-12 border-b border-[#111] hover:bg-[#050505] transition-colors">
                     <div className="col-span-2 td">
                       <span className={`badge ${EVENT_BADGE[log.event_type] ?? "badge-slate"}`}>{log.event_type}</span>
                     </div>
-                    <div className="col-span-6 td truncate text-[#888]">
+                    <div className="col-span-6 td truncate text-white">
                       {log.request_content || log.tool_invoked || "—"}
                     </div>
                     <div className="col-span-2 td">
@@ -69,7 +69,7 @@ export default function Dashboard() {
                         </span>
                       )}
                     </div>
-                    <div className="col-span-2 td font-mono text-[11px] text-[#aaa]">{fmtDate(log.timestamp_utc)}</div>
+                    <div className="col-span-2 td font-mono text-[11px] text-white">{fmtDate(log.timestamp_utc)}</div>
                   </div>
                 ))
             }

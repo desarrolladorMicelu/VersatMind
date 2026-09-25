@@ -42,7 +42,7 @@ export default function Agente() {
       <div>
         <PageHeader tag="CONFIG" title="Agente" description="Selecciona un cliente" />
         <div className="px-8 py-16 text-center">
-          <p className="font-mono text-xs text-[#333] uppercase tracking-widest">Selecciona un cliente en el panel izquierdo</p>
+          <p className="font-mono text-xs text-white uppercase tracking-widest">Selecciona un cliente en el panel izquierdo</p>
         </div>
       </div>
     );
@@ -59,7 +59,7 @@ export default function Agente() {
         action={
           <div className="flex items-center gap-4">
             {saved && <span className="font-mono text-xs text-[#00e5a0] uppercase tracking-widest">// guardado</span>}
-            {data?.updated_at && <span className="font-mono text-[11px] text-[#333]">{fmtDate(data.updated_at)}</span>}
+            {data?.updated_at && <span className="font-mono text-[11px] text-white">{fmtDate(data.updated_at)}</span>}
             <button className="btn-primary" onClick={() => mutation.mutate(form)} disabled={mutation.isPending}>
               {mutation.isPending ? "GUARDANDO..." : "GUARDAR →"}
             </button>
@@ -71,10 +71,10 @@ export default function Agente() {
         <div className="border border-[#1a1a1a]">
           <div className="px-5 py-3 border-b border-[#1a1a1a] bg-[#050505] flex items-center justify-between">
             <span className="section-tag">// SYSTEM PROMPT</span>
-            <span className="font-mono text-[10px] text-[#333]">{form.system_prompt.length} chars</span>
+            <span className="font-mono text-[10px] text-white">{form.system_prompt.length} chars</span>
           </div>
           <div className="p-5">
-            <p className="font-mono text-[11px] text-[#444] mb-3">
+            <p className="font-mono text-[11px] text-white mb-3">
               Define la personalidad y reglas del agente para este cliente.
             </p>
             <textarea
@@ -104,7 +104,7 @@ export default function Agente() {
               <label className="label">Temperatura — <span className="text-[#00e5a0]">{form.temperature}</span></label>
               <input type="range" min="0" max="2" step="0.1" className="w-full mt-2 accent-[#00e5a0]"
                 value={form.temperature} onChange={(e) => setForm({ ...form, temperature: parseFloat(e.target.value) })} />
-              <div className="flex justify-between font-mono text-[10px] text-[#333] mt-1">
+              <div className="flex justify-between font-mono text-[10px] text-white mt-1">
                 <span>0 preciso</span><span>2 creativo</span>
               </div>
             </div>
@@ -112,13 +112,13 @@ export default function Agente() {
               <label className="label">Ventana de conversación</label>
               <input type="number" min="1" max="100" className="input" value={form.conversation_window}
                 onChange={(e) => setForm({ ...form, conversation_window: parseInt(e.target.value) })} />
-              <p className="font-mono text-[10px] text-[#333] mt-1.5">Mensajes anteriores que recuerda</p>
+              <p className="font-mono text-[10px] text-white mt-1.5">Mensajes anteriores que recuerda</p>
             </div>
             <div>
               <label className="label">Máx. ciclos de herramientas</label>
               <input type="number" min="1" max="20" className="input" value={form.max_tool_cycles}
                 onChange={(e) => setForm({ ...form, max_tool_cycles: parseInt(e.target.value) })} />
-              <p className="font-mono text-[10px] text-[#333] mt-1.5">Límite de tool calls por mensaje</p>
+              <p className="font-mono text-[10px] text-white mt-1.5">Límite de tool calls por mensaje</p>
             </div>
           </div>
         </div>

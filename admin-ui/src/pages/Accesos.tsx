@@ -36,7 +36,7 @@ export default function Accesos() {
       <div>
         <PageHeader tag="ACCESO" title="Solicitudes" description="Selecciona un cliente" />
         <div className="px-8 py-16 text-center">
-          <p className="font-mono text-xs text-[#333] uppercase tracking-widest">Selecciona un cliente en el panel izquierdo</p>
+          <p className="font-mono text-xs text-white uppercase tracking-widest">Selecciona un cliente en el panel izquierdo</p>
         </div>
       </div>
     );
@@ -60,8 +60,8 @@ export default function Accesos() {
             : requests.map((r: any) => (
               <div key={r.id} className="grid grid-cols-12 border-b border-[#111] hover:bg-[#050505] transition-colors items-center">
                 <div className="col-span-3 td font-medium text-white">{r.first_name || "—"}</div>
-                <div className="col-span-3 td font-mono text-xs text-[#555]">@{r.username || "—"}</div>
-                <div className="col-span-2 td font-mono text-xs text-[#555]">{r.chat_id}</div>
+                <div className="col-span-3 td font-mono text-xs text-white">@{r.username || "—"}</div>
+                <div className="col-span-2 td font-mono text-xs text-white">{r.chat_id}</div>
                 <div className="col-span-2 td">
                   <span className={`badge ${STATUS_BADGE[r.status] ?? "badge-slate"}`}>
                     {STATUS[r.status] ?? r.status}
@@ -80,14 +80,14 @@ export default function Accesos() {
                       </button>
                     </div>
                   ) : (
-                    <span className="font-mono text-[11px] text-[#333]">{fmtDate(r.created_at)}</span>
+                    <span className="font-mono text-[11px] text-white">{fmtDate(r.created_at)}</span>
                   )}
                 </div>
               </div>
             ))
           }
           {!isLoading && requests.length === 0 && (
-            <p className="px-5 py-10 text-center font-mono text-xs text-[#333]">SIN SOLICITUDES</p>
+            <p className="px-5 py-10 text-center font-mono text-xs text-white">SIN SOLICITUDES</p>
           )}
         </div>
       </div>

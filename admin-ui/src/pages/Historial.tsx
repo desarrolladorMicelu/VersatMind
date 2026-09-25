@@ -37,7 +37,7 @@ export default function Historial() {
       <div>
         <PageHeader tag="LOGS" title="Historial" description="Selecciona un cliente" />
         <div className="px-8 py-16 text-center">
-          <p className="font-mono text-xs text-[#333] uppercase tracking-widest">Selecciona un cliente en el panel izquierdo</p>
+          <p className="font-mono text-xs text-white uppercase tracking-widest">Selecciona un cliente en el panel izquierdo</p>
         </div>
       </div>
     );
@@ -54,14 +54,14 @@ export default function Historial() {
             {isLoading ? (
               Array(3).fill(0).map((_, i) => <div key={i} className="h-10 border-b border-[#111] animate-pulse" />)
             ) : users.length === 0 ? (
-              <p className="p-4 font-mono text-[10px] text-[#333] text-center">VACÍO</p>
+              <p className="p-4 font-mono text-[10px] text-white text-center">VACÍO</p>
             ) : users.map((u: any) => (
               <button key={u.chat_id} onClick={() => setSelectedChatId(u.chat_id)}
                 className={`w-full text-left px-4 py-3 border-b border-[#111] transition-colors ${
                   selectedChatId === u.chat_id ? "bg-[#00e5a0]/5 border-l-2 border-l-[#00e5a0]" : "hover:bg-[#050505]"
                 }`}>
                 <p className="text-xs font-medium text-white">{u.username || "—"}</p>
-                <p className="font-mono text-[10px] text-[#333]">{u.chat_id}</p>
+                <p className="font-mono text-[10px] text-white">{u.chat_id}</p>
               </button>
             ))}
           </div>
@@ -70,7 +70,7 @@ export default function Historial() {
         <div className="flex-1 min-w-0">
           {!selectedChatId ? (
             <div className="border border-[#1a1a1a] flex items-center justify-center py-20">
-              <p className="font-mono text-xs text-[#333] uppercase tracking-widest">Selecciona un usuario</p>
+              <p className="font-mono text-xs text-white uppercase tracking-widest">Selecciona un usuario</p>
             </div>
           ) : (
             <div className="border border-[#1a1a1a]">
@@ -83,15 +83,15 @@ export default function Historial() {
               </div>
               <div className="max-h-[600px] overflow-y-auto divide-y divide-[#111]">
                 {messages.length === 0 ? (
-                  <p className="px-5 py-10 text-center font-mono text-xs text-[#333]">SIN MENSAJES</p>
+                  <p className="px-5 py-10 text-center font-mono text-xs text-white">SIN MENSAJES</p>
                 ) : messages.map((m: any) => (
                   <div key={m.id} className={`px-5 py-4 ${m.role === "assistant" ? "bg-[#050505]" : ""}`}>
                     <div className="flex items-center gap-2 mb-2">
                       <span className={`badge ${ROLE_BADGE[m.role] ?? "badge-slate"}`}>{m.role}</span>
-                      {m.tool_name && <span className="font-mono text-[10px] text-[#444]">{m.tool_name}</span>}
-                      <span className="font-mono text-[10px] text-[#333] ml-auto">{fmtDate(m.created_at)}</span>
+                      {m.tool_name && <span className="font-mono text-[10px] text-white">{m.tool_name}</span>}
+                      <span className="font-mono text-[10px] text-white ml-auto">{fmtDate(m.created_at)}</span>
                     </div>
-                    <p className="text-sm text-[#aaa] whitespace-pre-wrap leading-relaxed">{m.content}</p>
+                    <p className="text-sm text-white whitespace-pre-wrap leading-relaxed">{m.content}</p>
                   </div>
                 ))}
               </div>

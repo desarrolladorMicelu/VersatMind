@@ -51,7 +51,7 @@ function TenantSelector() {
     // Tenant admin: muestra su tenant fijo, sin selector
     return (
       <div className="px-3 py-2 border border-[#1a1a1a] bg-[#050505]">
-        <p className="font-mono text-[9px] uppercase tracking-widest text-[#444] mb-1">CLIENTE</p>
+        <p className="font-mono text-[9px] uppercase tracking-widest text-white mb-1">CLIENTE</p>
         <p className="text-xs font-medium text-[#00e5a0] truncate">
           {activeTenant?.name ?? "—"}
         </p>
@@ -66,12 +66,12 @@ function TenantSelector() {
         className="w-full px-3 py-2 border border-[#1a1a1a] bg-[#050505] hover:border-[#2a2a2a] transition-colors flex items-center justify-between gap-2"
       >
         <div className="min-w-0 text-left">
-          <p className="font-mono text-[9px] uppercase tracking-widest text-[#444]">CLIENTE ACTIVO</p>
+          <p className="font-mono text-[9px] uppercase tracking-widest text-white">CLIENTE ACTIVO</p>
           <p className="text-xs font-medium text-white truncate mt-0.5">
             {activeTenant?.name ?? "— Todos —"}
           </p>
         </div>
-        <ChevronDown className={`w-3 h-3 text-[#444] flex-shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className={`w-3 h-3 text-white flex-shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && (
@@ -80,7 +80,7 @@ function TenantSelector() {
           <button
             onClick={() => { setActiveTenant(null); setOpen(false); }}
             className={`w-full text-left px-3 py-2.5 border-b border-[#111] transition-colors hover:bg-[#050505] ${
-              activeTenant === null ? "text-[#00e5a0]" : "text-[#555]"
+              activeTenant === null ? "text-[#00e5a0]" : "text-white"
             }`}
           >
             <p className="font-mono text-[10px] uppercase tracking-widest">— Todos los clientes —</p>
@@ -99,13 +99,13 @@ function TenantSelector() {
                   <p className={`text-xs font-medium truncate ${activeTenant?.id === t.id ? "text-[#00e5a0]" : "text-white"}`}>
                     {t.name}
                   </p>
-                  <p className="font-mono text-[9px] text-[#333] truncate">{t.slug}</p>
+                  <p className="font-mono text-[9px] text-white truncate">{t.slug}</p>
                 </div>
               </div>
             </button>
           ))}
           {tenants.length === 0 && (
-            <p className="px-3 py-3 font-mono text-[10px] text-[#333] text-center">Sin clientes</p>
+            <p className="px-3 py-3 font-mono text-[10px] text-white text-center">Sin clientes</p>
           )}
         </div>
       )}
@@ -132,10 +132,10 @@ export default function Layout() {
           <div className="flex items-center gap-2">
             <span className="font-mono font-bold text-xs tracking-widest" style={{ color: "#00e5a0" }}>⬡</span>
             <span className="font-bold text-white text-sm tracking-tight">MIND</span>
-            <span className="font-mono text-xs" style={{ color: "#444" }}> / ADMIN</span>
+            <span className="font-mono text-xs" style={{ color: "#ffffff" }}> / ADMIN</span>
           </div>
           <div className="mt-1 flex items-center gap-2">
-            <span className="font-mono text-[10px] uppercase tracking-widest" style={{ color: "#444" }}>by Versat</span>
+            <span className="font-mono text-[10px] uppercase tracking-widest" style={{ color: "#ffffff" }}>by Versat</span>
             {isSuperAdmin && (
               <span className="font-mono text-[9px] px-1.5 py-0.5 border border-[#00e5a0]/20 text-[#00e5a0] uppercase tracking-widest">
                 SUPER
@@ -175,11 +175,11 @@ export default function Layout() {
                   {username?.[0]?.toUpperCase()}
                 </span>
               </div>
-              <span className="font-mono text-[11px] text-[#888]">{username}</span>
+              <span className="font-mono text-[11px] text-white">{username}</span>
             </div>
             <button
               onClick={async () => { await logout(); navigate("/login"); }}
-              className="text-[#333] hover:text-red-500 transition-colors"
+              className="text-white hover:text-red-500 transition-colors"
               title="Salir"
             >
               <LogOut className="w-3.5 h-3.5" />

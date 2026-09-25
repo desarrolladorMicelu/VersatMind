@@ -57,7 +57,7 @@ function TenantModal({
               {isEdit ? form.name || "Sin nombre" : "Crear tenant"}
             </h2>
           </div>
-          <button onClick={onClose} className="text-[#333] hover:text-white transition-colors p-1">
+          <button onClick={onClose} className="text-white hover:text-white transition-colors p-1">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -84,17 +84,17 @@ function TenantModal({
                 />
               </div>
               <div>
-                <label className="label">Slug <span className="text-[#333]">(identificador único)</span></label>
+                <label className="label">Slug <span className="text-white">(identificador único)</span></label>
                 <input
                   className="input font-mono"
                   placeholder="empresa-xyz"
                   value={form.slug}
                   onChange={(e) => handleSlug(e.target.value)}
                 />
-                <p className="font-mono text-[10px] text-[#333] mt-1.5">Solo letras, números y guiones</p>
+                <p className="font-mono text-[10px] text-white mt-1.5">Solo letras, números y guiones</p>
               </div>
               <div>
-                <label className="label">Admin Chat ID <span className="text-[#333]">(Telegram)</span></label>
+                <label className="label">Admin Chat ID <span className="text-white">(Telegram)</span></label>
                 <input
                   className="input font-mono"
                   placeholder="123456789"
@@ -102,7 +102,7 @@ function TenantModal({
                   value={form.admin_chat_id || ""}
                   onChange={(e) => set("admin_chat_id", parseInt(e.target.value) || 0)}
                 />
-                <p className="font-mono text-[10px] text-[#333] mt-1.5">Chat ID del administrador del tenant</p>
+                <p className="font-mono text-[10px] text-white mt-1.5">Chat ID del administrador del tenant</p>
               </div>
             </div>
           </div>
@@ -117,7 +117,7 @@ function TenantModal({
               <div>
                 <label className="label">
                   Token del bot
-                  {isEdit && <span className="text-[#333] ml-2">(dejar vacío para no cambiar)</span>}
+                  {isEdit && <span className="text-white ml-2">(dejar vacío para no cambiar)</span>}
                 </label>
                 <div className="relative">
                   <input
@@ -130,26 +130,26 @@ function TenantModal({
                   <button
                     type="button"
                     onClick={() => setShowToken((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#333] hover:text-[#888] transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white hover:text-white transition-colors"
                   >
                     {showToken ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   </button>
                 </div>
-                <p className="font-mono text-[10px] text-[#333] mt-1.5">
+                <p className="font-mono text-[10px] text-white mt-1.5">
                   Obtenlo de @BotFather → /newbot
                 </p>
               </div>
               <div>
-                <label className="label">Webhook URL <span className="text-[#333]">(URL pública del servidor)</span></label>
+                <label className="label">Webhook URL <span className="text-white">(URL pública del servidor)</span></label>
                 <input
                   className="input font-mono text-xs"
                   placeholder="https://tu-servidor.railway.app"
                   value={form.webhook_url}
                   onChange={(e) => set("webhook_url", e.target.value)}
                 />
-                <p className="font-mono text-[10px] text-[#333] mt-1.5">
+                <p className="font-mono text-[10px] text-white mt-1.5">
                   El webhook se registra automáticamente en{" "}
-                  <span className="text-[#555]">{form.webhook_url || "https://…"}/webhook/&#60;token&#62;</span>
+                  <span className="text-white">{form.webhook_url || "https://…"}/webhook/&#60;token&#62;</span>
                 </p>
               </div>
             </div>
@@ -192,7 +192,7 @@ function TenantModal({
               <div>
                 <label className="label">
                   Contraseña
-                  {isEdit && <span className="text-[#333] ml-2">(dejar vacío para no cambiar)</span>}
+                  {isEdit && <span className="text-white ml-2">(dejar vacío para no cambiar)</span>}
                 </label>
                 <div className="relative">
                   <input
@@ -205,7 +205,7 @@ function TenantModal({
                   <button
                     type="button"
                     onClick={() => setShowPass((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#333] hover:text-[#888] transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white hover:text-white transition-colors"
                   >
                     {showPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   </button>
@@ -417,14 +417,14 @@ export default function Tenants() {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-white leading-tight">{t.name}</p>
-                    <p className="font-mono text-[10px] text-[#333]">{t.slug}</p>
+                    <p className="font-mono text-[10px] text-white">{t.slug}</p>
                   </div>
                 </div>
               </div>
 
               {/* Bot token hint */}
               <div className="col-span-2 td">
-                <span className="font-mono text-[11px] text-[#555] bg-[#0a0a0a] px-2 py-0.5 border border-[#1a1a1a]">
+                <span className="font-mono text-[11px] text-white bg-[#0a0a0a] px-2 py-0.5 border border-[#1a1a1a]">
                   ...{t.bot_token_hint}
                 </span>
               </div>
@@ -433,11 +433,11 @@ export default function Tenants() {
               <div className="col-span-2 td">
                 {t.sqlserver_host ? (
                   <div>
-                    <p className="font-mono text-[11px] text-[#888] truncate" title={t.sqlserver_host}>{t.sqlserver_host}</p>
-                    <p className="font-mono text-[10px] text-[#333] truncate" title={t.sqlserver_db}>{t.sqlserver_db}</p>
+                    <p className="font-mono text-[11px] text-white truncate" title={t.sqlserver_host}>{t.sqlserver_host}</p>
+                    <p className="font-mono text-[10px] text-white truncate" title={t.sqlserver_db}>{t.sqlserver_db}</p>
                   </div>
                 ) : (
-                  <span className="font-mono text-[11px] text-[#2a2a2a]">— sin configurar</span>
+                  <span className="font-mono text-[11px] text-white">— sin configurar</span>
                 )}
               </div>
 
@@ -445,13 +445,13 @@ export default function Tenants() {
               <div className="col-span-2 td">
                 {t.external_db_configured ? (
                   <div>
-                    <p className="font-mono text-[11px] text-[#888]">
+                    <p className="font-mono text-[11px] text-white">
                       {t.external_db_engine ?? "postgresql"}
                     </p>
                     <p className="font-mono text-[10px] text-[#00e5a0]">✓ configurada</p>
                   </div>
                 ) : (
-                  <span className="font-mono text-[11px] text-[#2a2a2a]">— no configurada</span>
+                  <span className="font-mono text-[11px] text-white">— no configurada</span>
                 )}
               </div>
 
@@ -459,20 +459,20 @@ export default function Tenants() {
               <div className="col-span-1 td">
                 {t.external_sheets_configured ? (
                   <div>
-                    <p className="font-mono text-[10px] text-[#888] truncate" title={t.external_sheets_spreadsheet}>
+                    <p className="font-mono text-[10px] text-white truncate" title={t.external_sheets_spreadsheet}>
                       Sheets
                     </p>
                     <p className="font-mono text-[10px] text-[#00e5a0]">✓ configurada</p>
                   </div>
                 ) : (
-                  <span className="font-mono text-[11px] text-[#2a2a2a]">— no config</span>
+                  <span className="font-mono text-[11px] text-white">— no config</span>
                 )}
               </div>
 
               {/* Webhook */}
               <div className="col-span-1 td">
                 <span
-                  className="font-mono text-[10px] text-[#444] truncate block max-w-full"
+                  className="font-mono text-[10px] text-white truncate block max-w-full"
                   title={t.webhook_url}
                 >
                   {t.webhook_url.replace(/^https?:\/\//, "")}
@@ -487,7 +487,7 @@ export default function Tenants() {
               </div>
 
               {/* Fecha */}
-              <div className="col-span-1 td font-mono text-[11px] text-[#333]">
+              <div className="col-span-1 td font-mono text-[11px] text-white">
                 {fmtDateShort(t.created_at)}
               </div>
 
@@ -496,7 +496,7 @@ export default function Tenants() {
                 <div className="flex items-center gap-1 justify-end">
                   <button
                     onClick={() => openEdit(t)}
-                    className="p-1.5 text-[#333] hover:text-[#00e5a0] transition-colors"
+                    className="p-1.5 text-white hover:text-[#00e5a0] transition-colors"
                     title="Editar"
                   >
                     <Pencil className="w-3.5 h-3.5" />
@@ -505,8 +505,8 @@ export default function Tenants() {
                     onClick={() => toggle.mutate({ id: t.id, is_active: !t.is_active })}
                     className={`p-1.5 transition-colors ${
                       t.is_active
-                        ? "text-[#333] hover:text-yellow-500"
-                        : "text-[#333] hover:text-[#00e5a0]"
+                        ? "text-white hover:text-yellow-500"
+                        : "text-white hover:text-[#00e5a0]"
                     }`}
                     title={t.is_active ? "Desactivar" : "Activar"}
                   >
@@ -517,7 +517,7 @@ export default function Tenants() {
                       window.confirm(`¿Eliminar el cliente "${t.name}"? Esta acción es irreversible.`) &&
                       remove.mutate(t.id)
                     }
-                    className="p-1.5 text-[#333] hover:text-red-500 transition-colors"
+                    className="p-1.5 text-white hover:text-red-500 transition-colors"
                     title="Eliminar"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -529,8 +529,8 @@ export default function Tenants() {
 
           {!isLoading && tenants.length === 0 && (
             <div className="px-5 py-16 text-center">
-              <p className="font-mono text-xs text-[#333]">SIN CLIENTES REGISTRADOS</p>
-              <p className="font-mono text-[10px] text-[#222] mt-2">
+              <p className="font-mono text-xs text-white">SIN CLIENTES REGISTRADOS</p>
+              <p className="font-mono text-[10px] text-white mt-2">
                 Crea el primero con el botón "NUEVO CLIENTE"
               </p>
             </div>
@@ -540,7 +540,7 @@ export default function Tenants() {
 
         {/* Leyenda info */}
         <div className="mt-4 flex items-start gap-6">
-          <p className="font-mono text-[10px] text-[#222] leading-relaxed">
+          <p className="font-mono text-[10px] text-white leading-relaxed">
             // Cada cliente tiene su propio bot de Telegram, base de datos OFIMA y whitelist de usuarios.
             <br />
             // Los cambios aplican inmediatamente sin reiniciar el servidor.

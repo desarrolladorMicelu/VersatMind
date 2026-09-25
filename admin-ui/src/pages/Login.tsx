@@ -49,7 +49,7 @@ export default function Login() {
           <div className="mb-8">
             <p className="font-mono text-[10px] text-[#00e5a0] uppercase tracking-widest mb-3">// MIND ADMIN</p>
             <h1 className="text-3xl font-bold text-white leading-none">Acceso</h1>
-            <p className="text-sm text-[#444] mt-1">Panel de administración — Versat</p>
+            <p className="text-sm text-white mt-1">Panel de administración — Versat</p>
           </div>
 
           {/* Error */}

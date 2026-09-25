@@ -57,7 +57,7 @@ export default function Auditoria() {
               {[50, 100, 200, 500].map((n) => <option key={n} value={n}>{n}</option>)}
             </select>
           </div>
-          <div className="font-mono text-[10px] text-[#333] pb-2">{logs.length} registros</div>
+          <div className="font-mono text-[10px] text-white pb-2">{logs.length} registros</div>
         </div>
 
         <div className="border border-[#1a1a1a]">
@@ -72,15 +72,15 @@ export default function Auditoria() {
           {isLoading
             ? Array(5).fill(0).map((_, i) => <div key={i} className="h-10 border-b border-[#111] animate-pulse" />)
             : logs.length === 0
-            ? <p className="px-5 py-10 text-center font-mono text-xs text-[#333]">SIN REGISTROS</p>
+            ? <p className="px-5 py-10 text-center font-mono text-xs text-white">SIN REGISTROS</p>
             : logs.map((log: any) => (
               <div key={log.id} className="grid grid-cols-12 border-b border-[#111] hover:bg-[#050505] transition-colors">
                 <div className="col-span-2 td">
                   <span className={`badge ${EVENT_BADGE[log.event_type] ?? "badge-slate"}`}>{log.event_type}</span>
                 </div>
-                <div className="col-span-1 td font-mono text-[11px] text-[#444]">{log.chat_id ?? "—"}</div>
+                <div className="col-span-1 td font-mono text-[11px] text-white">{log.chat_id ?? "—"}</div>
                 <div className="col-span-5 td">
-                  <p className="text-xs text-[#888] truncate">{log.request_content || log.tool_invoked || "—"}</p>
+                  <p className="text-xs text-white truncate">{log.request_content || log.tool_invoked || "—"}</p>
                   {log.error_description && (
                     <p className="font-mono text-[10px] text-red-500 truncate mt-0.5">{log.error_description}</p>
                   )}
@@ -92,7 +92,7 @@ export default function Auditoria() {
                     </span>
                   )}
                 </div>
-                <div className="col-span-2 td font-mono text-[11px] text-[#333]">{fmtDate(log.timestamp_utc)}</div>
+                <div className="col-span-2 td font-mono text-[11px] text-white">{fmtDate(log.timestamp_utc)}</div>
               </div>
             ))
           }

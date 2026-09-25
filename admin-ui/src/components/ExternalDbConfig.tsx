@@ -111,7 +111,7 @@ function ExternalDbConfig({
           >
             <option value="postgresql">PostgreSQL</option>
           </select>
-          <p className="font-mono text-[10px] text-[#333] mt-1.5">
+          <p className="font-mono text-[10px] text-white mt-1.5">
             Solo lectura — se ejecutan sentencias SELECT
           </p>
         </div>
@@ -161,7 +161,7 @@ function ExternalDbConfig({
         <div>
           <label className="label">
             Contraseña
-            {value && <span className="text-[#333] ml-2">(vacío conserva la guardada)</span>}
+            {value && <span className="text-white ml-2">(vacío conserva la guardada)</span>}
           </label>
           <div className="relative">
             <input
@@ -174,7 +174,7 @@ function ExternalDbConfig({
             <button
               type="button"
               onClick={() => setShowPass((v) => !v)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#333] hover:text-[#888] transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-white hover:text-white transition-colors"
             >
               {showPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
             </button>
@@ -225,14 +225,14 @@ function ExternalDbConfig({
             {schemaPreview && (
               <div className="col-span-2">
                 <label className="label">Esquema detectado (vista previa)</label>
-                <pre className="font-mono text-xs text-[#888] p-3 border border-[#1a1a1a] bg-[#050505] max-h-60 overflow-y-auto">
+                <pre className="font-mono text-xs text-white p-3 border border-[#1a1a1a] bg-[#050505] max-h-60 overflow-y-auto">
                   {schemaPreview}
                 </pre>
               </div>
             )}
           </>
         ) : (
-          <p className="col-span-2 font-mono text-[10px] text-[#333] leading-relaxed">
+          <p className="col-span-2 font-mono text-[10px] text-white leading-relaxed">
             La conexión se probará automáticamente al guardar el cliente. El esquema se
             detecta después: edita el cliente y usa «Detectar esquema».
           </p>

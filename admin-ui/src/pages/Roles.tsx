@@ -53,7 +53,7 @@ export default function Roles() {
       <div>
         <PageHeader tag="PERMISOS" title="Roles" description="Selecciona un cliente" />
         <div className="px-8 py-16 text-center">
-          <p className="font-mono text-xs text-[#333] uppercase tracking-widest">Selecciona un cliente en el panel izquierdo</p>
+          <p className="font-mono text-xs text-white uppercase tracking-widest">Selecciona un cliente en el panel izquierdo</p>
         </div>
       </div>
     );
@@ -100,9 +100,9 @@ export default function Roles() {
               <div className="px-5 py-3 bg-[#050505] border-b border-[#1a1a1a] flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <span className="font-bold text-white">{role.name}</span>
-                  {role.description && <span className="font-mono text-[11px] text-[#444]">{role.description}</span>}
+                  {role.description && <span className="font-mono text-[11px] text-white">{role.description}</span>}
                 </div>
-                <span className="font-mono text-[10px] text-[#333]">ID {role.id}</span>
+                <span className="font-mono text-[10px] text-white">ID {role.id}</span>
               </div>
               <div className="p-5 flex flex-wrap gap-2">
                 {ALL_PERMISSIONS.map((perm) => {
@@ -110,7 +110,7 @@ export default function Roles() {
                   return (
                     <button key={perm} onClick={() => toggle(role, perm)}
                       className={`font-mono text-[10px] uppercase tracking-widest px-3 py-1.5 border transition-all ${
-                        active ? "border-[#00e5a0] text-[#00e5a0] bg-[#00e5a0]/5" : "border-[#2a2a2a] text-[#444] hover:border-[#444]"
+                        active ? "border-[#00e5a0] text-[#00e5a0] bg-[#00e5a0]/5" : "border-[#2a2a2a] text-white hover:border-[#444]"
                       }`}>
                       {active ? "✓ " : ""}{PERM_LABELS[perm] ?? perm}
                     </button>
@@ -121,7 +121,7 @@ export default function Roles() {
           ))
         }
         {!isLoading && roles.length === 0 && (
-          <p className="text-center font-mono text-xs text-[#333] py-10">SIN ROLES — CREA UNO</p>
+          <p className="text-center font-mono text-xs text-white py-10">SIN ROLES — CREA UNO</p>
         )}
       </div>
     </div>

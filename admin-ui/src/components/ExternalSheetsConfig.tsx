@@ -128,7 +128,7 @@ function ExternalSheetsConfig({
         {/* URL del spreadsheet */}
         <div>
           <label className="label">
-            URL del spreadsheet            {value && <span className="text-[#333] ml-2">(vacío desconfigura)</span>}
+            URL del spreadsheet            {value && <span className="text-white ml-2">(vacío desconfigura)</span>}
           </label>
           <input
             className="input font-mono text-xs"
@@ -136,7 +136,7 @@ function ExternalSheetsConfig({
             value={local.spreadsheet_url}
             onChange={(e) => setField("spreadsheet_url", e.target.value)}
           />
-          <p className="font-mono text-[10px] text-[#333] mt-1.5">
+          <p className="font-mono text-[10px] text-white mt-1.5">
             Comparte la hoja con el client_email de la service account
           </p>
         </div>
@@ -145,7 +145,7 @@ function ExternalSheetsConfig({
         <div>
           <label className="label">
             Credenciales (Service Account JSON)
-            {value && <span className="text-[#333] ml-2">(vacío conserva la guardada)</span>}
+            {value && <span className="text-white ml-2">(vacío conserva la guardada)</span>}
           </label>
           <textarea
             className="input font-mono text-xs min-h-[120px] resize-y"
@@ -154,7 +154,7 @@ function ExternalSheetsConfig({
             onChange={(e) => handleCredentialsText(e.target.value)}
             spellCheck={false}
           />
-          <p className="font-mono text-[10px] text-[#333] mt-1.5">
+          <p className="font-mono text-[10px] text-white mt-1.5">
             Google Cloud → Service Accounts → Add Key → JSON. Pega el contenido completo.
           </p>
         </div>
@@ -203,14 +203,14 @@ function ExternalSheetsConfig({
             {schemaPreview && (
               <div>
                 <label className="label">Descripción detectada (vista previa)</label>
-                <pre className="font-mono text-xs text-[#888] p-3 border border-[#1a1a1a] bg-[#050505] max-h-60 overflow-y-auto whitespace-pre-wrap">
+                <pre className="font-mono text-xs text-white p-3 border border-[#1a1a1a] bg-[#050505] max-h-60 overflow-y-auto whitespace-pre-wrap">
                   {schemaPreview}
                 </pre>
               </div>
             )}
           </>
         ) : (
-          <p className="font-mono text-[10px] text-[#333] leading-relaxed">
+          <p className="font-mono text-[10px] text-white leading-relaxed">
             La conexión se probará automáticamente al guardar el cliente. Las hojas se
             detectan después: edita el cliente y usa «Detectar hojas».
           </p>

@@ -12,7 +12,7 @@ export default function PageHeader({ tag, title, description, action }: Props) {
       <div className="flex items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white tracking-tight leading-none">{title}</h1>
-          {description && <p className="text-sm text-[#555] mt-1.5">{description}</p>}
+          {description && <p className="text-sm text-white mt-1.5">{description}</p>}
         </div>
         {action && <div className="flex-shrink-0">{action}</div>}
       </div>

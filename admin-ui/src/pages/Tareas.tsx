@@ -33,7 +33,7 @@ export default function Tareas() {
       <div>
         <PageHeader tag="SCHEDULER" title="Tareas" description="Selecciona un cliente" />
         <div className="px-8 py-16 text-center">
-          <p className="font-mono text-xs text-[#333] uppercase tracking-widest">Selecciona un cliente en el panel izquierdo</p>
+          <p className="font-mono text-xs text-white uppercase tracking-widest">Selecciona un cliente en el panel izquierdo</p>
         </div>
       </div>
     );
@@ -59,9 +59,9 @@ export default function Tareas() {
               <div key={t.id} className="grid grid-cols-12 border-b border-[#111] hover:bg-[#050505] transition-colors items-center">
                 <div className="col-span-4 td">
                   <p className="text-sm text-white">{t.description}</p>
-                  <p className="font-mono text-[10px] text-[#333]">{t.id.slice(0, 8)}…</p>
+                  <p className="font-mono text-[10px] text-white">{t.id.slice(0, 8)}…</p>
                 </div>
-                <div className="col-span-2 td font-mono text-xs text-[#555]">{t.chat_id}</div>
+                <div className="col-span-2 td font-mono text-xs text-white">{t.chat_id}</div>
                 <div className="col-span-2 td">
                   <code className="font-mono text-[11px] text-[#00e5a0] bg-[#00e5a0]/5 px-2 py-0.5 border border-[#00e5a0]/10">
                     {t.cron_expression}
@@ -72,15 +72,15 @@ export default function Tareas() {
                     {t.status === "active" ? "ON" : "OFF"}
                   </span>
                 </div>
-                <div className="col-span-2 td font-mono text-[11px] text-[#333]">{fmtDate(t.last_execution_at)}</div>
+                <div className="col-span-2 td font-mono text-[11px] text-white">{fmtDate(t.last_execution_at)}</div>
                 <div className="col-span-1 td">
                   <div className="flex items-center gap-1.5 justify-end">
                     <button onClick={() => toggle.mutate(t.id)}
-                      className={`p-1.5 transition-colors ${t.status === "active" ? "text-[#333] hover:text-yellow-500" : "text-[#333] hover:text-[#00e5a0]"}`}>
+                      className={`p-1.5 transition-colors ${t.status === "active" ? "text-white hover:text-yellow-500" : "text-white hover:text-[#00e5a0]"}`}>
                       <Power className="w-3.5 h-3.5" />
                     </button>
                     <button onClick={() => window.confirm("¿Eliminar?") && remove.mutate(t.id)}
-                      className="p-1.5 text-[#333] hover:text-red-500 transition-colors">
+                      className="p-1.5 text-white hover:text-red-500 transition-colors">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -89,7 +89,7 @@ export default function Tareas() {
             ))
           }
           {!isLoading && tasks.length === 0 && (
-            <p className="px-5 py-10 text-center font-mono text-xs text-[#333]">SIN TAREAS</p>
+            <p className="px-5 py-10 text-center font-mono text-xs text-white">SIN TAREAS</p>
           )}
         </div>
       </div>
