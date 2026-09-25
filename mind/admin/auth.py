@@ -15,6 +15,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from typing import Literal
 
+import bcrypt
 from fastapi import HTTPException, Request
 from jose import JWTError, jwt
 
@@ -49,6 +50,27 @@ def decode_token(token: str) -> dict | None:
         return jwt.decode(token, _secret(), algorithms=[ALGORITHM])
     except JWTError:
         return None
+
+
+# ── Hashing de contraseñas ───────────────────────────────────────────────────
+
+_BCRYPT_MAX_BYTES = 72
+
+
+def _bcrypt_secret(password: str) -> bytes:
+    # bcrypt solo considera los primeros 72 bytes y desde 4.1 rechaza más
+    return password.encode("utf-8")[:_BCRYPT_MAX_BYTES]
+
+
+def hash_password(password: str) -> str:
+    return bcrypt.hashpw(_bcrypt_secret(password), bcrypt.gensalt()).decode("ascii")
+
+
+def verify_password(password: str, password_hash: str) -> bool:
+    try:
+        return bcrypt.checkpw(_bcrypt_secret(password), password_hash.encode("ascii"))
+    except (ValueError, TypeError):
+        return False
 
 
 # ── Verificación de credenciales ─────────────────────────────────────────────

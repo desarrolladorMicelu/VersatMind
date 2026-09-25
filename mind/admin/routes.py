@@ -17,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from mind.admin.auth import (
     create_access_token, require_admin, require_superadmin,
     verify_superadmin, get_effective_tenant_id,
+    hash_password, verify_password,
 )
 from mind.db.base import get_session
 
@@ -102,8 +103,6 @@ async def login(
 
     # 2. Tenant admin
     from mind.db.models import TenantAdmin
-    from passlib.context import CryptContext
-    _pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
     result = await session.execute(
         select(TenantAdmin).where(
@@ -112,7 +111,7 @@ async def login(
         )
     )
     ta = result.scalar_one_or_none()
-    if ta is None or not _pwd.verify(body.password, ta.password_hash):
+    if ta is None or not verify_password(body.password, ta.password_hash):
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
 
     token = create_access_token(body.username, role="tenant_admin", tenant_id=ta.tenant_id)
@@ -170,8 +169,6 @@ async def tenant_admin_create(
     session: AsyncSession = Depends(get_session),
 ):
     from mind.db.models import TenantAdmin
-    from passlib.context import CryptContext
-    _pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
     # Verificar que el tenant existe
     from mind.db.models import Tenant
@@ -194,7 +191,7 @@ async def tenant_admin_create(
     ta = TenantAdmin(
         tenant_id=tenant_id,
         username=body.username,
-        password_hash=_pwd.hash(body.password),
+        password_hash=hash_password(body.password),
         is_active=True,
     )
     session.add(ta)
@@ -212,8 +209,6 @@ async def tenant_admin_update(
     session: AsyncSession = Depends(get_session),
 ):
     from mind.db.models import TenantAdmin
-    from passlib.context import CryptContext
-    _pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
     ta = (await session.execute(
         select(TenantAdmin).where(
@@ -225,7 +220,7 @@ async def tenant_admin_update(
         raise HTTPException(status_code=404, detail="Admin no encontrado")
 
     if body.password:
-        ta.password_hash = _pwd.hash(body.password)
+        ta.password_hash = hash_password(body.password)
     if body.is_active is not None:
         ta.is_active = body.is_active
     await session.commit()

@@ -330,7 +330,7 @@ function TenantAdmins({ tenantId, tenantName }: { tenantId: number; tenantName: 
                 <button
                   type="button"
                   onClick={() => setShowPass((v) => !v)}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#444] hover:text-[#888]"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#888] hover:text-white"
                 >
                   {showPass ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
                 </button>
@@ -360,7 +360,7 @@ function TenantAdmins({ tenantId, tenantName }: { tenantId: number; tenantName: 
         {isLoading ? (
           <div className="h-10 animate-pulse border border-[#111]" />
         ) : admins.length === 0 ? (
-          <p className="font-mono text-[10px] text-[#333] py-3">Sin cuentas creadas — este cliente no puede entrar al panel.</p>
+          <p className="font-mono text-[10px] text-[#888] py-3">Sin cuentas creadas — este cliente no puede entrar al panel.</p>
         ) : (
           <div className="border border-[#1a1a1a]">
             <div className="grid grid-cols-12 bg-[#050505] border-b border-[#111]">
@@ -391,14 +391,14 @@ function TenantAdmins({ tenantId, tenantName }: { tenantId: number; tenantName: 
                   <div className="flex items-center gap-1 justify-end">
                     <button
                       onClick={() => toggleAdmin.mutate({ adminId: a.id, is_active: !a.is_active })}
-                      className={`p-1.5 transition-colors ${a.is_active ? "text-[#333] hover:text-yellow-500" : "text-[#333] hover:text-[#00e5a0]"}`}
+                      className={`p-1.5 transition-colors ${a.is_active ? "text-[#999] hover:text-yellow-500" : "text-[#999] hover:text-[#00e5a0]"}`}
                       title={a.is_active ? "Desactivar" : "Activar"}
                     >
                       <Power className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => window.confirm(`¿Eliminar la cuenta "${a.username}"?`) && removeAdmin.mutate(a.id)}
-                      className="p-1.5 text-[#333] hover:text-red-500 transition-colors"
+                      className="p-1.5 text-[#999] hover:text-red-500 transition-colors"
                       title="Eliminar"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -622,7 +622,7 @@ export default function Tenants() {
                 <div className="flex items-center gap-1 justify-end">
                   <button
                     onClick={() => setExpandedId(expandedId === t.id ? null : t.id)}
-                    className={`p-1.5 transition-colors ${expandedId === t.id ? "text-[#00e5a0]" : "text-[#333] hover:text-[#00e5a0]"}`}
+                    className={`p-1.5 transition-colors ${expandedId === t.id ? "text-[#00e5a0]" : "text-white hover:text-[#00e5a0]"}`}
                     title="Gestionar accesos al panel"
                   >
                     <Users className="w-3.5 h-3.5" />
