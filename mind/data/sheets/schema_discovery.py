@@ -113,14 +113,23 @@ async def generate_sheets_description(raw: list[dict]) -> str:
     from mind.config import settings
 
     prompt = (
-        "Eres un experto en análisis de datos. A continuación tienes las "
-        "hojas de cálculo de Google Sheets de una empresa.\n\n"
+        "Eres un experto en análisis de datos. A continuación tienes la "
+        "estructura raw de varias hojas de cálculo de Google Sheets de una empresa.\n\n"
         f"{raw}\n\n"
         "Genera una descripción en español que sirva como contexto para un "
-        "agente de IA que consultará estas hojas. Para cada hoja explica su "
-        "propósito probable y qué significa cada columna (especialmente "
-        "códigos y campos crípticos). Indica qué hoja usar para qué tipo de "
-        "consulta. Usa formato Markdown. No inventes información."
+        "agente de IA que consultará estas hojas usando la herramienta "
+        "'consultar_sheet'.\n\n"
+        "Analiza cada hoja y basándote ÚNICAMENTE en los nombres y valores de "
+        "ejemplo de las columnas, identifica:\n"
+        "- El propósito probable de cada hoja según sus columnas.\n"
+        "- Qué significa cada columna (especialmente códigos, IDs y campos "
+        "crípticos). Explica los valores de ejemplo para dar contexto.\n"
+        "- Para qué tipo de preguntas sirve cada hoja (productos, clientes, "
+        "ventas, etc.).\n"
+        "- Si hay columnas que se relacionan entre hojas (ej: un código de "
+        "producto que aparece en dos hojas), indícalo.\n\n"
+        "Usa formato Markdown. No inventes información: si algo no es claro "
+        "por los nombres o valores, indícalo explícitamente."
     )
 
     try:
