@@ -1,11 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plus, Pencil, Trash2, Power, X, Eye, EyeOff, Database, Bot, Users, KeyRound } from "lucide-react";
+import { Plus, Pencil, Trash2, Power, X, Eye, EyeOff, Database, Bot, Users, KeyRound, FileText } from "lucide-react";
 import api, { tenantsApi } from "../lib/api";
 import type { Tenant, TenantPayload } from "../lib/api";
 import PageHeader from "../components/PageHeader";
 import ExternalDbConfig from "../components/ExternalDbConfig";
 import ExternalSheetsConfig from "../components/ExternalSheetsConfig";
+import AlegraConfig from "../components/AlegraConfig";
 
 const EMPTY: TenantPayload = {
   name: "",
@@ -232,6 +233,13 @@ function TenantModal({
           <ExternalSheetsConfig
             value={form.external_sheets ?? null}
             onChange={(v) => setForm((f) => ({ ...f, external_sheets: v ?? undefined }))}
+            tenantId={form.id}
+          />
+
+          {/* Alegra */}
+          <AlegraConfig
+            value={form.external_alegra ?? null}
+            onChange={(v) => setForm((f) => ({ ...f, external_alegra: v ?? undefined }))}
             tenantId={form.id}
           />
 
@@ -490,11 +498,18 @@ export default function Tenants() {
             schema_description: t.external_db.schema_description,
           }
         : undefined,
-      external_sheets: t.external_sheets_configured && t.external_sheets
+external_sheets: t.external_sheets_configured && t.external_sheets
         ? {
             spreadsheet_url: t.external_sheets.spreadsheet_url ?? "",
-            credentials: undefined, // nunca pre-rellenamos las credenciales
+            credentials: undefined,
             schema_description: t.external_sheets.schema_description,
+          }
+        : undefined,
+      external_alegra: t.external_alegra_configured && t.external_alegra
+        ? {
+            email: t.external_alegra.email ?? "",
+            token: "",
+            schema_description: t.external_alegra.schema_description,
           }
         : undefined,
     });
@@ -603,10 +618,13 @@ export default function Tenants() {
                     <p className="font-mono text-[11px] text-white">
                       {t.external_db_engine ?? "postgresql"}
                     </p>
-                    <p className="font-mono text-[10px] text-[#00e5a0]">✓ configurada</p>
+                    <p className="font-mono text-[10px] text-[#00e5a0]">✓ DB configurada</p>
                   </div>
                 ) : (
                   <span className="font-mono text-[11px] text-white">— no configurada</span>
+                )}
+                {t.external_alegra_configured && (
+                  <p className="font-mono text-[10px] text-[#00e5a0] mt-1">✓ Alegra</p>
                 )}
               </div>
 

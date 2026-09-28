@@ -58,6 +58,7 @@ class TenantCreate(BaseModel):
     sqlserver_driver: str = "ODBC Driver 18 for SQL Server"
     external_db: dict | None = None
     external_sheets: dict | None = None
+    external_alegra: dict | None = None
 
 class TenantUpdate(BaseModel):
     name: str | None = None
@@ -72,6 +73,7 @@ class TenantUpdate(BaseModel):
     is_active: bool | None = None
     external_db: dict | None = None
     external_sheets: dict | None = None
+    external_alegra: dict | None = None
 
 class ExternalDbPayload(BaseModel):
     engine: str = "postgresql"
@@ -310,6 +312,15 @@ async def tenants_list(
                 if t.external_sheets
                 else None
             ),
+            "external_alegra_configured": t.external_alegra is not None,
+            "external_alegra": (
+                {
+                    "email": t.external_alegra.get("email", ""),
+                    "schema_description": t.external_alegra.get("schema_description"),
+                }
+                if t.external_alegra
+                else None
+            ),
             "created_at": t.created_at.isoformat() if t.created_at else None,
         }
         for t in tenants
@@ -407,7 +418,7 @@ async def tenant_update(
         raise HTTPException(status_code=404, detail="Tenant no encontrado")
 
     old_token = tenant.bot_token
-    updates = body.model_dump(exclude_none=True, exclude={"external_db", "external_sheets"})
+    updates = body.model_dump(exclude_none=True, exclude={"external_db", "external_sheets", "external_alegra"})
     for key, val in updates.items():
         setattr(tenant, key, val)
 
@@ -446,6 +457,35 @@ async def tenant_update(
             if schema_desc:
                 merged["schema_description"] = schema_desc
             tenant.external_sheets = merged
+
+    # external_alegra: merge sobre lo almacenado
+    if body.external_alegra is not None:
+        stored = tenant.external_alegra or {}
+        merged = dict(stored)
+        email_val = body.external_alegra.get("email") or ""
+        token_val = body.external_alegra.get("token") or ""
+        schema_desc = body.external_alegra.get("schema_description")
+        groups = body.external_alegra.get("groups")
+
+        if not email_val.strip() and not token_val.strip():
+            if not stored.get("email"):
+                tenant.external_alegra = None
+        else:
+            if email_val.strip():
+                merged["email"] = email_val.strip()
+            elif "email" in stored:
+                merged["email"] = stored["email"]
+            if token_val.strip():
+                merged["token"] = token_val.strip()
+            elif "token" in stored:
+                merged["token"] = stored["token"]
+            if groups:
+                merged["groups"] = groups
+            elif "groups" in stored:
+                merged["groups"] = stored["groups"]
+            if schema_desc:
+                merged["schema_description"] = schema_desc
+            tenant.external_alegra = merged
 
     await session.commit()
 
@@ -644,6 +684,70 @@ async def tenant_discover_sheets(
         }
     except asyncio.TimeoutError:
         return {"error": "Timeout del descubrimiento de hojas (90 s)."}
+    except Exception as exc:
+        return {"error": str(exc)}
+
+
+# ── ALEGRA MCP ──────────────────────────────────────────────────────────────
+
+@router.post("/tenants/{tenant_id}/alegra/test")
+async def tenant_test_alegra(
+    tenant_id: int,
+    body: dict,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+):
+    from mind.db.models import Tenant
+    tenant = (await session.execute(
+        select(Tenant).where(Tenant.id == tenant_id)
+    )).scalar_one_or_none()
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant no encontrado")
+
+    conf = {
+        "email": body.get("email", ""),
+        "token": body.get("token", ""),
+        "groups": body.get("groups"),
+    }
+    from mind.data.alegra.alegra_mcp import test_connection, AlegraError
+    try:
+        tools = await asyncio.wait_for(test_connection(conf), timeout=20)
+        return {"ok": True, "tools_count": len(tools)}
+    except asyncio.TimeoutError:
+        return {"ok": False, "error": "Timeout conectando a Alegra (20 s)."}
+    except AlegraError as exc:
+        return {"ok": False, "error": str(exc)}
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)}
+
+
+@router.post("/tenants/{tenant_id}/alegra/discover")
+async def tenant_discover_alegra(
+    tenant_id: int,
+    body: dict,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+):
+    from mind.db.models import Tenant
+    tenant = (await session.execute(
+        select(Tenant).where(Tenant.id == tenant_id)
+    )).scalar_one_or_none()
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant no encontrado")
+
+    conf = {
+        "email": body.get("email", ""),
+        "token": body.get("token", ""),
+        "groups": body.get("groups"),
+    }
+    from mind.data.alegra.alegra_mcp import generate_description, AlegraError
+    try:
+        description = await asyncio.wait_for(generate_description(conf), timeout=30)
+        return {"schema_description": description}
+    except asyncio.TimeoutError:
+        return {"error": "Timeout descubriendo tools de Alegra (30 s)."}
+    except AlegraError as exc:
+        return {"error": str(exc)}
     except Exception as exc:
         return {"error": str(exc)}
 

@@ -75,6 +75,7 @@ def _register_all_tools() -> None:
     )
     from mind.agent.tools.external_db_tool import ejecutar_consulta
     from mind.agent.tools.sheets_tool import consultar_sheet
+    from mind.agent.tools.alegra_tool import consultar_alegra
 
     TOOL_REGISTRY["consultar_ventas"] = ToolDefinition(
         fn=consultar_ventas,
@@ -290,6 +291,27 @@ def _register_all_tools() -> None:
                     },
                 },
                 "required": ["hoja"],
+            },
+        },
+    )
+    TOOL_REGISTRY["consultar_alegra"] = ToolDefinition(
+        fn=consultar_alegra,
+        permission=Permission.READ_EXTERNAL_DB,
+        schema={
+            "name": "consultar_alegra",
+            "description": "Consulta información de Alegra (contabilidad) del cliente. "
+                           "Ejemplos: facturas del mes, clientes con saldo, productos, "
+                           "reporte de ventas, movimientos bancarios.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "consulta": {
+                        "type": "string",
+                        "description": "Pregunta en lenguaje natural. "
+                                       "Ej: 'facturas de este mes', 'clientes con saldo pendiente'",
+                    },
+                },
+                "required": ["consulta"],
             },
         },
     )

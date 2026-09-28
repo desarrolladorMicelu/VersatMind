@@ -136,6 +136,16 @@ async def process(
             "Usa 'limite' para acotar (default 1000)."
         )
 
+    # Inyectar descripción de Alegra si existe
+    ext_alegra = getattr(tenant, "external_alegra", None)
+    alegra_description = (ext_alegra or {}).get("schema_description")
+    if alegra_description:
+        active_system_prompt += (
+            "\n\n" + alegra_description + "\n\n"
+            "Para consultarla usa la herramienta 'consultar_alegra' con una descripción "
+            "en lenguaje natural de lo que necesitas. Sé específico con fechas y nombres."
+        )
+
     client = AsyncOpenAI(
         api_key=settings.OPENAI_API_KEY,
         base_url=settings.OPENAI_BASE_URL,
@@ -178,6 +188,7 @@ async def process(
     tenant_ofima = bool(tenant.sqlserver_host)
     tenant_ext_db = bool(tenant.external_db)
     tenant_ext_sheets = bool(tenant.external_sheets)
+    tenant_alegra = bool(tenant.external_alegra and tenant.external_alegra.get("token"))
     ofima_tools = {
         "consultar_ventas", "consultar_ventas_detalle", "consultar_indicadores",
         "consultar_finanzas", "consultar_productos", "consultar_cxp", "generar_informe",
@@ -194,6 +205,8 @@ async def process(
         if name == "ejecutar_consulta" and not tenant_ext_db:
             continue
         if name == "consultar_sheet" and not tenant_ext_sheets:
+            continue
+        if name == "consultar_alegra" and not tenant_alegra:
             continue
         filtered_tools.append(t)
     tools = filtered_tools

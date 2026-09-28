@@ -57,6 +57,9 @@ class Tenant(Base):
     # spreadsheet_id, credentials (service account JSON) y schema_description
     external_sheets: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
+    # Alegra (MCP): email, token y schema_description
+    external_alegra: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(
         nullable=False, server_default=func.now()
     )

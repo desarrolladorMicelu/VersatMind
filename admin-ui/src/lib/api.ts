@@ -64,6 +64,8 @@ export interface Tenant {
   external_sheets_configured: boolean;
   external_sheets_spreadsheet: string;
   external_sheets: ExternalSheetsInfo | null;
+  external_alegra_configured: boolean;
+  external_alegra: AlegraInfo | null;
   created_at: string | null;
 }
 
@@ -80,6 +82,7 @@ export interface TenantPayload {
   sqlserver_driver: string;
   external_db?: ExternalDbPayload;
   external_sheets?: ExternalSheetsPayload;
+  external_alegra?: AlegraPayload;
 }
 
 // ── Tenants API ───────────────────────────────────────────────────────────────
@@ -108,4 +111,25 @@ export const externalSheetsApi = {
     api.post(`/tenants/${tenantId}/test-sheets`, payload).then((r) => r.data),
   discoverSheets: (tenantId: number, payload: ExternalSheetsPayload) =>
     api.post(`/tenants/${tenantId}/discover-sheets`, payload).then((r) => r.data),
+};
+
+// ── Alegra (MCP) ─────────────────────────────────────────────────────────
+
+export interface AlegraPayload {
+  email: string;
+  token: string;
+  groups?: string[];
+  schema_description?: string;
+}
+
+export interface AlegraInfo {
+  email: string;
+  schema_description?: string;
+}
+
+export const alegraApi = {
+  testConnection: (tenantId: number, payload: AlegraPayload) =>
+    api.post(`/tenants/${tenantId}/alegra/test`, payload).then((r) => r.data),
+  discoverTools: (tenantId: number, payload: AlegraPayload) =>
+    api.post(`/tenants/${tenantId}/alegra/discover`, payload).then((r) => r.data),
 };
