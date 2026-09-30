@@ -1,19 +1,22 @@
 """telegram chats registry (destinos de prompts programados)
 
-Revision ID: 0011
-Revises: 0010
+Revision ID: 0012
+Revises: 0011
 Create Date: 2026-09-30 00:00:00.000000
 
 Registra los chats (usuarios y grupos) que el bot ha visto, para poder
 elegir el destino de los prompts programados desde una lista amigable.
+
+Nota: la revisión 0011 ya la ocupa `00011_report_config.py`. Esta migración
+se numera 0012 para no colisionar y encadenarse después de 0011.
 """
 from typing import Sequence, Union
 
 import sqlalchemy as sa
 from alembic import op
 
-revision: str = "0011"
-down_revision: Union[str, None] = "0010"
+revision: str = "0012"
+down_revision: Union[str, None] = "0011"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
