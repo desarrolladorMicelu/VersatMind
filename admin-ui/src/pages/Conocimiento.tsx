@@ -77,13 +77,13 @@ export default function Conocimiento() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               <div className="md:col-span-2">
-                <label className="label">Título</label>
+                <label className="label text-white">Título</label>
                 <input className="input" value={form.title}
                   placeholder="Metas de venta por asesor"
                   onChange={(e) => setForm({ ...form, title: e.target.value })} />
               </div>
               <div>
-                <label className="label">Origen</label>
+                <label className="label text-white">Origen</label>
                 <input className="input" value={form.source}
                   placeholder="manual / archivo.csv"
                   onChange={(e) => setForm({ ...form, source: e.target.value })} />
@@ -91,14 +91,14 @@ export default function Conocimiento() {
             </div>
 
             <div>
-              <label className="label">Contenido</label>
+              <label className="label text-white">Contenido</label>
               <textarea className="input" rows={10} value={form.content}
                 placeholder="Pega aquí la información del negocio: metas, políticas, precios, catálogos, contexto de la tienda, etc."
                 onChange={(e) => setForm({ ...form, content: e.target.value })} />
             </div>
 
             <div>
-              <label className="label">Etiquetas (separadas por coma)</label>
+              <label className="label text-white">Etiquetas (separadas por coma)</label>
               <input className="input" value={form.tags}
                 placeholder="ventas, margen, metas"
                 onChange={(e) => setForm({ ...form, tags: e.target.value })} />

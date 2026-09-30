@@ -135,7 +135,7 @@ function SettingsForm({ tenantId, config }: { tenantId: number; config: UsageSet
       <p className="section-tag mb-5">// Configuración de alertas</p>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         <div>
-          <label className="label">Umbral por usuario (USD)</label>
+          <label className="label text-white">Umbral por usuario (USD)</label>
           <input
             type="number" min={0} step="0.5" className="input"
             value={form.threshold_usd}
@@ -143,7 +143,7 @@ function SettingsForm({ tenantId, config }: { tenantId: number; config: UsageSet
           />
         </div>
         <div>
-          <label className="label">Período</label>
+          <label className="label text-white">Período</label>
           <select
             className="input" value={form.period}
             onChange={(e) => setForm({ ...form, period: e.target.value as UsageSettings["period"] })}
@@ -153,7 +153,7 @@ function SettingsForm({ tenantId, config }: { tenantId: number; config: UsageSet
           </select>
         </div>
         <div>
-          <label className="label">Email de alertas (opcional)</label>
+          <label className="label text-white">Email de alertas (opcional)</label>
           <input
             type="email" className="input" placeholder="admin@empresa.com"
             value={form.admin_email ?? ""}
@@ -288,11 +288,11 @@ function TenantConsumo({ tenantId }: { tenantId: number }) {
         {/* Filtros */}
         <div className="flex flex-wrap items-end gap-4">
           <div className="w-44">
-            <label className="label">Desde</label>
+            <label className="label text-white">Desde</label>
             <input type="date" className="input" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
           </div>
           <div className="w-44">
-            <label className="label">Hasta</label>
+            <label className="label text-white">Hasta</label>
             <input type="date" className="input" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
           </div>
           {(dateFrom || dateTo) && (

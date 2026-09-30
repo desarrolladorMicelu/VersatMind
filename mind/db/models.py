@@ -15,6 +15,7 @@ from sqlalchemy import (
     Text,
     Float,
     Integer,
+    UniqueConstraint,
     func,
 )
 from sqlalchemy.dialects.postgresql import JSONB
@@ -544,3 +545,44 @@ class KnowledgeEntry(Base):
 
     def __repr__(self) -> str:
         return f"<KnowledgeEntry id={self.id} tenant_id={self.tenant_id} title={self.title!r}>"
+
+
+# ---------------------------------------------------------------------------
+# Registro de chats de Telegram conocidos por el bot
+# ---------------------------------------------------------------------------
+
+class TelegramChat(Base):
+    """
+    Usuarios y grupos que el bot ha visto (se registran al recibir mensajes).
+    Permite elegir el destino de los prompts programados desde una lista,
+    sin que el administrador tenga que conocer el chat_id.
+    """
+    __tablename__ = "telegram_chats"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "chat_id", name="uq_telegram_chats_tenant_chat"),
+        Index("idx_telegram_chats_tenant", "tenant_id"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    tenant_id: Mapped[int] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
+    )
+    chat_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    # "private" | "group" | "supergroup" | "channel"
+    chat_type: Mapped[str] = mapped_column(Text, nullable=False, default="private")
+    title: Mapped[str | None] = mapped_column(Text, nullable=True)
+    username: Mapped[str | None] = mapped_column(Text, nullable=True)
+    first_name: Mapped[str | None] = mapped_column(Text, nullable=True)
+    last_name: Mapped[str | None] = mapped_column(Text, nullable=True)
+    last_seen_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    def __repr__(self) -> str:
+        return (
+            f"<TelegramChat tenant_id={self.tenant_id} chat_id={self.chat_id} "
+            f"type={self.chat_type!r}>"
+        )
