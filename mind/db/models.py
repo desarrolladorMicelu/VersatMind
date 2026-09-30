@@ -9,6 +9,7 @@ from datetime import datetime
 from sqlalchemy import (
     BigInteger,
     Boolean,
+    DateTime,
     ForeignKey,
     Index,
     Text,
@@ -148,7 +149,9 @@ class User(Base):
         Boolean, default=False, nullable=False, server_default="false"
     )
     paused_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
-    paused_at: Mapped[datetime | None] = mapped_column(nullable=True)
+    paused_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     created_at: Mapped[datetime] = mapped_column(
         nullable=False, server_default=func.now()
@@ -378,7 +381,7 @@ class TokenUsage(Base):
     # Origen del consumo: "chat" | "scheduler"
     source: Mapped[str] = mapped_column(Text, nullable=False, default="chat")
     created_at: Mapped[datetime] = mapped_column(
-        nullable=False, server_default=func.now()
+        DateTime(timezone=True), nullable=False, server_default=func.now()
     )
 
     def __repr__(self) -> str:
@@ -415,9 +418,11 @@ class UsageAlert(Base):
     status: Mapped[str] = mapped_column(Text, nullable=False, default="active")
     notified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_at: Mapped[datetime] = mapped_column(
-        nullable=False, server_default=func.now()
+        DateTime(timezone=True), nullable=False, server_default=func.now()
     )
-    acknowledged_at: Mapped[datetime | None] = mapped_column(nullable=True)
+    acknowledged_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     def __repr__(self) -> str:
         return (
@@ -445,7 +450,7 @@ class UsageSettings(Base):
     notify_email: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     admin_email: Mapped[str | None] = mapped_column(Text, nullable=True)
     updated_at: Mapped[datetime] = mapped_column(
-        nullable=False, server_default=func.now(), onupdate=func.now()
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
     )
 
     def __repr__(self) -> str:
@@ -486,14 +491,16 @@ class ScheduledPrompt(Base):
     cron_expression: Mapped[str] = mapped_column(Text, nullable=False)
     timezone: Mapped[str] = mapped_column(Text, nullable=False, default="America/Bogota")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    last_run_at: Mapped[datetime | None] = mapped_column(nullable=True)
+    last_run_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     last_status: Mapped[str | None] = mapped_column(Text, nullable=True)
     last_error: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        nullable=False, server_default=func.now()
+        DateTime(timezone=True), nullable=False, server_default=func.now()
     )
     updated_at: Mapped[datetime] = mapped_column(
-        nullable=False, server_default=func.now(), onupdate=func.now()
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
     )
 
     def __repr__(self) -> str:
@@ -529,10 +536,10 @@ class KnowledgeEntry(Base):
     tags: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        nullable=False, server_default=func.now()
+        DateTime(timezone=True), nullable=False, server_default=func.now()
     )
     updated_at: Mapped[datetime] = mapped_column(
-        nullable=False, server_default=func.now(), onupdate=func.now()
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
     )
 
     def __repr__(self) -> str:
