@@ -133,3 +133,142 @@ export const alegraApi = {
   discoverTools: (tenantId: number, payload: AlegraPayload) =>
     api.post(`/tenants/${tenantId}/alegra/discover`, payload).then((r) => r.data),
 };
+
+// ── Consumo de tokens ─────────────────────────────────────────────────────────
+
+export interface UsageSettings {
+  tenant_id?: number;
+  threshold_usd: number;
+  period: "month" | "total";
+  auto_pause: boolean;
+  notify_telegram: boolean;
+  notify_email: boolean;
+  admin_email: string | null;
+}
+
+export interface UsageUserRow {
+  chat_id: number;
+  user_id: number | null;
+  username: string | null;
+  role_name: string;
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+  cost_usd: number;
+  is_active: boolean;
+  is_paused: boolean;
+  paused_reason: string | null;
+  has_alert: boolean;
+  over_threshold: boolean;
+  last_activity: string | null;
+}
+
+export interface UsageUsersResponse extends UsageSettings {
+  currency: string;
+  totals: {
+    total_tokens: number;
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_cost_usd: number;
+    users_count: number;
+    over_threshold_count: number;
+    paused_count: number;
+  };
+  usuarios: UsageUserRow[];
+}
+
+export interface UsageGlobalRow {
+  tenant_id: number;
+  name: string;
+  slug: string;
+  is_active: boolean;
+  total_tokens: number;
+  total_cost_usd: number;
+  users_count: number;
+  over_threshold_count: number;
+  paused_count: number;
+  threshold_usd: number;
+}
+
+export interface UsageGlobalResponse {
+  currency: string;
+  totals: {
+    total_cost_usd: number;
+    total_tokens: number;
+    tenants_count: number;
+    over_threshold_count: number;
+  };
+  tenants: UsageGlobalRow[];
+}
+
+export interface UsageHistoryRow {
+  id: number;
+  tenant_id: number;
+  tenant_name: string;
+  chat_id: number | null;
+  user_id: number | null;
+  username: string | null;
+  model: string;
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+  cost_usd: number;
+  source: string;
+  created_at: string | null;
+}
+
+export interface UsageHistoryResponse {
+  total: number;
+  limit: number;
+  offset: number;
+  rows: UsageHistoryRow[];
+}
+
+export interface UsageAlertRow {
+  id: number;
+  tenant_id: number;
+  tenant_name: string;
+  chat_id: number;
+  user_id: number | null;
+  username: string | null;
+  threshold_usd: number;
+  total_cost_usd: number;
+  total_tokens: number;
+  period_key: string;
+  status: string;
+  notified: boolean;
+  created_at: string | null;
+  acknowledged_at: string | null;
+}
+
+export const consumoApi = {
+  global: (params?: { date_from?: string; date_to?: string }) =>
+    api.get<UsageGlobalResponse>("/consumo/global", { params }).then((r) => r.data),
+  usuarios: (tenantId: number, params?: { date_from?: string; date_to?: string }) =>
+    api
+      .get<UsageUsersResponse>("/consumo/usuarios", { params: { tenant_id: tenantId, ...params } })
+      .then((r) => r.data),
+  config: (tenantId: number) =>
+    api.get<UsageSettings>("/consumo/config", { params: { tenant_id: tenantId } }).then((r) => r.data),
+  updateConfig: (tenantId: number, payload: UsageSettings) =>
+    api.put("/consumo/config", payload, { params: { tenant_id: tenantId } }).then((r) => r.data),
+  historial: (params: {
+    tenant_id?: number;
+    chat_id?: number;
+    date_from?: string;
+    date_to?: string;
+    source?: string;
+    limit?: number;
+    offset?: number;
+  }) => api.get<UsageHistoryResponse>("/consumo/historial", { params }).then((r) => r.data),
+  alertas: (params?: { tenant_id?: number; status_filter?: string }) =>
+    api.get<UsageAlertRow[]>("/consumo/alertas", { params }).then((r) => r.data),
+  reconocerAlerta: (alertId: number) =>
+    api.patch(`/consumo/alertas/${alertId}/reconocer`).then((r) => r.data),
+  pausar: (tenantId: number, chatId: number, reason?: string) =>
+    api
+      .post(`/consumo/usuarios/${chatId}/pausar`, { reason }, { params: { tenant_id: tenantId } })
+      .then((r) => r.data),
+  reanudar: (tenantId: number, chatId: number) =>
+    api.post(`/consumo/usuarios/${chatId}/reanudar`, null, { params: { tenant_id: tenantId } }).then((r) => r.data),
+};

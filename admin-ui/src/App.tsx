@@ -14,6 +14,7 @@ import Roles from "./pages/Roles";
 import Tareas from "./pages/Tareas";
 import Historial from "./pages/Historial";
 import Auditoria from "./pages/Auditoria";
+import Consumo from "./pages/Consumo";
 
 const qc = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30000 } },
@@ -44,6 +45,7 @@ export default function App() {
                 <Route path="tareas" element={<Tareas />} />
                 <Route path="historial" element={<Historial />} />
                 <Route path="auditoria" element={<Auditoria />} />
+                <Route path="consumo" element={<Consumo />} />
               </Route>
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

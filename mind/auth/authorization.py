@@ -30,6 +30,10 @@ class AuthResult:
     allowed: bool
     user: User | None = None
     role: Role | None = None
+    # True cuando el usuario existe pero su bolsa de tokens está agotada
+    # (is_paused). Se distingue de un usuario no autorizado para mostrarle
+    # un mensaje claro en lugar del flujo de solicitud de acceso.
+    paused: bool = False
 
 
 class WhitelistUnavailableError(Exception):
@@ -75,12 +79,20 @@ async def check_access(
             stmt = select(User).where(
                 User.chat_id == chat_id,
                 User.tenant_id == tenant_id,
-                User.is_active.is_(True),
             )
             result = await session.execute(stmt)
             user = result.scalar_one_or_none()
 
             if user is None:
+                return AuthResult(allowed=False)
+
+            # Usuario con bolsa de tokens agotada: se le muestra un mensaje
+            # específico en lugar del flujo de solicitud de acceso.
+            if getattr(user, "is_paused", False):
+                return AuthResult(allowed=False, user=user, paused=True)
+
+            # Usuario desactivado manualmente por el admin → flujo de acceso
+            if not user.is_active:
                 return AuthResult(allowed=False)
 
             role_stmt = select(Role).where(Role.id == user.role_id)

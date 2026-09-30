@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from pydantic import BaseModel
@@ -94,6 +95,17 @@ class TenantAdminCreate(BaseModel):
 class TenantAdminUpdate(BaseModel):
     password: str | None = None
     is_active: bool | None = None
+
+class UsageSettingsUpdate(BaseModel):
+    threshold_usd: float = 8.0
+    period: str = "month"          # "month" | "total"
+    auto_pause: bool = False
+    notify_telegram: bool = True
+    notify_email: bool = False
+    admin_email: str | None = None
+
+class UsagePauseRequest(BaseModel):
+    reason: str | None = None
 
 
 # ── AUTH ─────────────────────────────────────────────────────────────────────
@@ -1179,3 +1191,438 @@ async def tarea_eliminar(
     await session.execute(delete(ScheduledTask).where(ScheduledTask.id == task_id))
     await session.commit()
     return {"ok": True}
+
+
+# ── CONSUMO DE TOKENS ─────────────────────────────────────────────────────────
+
+def _parse_dt(value: str | None, *, end: bool = False) -> datetime | None:
+    """Parsea 'YYYY-MM-DD' o ISO 8601 a datetime UTC. end=True suma un día."""
+    if not value:
+        return None
+    try:
+        dt = datetime.fromisoformat(value)
+    except ValueError:
+        try:
+            dt = datetime.strptime(value, "%Y-%m-%d")
+        except ValueError:
+            return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    if end and len(value.strip()) <= 10:
+        dt = dt + timedelta(days=1)
+    return dt
+
+
+@router.get("/consumo/config")
+async def consumo_config_get(
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
+):
+    from mind.usage.tracker import get_usage_settings
+    tid = get_effective_tenant_id(admin, tenant_id)
+    conf = await get_usage_settings(session, tid)
+    return {
+        "tenant_id": tid,
+        "threshold_usd": conf.threshold_usd,
+        "period": conf.period,
+        "auto_pause": conf.auto_pause,
+        "notify_telegram": conf.notify_telegram,
+        "notify_email": conf.notify_email,
+        "admin_email": conf.admin_email,
+    }
+
+
+@router.put("/consumo/config")
+async def consumo_config_update(
+    body: UsageSettingsUpdate,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
+):
+    from mind.db.models import UsageSettings
+    tid = get_effective_tenant_id(admin, tenant_id)
+    period = body.period if body.period in ("month", "total") else "month"
+    threshold = max(0.0, float(body.threshold_usd))
+
+    row = (await session.execute(
+        select(UsageSettings).where(UsageSettings.tenant_id == tid).limit(1)
+    )).scalar_one_or_none()
+    if row is None:
+        row = UsageSettings(tenant_id=tid)
+        session.add(row)
+
+    row.threshold_usd = threshold
+    row.period = period
+    row.auto_pause = body.auto_pause
+    row.notify_telegram = body.notify_telegram
+    row.notify_email = body.notify_email
+    row.admin_email = (body.admin_email or "").strip() or None
+    await session.commit()
+    return {"ok": True}
+
+
+@router.get("/consumo/global")
+async def consumo_global(
+    admin=Depends(require_superadmin),
+    session: AsyncSession = Depends(get_session),
+    date_from: str | None = None,
+    date_to: str | None = None,
+):
+    """Resumen de consumo por cliente (solo superadmin). Nueva sección."""
+    from mind.db.models import Tenant, TokenUsage, UsageSettings, User
+    from mind.usage.tracker import get_usage_settings
+
+    start = _parse_dt(date_from)
+    end = _parse_dt(date_to, end=True)
+
+    stmt = select(
+        TokenUsage.tenant_id,
+        TokenUsage.chat_id,
+        sqlfunc.coalesce(sqlfunc.sum(TokenUsage.cost_usd), 0.0),
+        sqlfunc.coalesce(sqlfunc.sum(TokenUsage.total_tokens), 0),
+    ).group_by(TokenUsage.tenant_id, TokenUsage.chat_id)
+    if start is not None:
+        stmt = stmt.where(TokenUsage.created_at >= start)
+    if end is not None:
+        stmt = stmt.where(TokenUsage.created_at < end)
+    per_user = (await session.execute(stmt)).all()
+
+    tenants = (await session.execute(select(Tenant).order_by(Tenant.name))).scalars().all()
+
+    # Umbral por tenant (con default global)
+    thresholds: dict[int, float] = {}
+    for t in tenants:
+        conf = await get_usage_settings(session, t.id)
+        thresholds[t.id] = conf.threshold_usd
+
+    paused_rows = (await session.execute(
+        select(User.tenant_id, sqlfunc.count()).where(User.is_paused.is_(True)).group_by(User.tenant_id)
+    )).all()
+    paused_map = {tid: int(cnt) for tid, cnt in paused_rows}
+
+    agg: dict[int, dict] = {
+        t.id: {
+            "tenant_id": t.id, "name": t.name, "slug": t.slug, "is_active": t.is_active,
+            "total_tokens": 0, "total_cost_usd": 0.0, "users_count": 0,
+            "over_threshold_count": 0, "paused_count": paused_map.get(t.id, 0),
+            "threshold_usd": thresholds.get(t.id, 8.0),
+        }
+        for t in tenants
+    }
+
+    for tenant_id_v, _chat_id, cost, tokens in per_user:
+        entry = agg.get(tenant_id_v)
+        if entry is None:
+            continue
+        cost = float(cost or 0.0)
+        entry["total_tokens"] += int(tokens or 0)
+        entry["total_cost_usd"] += cost
+        entry["users_count"] += 1
+        if cost >= entry["threshold_usd"] > 0:
+            entry["over_threshold_count"] += 1
+
+    rows = sorted(agg.values(), key=lambda r: r["total_cost_usd"], reverse=True)
+    for r in rows:
+        r["total_cost_usd"] = round(r["total_cost_usd"], 4)
+
+    return {
+        "currency": "USD",
+        "totals": {
+            "total_cost_usd": round(sum(r["total_cost_usd"] for r in rows), 4),
+            "total_tokens": sum(r["total_tokens"] for r in rows),
+            "tenants_count": len(rows),
+            "over_threshold_count": sum(r["over_threshold_count"] for r in rows),
+        },
+        "tenants": rows,
+    }
+
+
+@router.get("/consumo/usuarios")
+async def consumo_usuarios(
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
+    date_from: str | None = None,
+    date_to: str | None = None,
+):
+    """Consumo desglosado por usuario dentro de un cliente."""
+    from mind.db.models import Role, TokenUsage, UsageAlert, User
+    from mind.usage.tracker import get_usage_settings
+
+    tid = get_effective_tenant_id(admin, tenant_id)
+    start = _parse_dt(date_from)
+    end = _parse_dt(date_to, end=True)
+    conf = await get_usage_settings(session, tid)
+
+    stmt = (
+        select(
+            TokenUsage.chat_id,
+            sqlfunc.coalesce(sqlfunc.sum(TokenUsage.prompt_tokens), 0),
+            sqlfunc.coalesce(sqlfunc.sum(TokenUsage.completion_tokens), 0),
+            sqlfunc.coalesce(sqlfunc.sum(TokenUsage.total_tokens), 0),
+            sqlfunc.coalesce(sqlfunc.sum(TokenUsage.cost_usd), 0.0),
+            sqlfunc.max(TokenUsage.username),
+            sqlfunc.max(TokenUsage.user_id),
+            sqlfunc.max(TokenUsage.created_at),
+        )
+        .where(TokenUsage.tenant_id == tid, TokenUsage.chat_id.isnot(None))
+        .group_by(TokenUsage.chat_id)
+    )
+    if start is not None:
+        stmt = stmt.where(TokenUsage.created_at >= start)
+    if end is not None:
+        stmt = stmt.where(TokenUsage.created_at < end)
+    rows = (await session.execute(stmt)).all()
+
+    users = (await session.execute(
+        select(User).where(User.tenant_id == tid)
+    )).scalars().all()
+    users_map = {u.chat_id: u for u in users}
+    roles_map = {
+        r.id: r.name for r in (await session.execute(
+            select(Role).where(Role.tenant_id == tid)
+        )).scalars().all()
+    }
+    active_alerts = set((await session.execute(
+        select(UsageAlert.chat_id).where(
+            UsageAlert.tenant_id == tid, UsageAlert.status == "active"
+        )
+    )).scalars().all())
+
+    user_rows = []
+    for chat_id, prompt, completion, total, cost, username, user_id, last_at in rows:
+        u = users_map.get(chat_id)
+        cost = float(cost or 0.0)
+        user_rows.append({
+            "chat_id": chat_id,
+            "user_id": (u.user_id if u else user_id),
+            "username": (u.username if u and u.username else username),
+            "role_name": roles_map.get(u.role_id, "—") if u else "—",
+            "prompt_tokens": int(prompt or 0),
+            "completion_tokens": int(completion or 0),
+            "total_tokens": int(total or 0),
+            "cost_usd": round(cost, 4),
+            "is_active": bool(u.is_active) if u else False,
+            "is_paused": bool(u.is_paused) if u else False,
+            "paused_reason": u.paused_reason if u else None,
+            "has_alert": chat_id in active_alerts,
+            "over_threshold": (conf.threshold_usd > 0 and cost >= conf.threshold_usd),
+            "last_activity": last_at.isoformat() if last_at else None,
+        })
+
+    user_rows.sort(key=lambda r: r["cost_usd"], reverse=True)
+
+    return {
+        "tenant_id": tid,
+        "currency": "USD",
+        "threshold_usd": conf.threshold_usd,
+        "period": conf.period,
+        "auto_pause": conf.auto_pause,
+        "notify_telegram": conf.notify_telegram,
+        "notify_email": conf.notify_email,
+        "admin_email": conf.admin_email,
+        "totals": {
+            "total_tokens": sum(r["total_tokens"] for r in user_rows),
+            "prompt_tokens": sum(r["prompt_tokens"] for r in user_rows),
+            "completion_tokens": sum(r["completion_tokens"] for r in user_rows),
+            "total_cost_usd": round(sum(r["cost_usd"] for r in user_rows), 4),
+            "users_count": len(user_rows),
+            "over_threshold_count": sum(1 for r in user_rows if r["over_threshold"]),
+            "paused_count": sum(1 for r in user_rows if r["is_paused"]),
+        },
+        "usuarios": user_rows,
+    }
+
+
+@router.get("/consumo/historial")
+async def consumo_historial(
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
+    chat_id: int | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    source: str = "",
+    limit: int = 100,
+    offset: int = 0,
+):
+    """Historial de consumo con filtros por fecha, cliente y usuario."""
+    from mind.db.models import Tenant, TokenUsage
+
+    tid = admin.get("tenant_id") if admin.get("role") == "tenant_admin" else tenant_id
+    start = _parse_dt(date_from)
+    end = _parse_dt(date_to, end=True)
+
+    base = select(TokenUsage)
+    count_stmt = select(sqlfunc.count()).select_from(TokenUsage)
+    if tid:
+        base = base.where(TokenUsage.tenant_id == tid)
+        count_stmt = count_stmt.where(TokenUsage.tenant_id == tid)
+    if chat_id is not None:
+        base = base.where(TokenUsage.chat_id == chat_id)
+        count_stmt = count_stmt.where(TokenUsage.chat_id == chat_id)
+    if start is not None:
+        base = base.where(TokenUsage.created_at >= start)
+        count_stmt = count_stmt.where(TokenUsage.created_at >= start)
+    if end is not None:
+        base = base.where(TokenUsage.created_at < end)
+        count_stmt = count_stmt.where(TokenUsage.created_at < end)
+    if source:
+        base = base.where(TokenUsage.source == source)
+        count_stmt = count_stmt.where(TokenUsage.source == source)
+
+    total = (await session.execute(count_stmt)).scalar() or 0
+    limit = max(1, min(int(limit), 500))
+    offset = max(0, int(offset))
+    base = base.order_by(TokenUsage.created_at.desc()).limit(limit).offset(offset)
+    logs = (await session.execute(base)).scalars().all()
+
+    tenant_names = {
+        t.id: t.name for t in (await session.execute(select(Tenant))).scalars().all()
+    }
+
+    return {
+        "total": int(total),
+        "limit": limit,
+        "offset": offset,
+        "rows": [
+            {
+                "id": log.id,
+                "tenant_id": log.tenant_id,
+                "tenant_name": tenant_names.get(log.tenant_id, "—"),
+                "chat_id": log.chat_id,
+                "user_id": log.user_id,
+                "username": log.username,
+                "model": log.model,
+                "prompt_tokens": log.prompt_tokens,
+                "completion_tokens": log.completion_tokens,
+                "total_tokens": log.total_tokens,
+                "cost_usd": round(float(log.cost_usd or 0.0), 4),
+                "source": log.source,
+                "created_at": log.created_at.isoformat() if log.created_at else None,
+            }
+            for log in logs
+        ],
+    }
+
+
+@router.get("/consumo/alertas")
+async def consumo_alertas(
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
+    status_filter: str = "",
+):
+    from mind.db.models import Tenant, UsageAlert
+
+    tid = admin.get("tenant_id") if admin.get("role") == "tenant_admin" else tenant_id
+    stmt = select(UsageAlert).order_by(UsageAlert.created_at.desc()).limit(300)
+    if tid:
+        stmt = stmt.where(UsageAlert.tenant_id == tid)
+    if status_filter:
+        stmt = stmt.where(UsageAlert.status == status_filter)
+    alerts = (await session.execute(stmt)).scalars().all()
+
+    tenant_names = {
+        t.id: t.name for t in (await session.execute(select(Tenant))).scalars().all()
+    }
+    return [
+        {
+            "id": a.id,
+            "tenant_id": a.tenant_id,
+            "tenant_name": tenant_names.get(a.tenant_id, "—"),
+            "chat_id": a.chat_id,
+            "user_id": a.user_id,
+            "username": a.username,
+            "threshold_usd": a.threshold_usd,
+            "total_cost_usd": round(float(a.total_cost_usd or 0.0), 4),
+            "total_tokens": a.total_tokens,
+            "period_key": a.period_key,
+            "status": a.status,
+            "notified": a.notified,
+            "created_at": a.created_at.isoformat() if a.created_at else None,
+            "acknowledged_at": a.acknowledged_at.isoformat() if a.acknowledged_at else None,
+        }
+        for a in alerts
+    ]
+
+
+@router.patch("/consumo/alertas/{alert_id}/reconocer")
+async def consumo_alerta_reconocer(
+    alert_id: int,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+):
+    from mind.db.models import UsageAlert
+    alert = (await session.execute(
+        select(UsageAlert).where(UsageAlert.id == alert_id)
+    )).scalar_one_or_none()
+    if not alert:
+        raise HTTPException(status_code=404, detail="Alerta no encontrada")
+    alert.status = "acknowledged"
+    alert.acknowledged_at = datetime.now(timezone.utc)
+    await session.commit()
+    return {"ok": True}
+
+
+@router.post("/consumo/usuarios/{chat_id}/pausar")
+async def consumo_pausar_usuario(
+    chat_id: int,
+    body: UsagePauseRequest | None = None,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
+):
+    """Pausa el acceso de un usuario por consumo excedido y le notifica."""
+    from mind.db.models import Tenant, User
+    from mind.usage.notifier import notify_user_paused
+
+    tid = get_effective_tenant_id(admin, tenant_id)
+    user = (await session.execute(
+        select(User).where(User.chat_id == chat_id, User.tenant_id == tid)
+    )).scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    reason = (body.reason if body and body.reason else None) or "Pausado por consumo excedido"
+    user.is_paused = True
+    user.paused_reason = reason
+    user.paused_at = datetime.now(timezone.utc)
+    await session.commit()
+
+    tenant = (await session.execute(
+        select(Tenant).where(Tenant.id == tid)
+    )).scalar_one_or_none()
+    await notify_user_paused(tenant.bot_token if tenant else None, chat_id)
+    return {"ok": True, "chat_id": chat_id, "is_paused": True}
+
+
+@router.post("/consumo/usuarios/{chat_id}/reanudar")
+async def consumo_reanudar_usuario(
+    chat_id: int,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
+):
+    """Reactiva el acceso de un usuario pausado y le notifica."""
+    from mind.db.models import Tenant, User
+    from mind.usage.notifier import notify_user_resumed
+
+    tid = get_effective_tenant_id(admin, tenant_id)
+    user = (await session.execute(
+        select(User).where(User.chat_id == chat_id, User.tenant_id == tid)
+    )).scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    user.is_paused = False
+    user.paused_reason = None
+    user.paused_at = None
+    await session.commit()
+
+    tenant = (await session.execute(
+        select(Tenant).where(Tenant.id == tid)
+    )).scalar_one_or_none()
+    await notify_user_resumed(tenant.bot_token if tenant else None, chat_id)
+    return {"ok": True, "chat_id": chat_id, "is_paused": False}

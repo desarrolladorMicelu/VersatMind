@@ -4,7 +4,7 @@ import { useTenant } from "../contexts/TenantContext";
 import {
   LayoutDashboard, Bot, Users, KeyRound,
   Shield, Clock, MessageSquare, Activity, LogOut,
-  Building2, ChevronDown,
+  Building2, ChevronDown, Coins,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import type { Tenant } from "../lib/api";
@@ -12,6 +12,7 @@ import type { Tenant } from "../lib/api";
 const NAV_SUPERADMIN = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/tenants", icon: Building2, label: "Clientes" },
+  { to: "/consumo", icon: Coins, label: "Consumo" },
   { to: "/agente", icon: Bot, label: "Agente" },
   { to: "/usuarios", icon: Users, label: "Usuarios" },
   { to: "/accesos", icon: KeyRound, label: "Accesos" },
@@ -23,6 +24,7 @@ const NAV_SUPERADMIN = [
 
 const NAV_TENANT = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
+  { to: "/consumo", icon: Coins, label: "Consumo" },
   { to: "/agente", icon: Bot, label: "Agente" },
   { to: "/usuarios", icon: Users, label: "Usuarios" },
   { to: "/accesos", icon: KeyRound, label: "Accesos" },
