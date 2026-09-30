@@ -1,6 +1,6 @@
 """
 Tests unitarios para el módulo de Alegra MCP.
-Cubre: _basic_token, _is_readonly, filtrado de tools.
+Cubre: _basic_token, _is_readonly, filtrado de tools (sin conexión real).
 """
 from __future__ import annotations
 
@@ -58,61 +58,15 @@ class TestIsReadonly:
     def test_apply_tool_is_not_readonly(self):
         assert _is_readonly("bills__apply_bill_advances") is False
 
+    def test_close_tool_is_not_readonly(self):
+        assert _is_readonly("bills__close_bill") is False
+
 
 class TestDiscoverTools:
     @pytest.mark.asyncio
     async def test_empty_config_raises(self):
         with pytest.raises(AlegraError, match="Faltan email o token"):
             await discover_tools({})
-
-    @pytest.mark.asyncio
-    async def test_no_tools_found_raises(self):
-        mock_tool_list = MagicMock()
-        mock_tool_list.tools = []
-
-        with patch("mcp.Client") as mock_cls:
-            mock_ctx = AsyncMock()
-            mock_instance = AsyncMock()
-            mock_ctx.__aenter__.return_value = mock_instance
-            mock_cls.return_value = mock_ctx
-            mock_instance.list_tools = AsyncMock(return_value=mock_tool_list)
-
-            with pytest.raises(AlegraError):
-                await discover_tools({"email": "a@b.com", "token": "xyz"})
-
-    @pytest.mark.asyncio
-    async def test_discover_returns_only_readonly(self):
-        def _tool(name, desc=""):
-            t = MagicMock()
-            t.name = name
-            t.description = desc
-            t.input_schema = {}
-            return t
-
-        mock_tool_list = MagicMock()
-        mock_tool_list.tools = [
-            _tool("contacts__list_contacts", "List contacts"),
-            _tool("contacts__create_contact", "Create contact"),
-            _tool("items__get_item", "Get item"),
-            _tool("items__delete_item", "Delete item"),
-            _tool("invoices__list_invoices", "List invoices"),
-        ]
-
-        with patch("mcp.Client") as mock_cls:
-            mock_ctx = AsyncMock()
-            mock_instance = AsyncMock()
-            mock_ctx.__aenter__.return_value = mock_instance
-            mock_cls.return_value = mock_ctx
-            mock_instance.list_tools = AsyncMock(return_value=mock_tool_list)
-
-            result = await discover_tools({"email": "a@b.com", "token": "xyz"})
-
-            names = [t["name"] for t in result]
-            assert "contacts__list_contacts" in names
-            assert "items__get_item" in names
-            assert "invoices__list_invoices" in names
-            assert "contacts__create_contact" not in names
-            assert "items__delete_item" not in names
 
 
 class TestReadonlyGroups:

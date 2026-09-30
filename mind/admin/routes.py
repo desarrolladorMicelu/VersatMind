@@ -704,10 +704,11 @@ async def tenant_test_alegra(
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant no encontrado")
 
+    stored = (tenant.external_alegra or {}) if tenant.external_alegra else {}
     conf = {
-        "email": body.get("email", ""),
-        "token": body.get("token", ""),
-        "groups": body.get("groups"),
+        "email": body.get("email") or stored.get("email", ""),
+        "token": body.get("token") or stored.get("token", ""),
+        "groups": body.get("groups") or stored.get("groups"),
     }
     from mind.data.alegra.alegra_mcp import test_connection, AlegraError
     try:
@@ -735,10 +736,11 @@ async def tenant_discover_alegra(
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant no encontrado")
 
+    stored = (tenant.external_alegra or {}) if tenant.external_alegra else {}
     conf = {
-        "email": body.get("email", ""),
-        "token": body.get("token", ""),
-        "groups": body.get("groups"),
+        "email": body.get("email") or stored.get("email", ""),
+        "token": body.get("token") or stored.get("token", ""),
+        "groups": body.get("groups") or stored.get("groups"),
     }
     from mind.data.alegra.alegra_mcp import generate_description, AlegraError
     try:
