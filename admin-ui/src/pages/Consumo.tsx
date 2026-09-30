@@ -27,7 +27,7 @@ function Kpi({ label, value, accent, danger }: { label: string; value: string; a
 // ── Vista global (superadmin): consumo por cliente ────────────────────────────
 
 function GlobalConsumo({ onSelect }: { onSelect: (row: UsageGlobalRow) => void }) {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ["consumo-global"],
     queryFn: () => consumoApi.global(),
     refetchInterval: 30000,
@@ -44,15 +44,23 @@ function GlobalConsumo({ onSelect }: { onSelect: (row: UsageGlobalRow) => void }
         description="Tokens y costo estimado por cliente — selecciona uno para el detalle"
       />
       <div className="px-8 py-8 space-y-8">
+        {isError && (
+          <div className="border border-red-900/50 bg-red-950/20 px-5 py-4">
+            <p className="font-mono text-[11px] text-red-400 uppercase tracking-widest">
+              No se pudo cargar el consumo. Verifica que el backend esté actualizado y que la
+              migración de consumo (0009) esté aplicada.
+            </p>
+          </div>
+        )}
         <div className="grid grid-cols-2 xl:grid-cols-4 gap-px bg-[#1a1a1a]">
           {isLoading ? (
             Array(4).fill(0).map((_, i) => <div key={i} className="bg-black p-6 h-24 animate-pulse" />)
           ) : (
             <>
-              <Kpi label="Costo total" value={fmtUsd(totals?.total_cost_usd)} accent />
-              <Kpi label="Tokens totales" value={fmtNum(totals?.total_tokens)} />
-              <Kpi label="Clientes con consumo" value={fmtNum(totals?.tenants_count)} />
-              <Kpi label="Usuarios sobre umbral" value={fmtNum(totals?.over_threshold_count)} danger={(totals?.over_threshold_count ?? 0) > 0} />
+              <Kpi label="Costo total" value={isError ? "—" : fmtUsd(totals?.total_cost_usd)} accent />
+              <Kpi label="Tokens totales" value={isError ? "—" : fmtNum(totals?.total_tokens)} />
+              <Kpi label="Clientes con consumo" value={isError ? "—" : fmtNum(totals?.tenants_count)} />
+              <Kpi label="Usuarios sobre umbral" value={isError ? "—" : fmtNum(totals?.over_threshold_count)} danger={(totals?.over_threshold_count ?? 0) > 0} />
             </>
           )}
         </div>
@@ -199,7 +207,7 @@ function TenantConsumo({ tenantId }: { tenantId: number }) {
     queryFn: () => consumoApi.config(tenantId),
   });
 
-  const { data: usuarios, isLoading: loadingUsers } = useQuery({
+  const { data: usuarios, isLoading: loadingUsers, isError: usersError } = useQuery({
     queryKey: ["consumo-usuarios", tenantId, dateFrom, dateTo],
     queryFn: () => consumoApi.usuarios(tenantId, rangeParams),
     enabled: tenantId !== null,
@@ -253,15 +261,24 @@ function TenantConsumo({ tenantId }: { tenantId: number }) {
       <PageHeader tag="ADMIN" title="Consumo" description="Tokens y costo estimado por usuario" />
       <div className="px-8 py-8 space-y-8">
 
+        {usersError && (
+          <div className="border border-red-900/50 bg-red-950/20 px-5 py-4">
+            <p className="font-mono text-[11px] text-red-400 uppercase tracking-widest">
+              No se pudo cargar el consumo. Verifica que el backend esté actualizado y que la
+              migración de consumo (0009) esté aplicada en esta base de datos.
+            </p>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 xl:grid-cols-4 gap-px bg-[#1a1a1a]">
           {loadingUsers ? (
             Array(4).fill(0).map((_, i) => <div key={i} className="bg-black p-6 h-24 animate-pulse" />)
           ) : (
             <>
-              <Kpi label="Costo total" value={fmtUsd(totals?.total_cost_usd)} accent />
-              <Kpi label="Tokens totales" value={fmtNum(totals?.total_tokens)} />
-              <Kpi label="Usuarios sobre umbral" value={fmtNum(totals?.over_threshold_count)} danger={(totals?.over_threshold_count ?? 0) > 0} />
-              <Kpi label="Usuarios pausados" value={fmtNum(totals?.paused_count)} danger={(totals?.paused_count ?? 0) > 0} />
+              <Kpi label="Costo total" value={usersError ? "—" : fmtUsd(totals?.total_cost_usd)} accent />
+              <Kpi label="Tokens totales" value={usersError ? "—" : fmtNum(totals?.total_tokens)} />
+              <Kpi label="Usuarios sobre umbral" value={usersError ? "—" : fmtNum(totals?.over_threshold_count)} danger={(totals?.over_threshold_count ?? 0) > 0} />
+              <Kpi label="Usuarios pausados" value={usersError ? "—" : fmtNum(totals?.paused_count)} danger={(totals?.paused_count ?? 0) > 0} />
             </>
           )}
         </div>
