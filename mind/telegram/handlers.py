@@ -14,6 +14,12 @@ logger = logging.getLogger(__name__)
 
 MAX_MESSAGE_LENGTH = 4096
 ERROR_MSG = "Lo siento, ocurrió un error procesando tu solicitud. Por favor intenta de nuevo."
+PAUSED_MSG = (
+    "⛔ Tu bolsa de tokens se agotó.\n\n"
+    "El acceso a Mind está temporalmente pausado para tu usuario. "
+    "Contacta al administrador de tu empresa para recargar tu bolsa y "
+    "reactivar el servicio."
+)
 
 
 def _resolve_tenant(bot_token: str):
@@ -67,6 +73,12 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         return
     except Exception:
         await update.message.reply_text(ERROR_MSG)
+        return
+
+    # Usuario con bolsa de tokens agotada → mensaje claro (sin flujo de acceso)
+    if not auth_result.allowed and auth_result.paused:
+        await log_unauthorized(chat_id, user_id, text, tenant_id=tenant.id)
+        await update.message.reply_text(PAUSED_MSG)
         return
 
     # Usuario no autorizado → flujo de solicitud de acceso

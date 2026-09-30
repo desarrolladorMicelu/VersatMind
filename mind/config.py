@@ -49,6 +49,18 @@ class Settings(BaseSettings):
     ADMIN_PASSWORD: str = "admin1234"
     ADMIN_SECRET_KEY: str = "cambia_esto_por_una_clave_secreta_larga"
 
+    # --- Consumo de tokens / alertas ---
+    USAGE_DEFAULT_THRESHOLD_USD: float = Field(default=8.0, ge=0.0)
+    USAGE_DEFAULT_PERIOD: str = "month"  # "month" | "total"
+
+    # --- Email (opcional, para alertas de consumo) ---
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = Field(default=587, ge=1, le=65535)
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM: str = ""
+    SMTP_TLS: bool = True
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from pydantic import BaseModel
@@ -94,6 +95,61 @@ class TenantAdminCreate(BaseModel):
 class TenantAdminUpdate(BaseModel):
     password: str | None = None
     is_active: bool | None = None
+
+class UsageSettingsUpdate(BaseModel):
+    threshold_usd: float = 8.0
+    period: str = "month"          # "month" | "total"
+    auto_pause: bool = False
+    notify_telegram: bool = True
+    notify_email: bool = False
+    admin_email: str | None = None
+
+class UsagePauseRequest(BaseModel):
+    reason: str | None = None
+
+class ScheduledPromptCreate(BaseModel):
+    name: str
+    description: str = ""
+    prompt: str
+    chat_id: int
+    chat_label: str = ""
+    frequency: str = "daily"          # "daily" | "weekly" | "custom"
+    hour: int = 8
+    minute: int = 0
+    weekday: int = 0                  # 0 = lunes ... 6 = domingo
+    cron_expression: str | None = None  # requerido si frequency = "custom"
+    timezone: str = "America/Bogota"
+    is_active: bool = True
+
+class ScheduledPromptUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    prompt: str | None = None
+    chat_id: int | None = None
+    chat_label: str | None = None
+    frequency: str | None = None
+    hour: int | None = None
+    minute: int | None = None
+    weekday: int | None = None
+    cron_expression: str | None = None
+    timezone: str | None = None
+    is_active: bool | None = None
+
+class KnowledgeCreate(BaseModel):
+    title: str
+    content: str
+    source: str = ""
+    tags: str = ""
+
+class KnowledgeUpdate(BaseModel):
+    title: str | None = None
+    content: str | None = None
+    source: str | None = None
+    tags: str | None = None
+    is_active: bool | None = None
+
+class PromptPreviewRequest(BaseModel):
+    prompt: str
 
 
 # ── AUTH ─────────────────────────────────────────────────────────────────────
@@ -1179,5 +1235,819 @@ async def tarea_eliminar(
 ):
     from mind.db.models import ScheduledTask
     await session.execute(delete(ScheduledTask).where(ScheduledTask.id == task_id))
+    await session.commit()
+    return {"ok": True}
+
+
+# ── CONSUMO DE TOKENS ─────────────────────────────────────────────────────────
+
+def _parse_dt(value: str | None, *, end: bool = False) -> datetime | None:
+    """Parsea 'YYYY-MM-DD' o ISO 8601 a datetime UTC. end=True suma un día."""
+    if not value:
+        return None
+    try:
+        dt = datetime.fromisoformat(value)
+    except ValueError:
+        try:
+            dt = datetime.strptime(value, "%Y-%m-%d")
+        except ValueError:
+            return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    if end and len(value.strip()) <= 10:
+        dt = dt + timedelta(days=1)
+    return dt
+
+
+@router.get("/consumo/config")
+async def consumo_config_get(
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
+):
+    from mind.usage.tracker import get_usage_settings
+    tid = get_effective_tenant_id(admin, tenant_id)
+    conf = await get_usage_settings(session, tid)
+    return {
+        "tenant_id": tid,
+        "threshold_usd": conf.threshold_usd,
+        "period": conf.period,
+        "auto_pause": conf.auto_pause,
+        "notify_telegram": conf.notify_telegram,
+        "notify_email": conf.notify_email,
+        "admin_email": conf.admin_email,
+    }
+
+
+@router.put("/consumo/config")
+async def consumo_config_update(
+    body: UsageSettingsUpdate,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
+):
+    from mind.db.models import UsageSettings
+    tid = get_effective_tenant_id(admin, tenant_id)
+    period = body.period if body.period in ("month", "total") else "month"
+    threshold = max(0.0, float(body.threshold_usd))
+
+    row = (await session.execute(
+        select(UsageSettings).where(UsageSettings.tenant_id == tid).limit(1)
+    )).scalar_one_or_none()
+    if row is None:
+        row = UsageSettings(tenant_id=tid)
+        session.add(row)
+
+    row.threshold_usd = threshold
+    row.period = period
+    row.auto_pause = body.auto_pause
+    row.notify_telegram = body.notify_telegram
+    row.notify_email = body.notify_email
+    row.admin_email = (body.admin_email or "").strip() or None
+    await session.commit()
+    return {"ok": True}
+
+
+@router.get("/consumo/global")
+async def consumo_global(
+    admin=Depends(require_superadmin),
+    session: AsyncSession = Depends(get_session),
+    date_from: str | None = None,
+    date_to: str | None = None,
+):
+    """Resumen de consumo por cliente (solo superadmin). Nueva sección."""
+    from mind.db.models import Tenant, TokenUsage, UsageSettings, User
+    from mind.usage.tracker import get_usage_settings
+
+    start = _parse_dt(date_from)
+    end = _parse_dt(date_to, end=True)
+
+    stmt = select(
+        TokenUsage.tenant_id,
+        TokenUsage.chat_id,
+        sqlfunc.coalesce(sqlfunc.sum(TokenUsage.cost_usd), 0.0),
+        sqlfunc.coalesce(sqlfunc.sum(TokenUsage.total_tokens), 0),
+    ).group_by(TokenUsage.tenant_id, TokenUsage.chat_id)
+    if start is not None:
+        stmt = stmt.where(TokenUsage.created_at >= start)
+    if end is not None:
+        stmt = stmt.where(TokenUsage.created_at < end)
+    per_user = (await session.execute(stmt)).all()
+
+    tenants = (await session.execute(select(Tenant).order_by(Tenant.name))).scalars().all()
+
+    # Umbral por tenant (con default global)
+    thresholds: dict[int, float] = {}
+    for t in tenants:
+        conf = await get_usage_settings(session, t.id)
+        thresholds[t.id] = conf.threshold_usd
+
+    paused_rows = (await session.execute(
+        select(User.tenant_id, sqlfunc.count()).where(User.is_paused.is_(True)).group_by(User.tenant_id)
+    )).all()
+    paused_map = {tid: int(cnt) for tid, cnt in paused_rows}
+
+    agg: dict[int, dict] = {
+        t.id: {
+            "tenant_id": t.id, "name": t.name, "slug": t.slug, "is_active": t.is_active,
+            "total_tokens": 0, "total_cost_usd": 0.0, "users_count": 0,
+            "over_threshold_count": 0, "paused_count": paused_map.get(t.id, 0),
+            "threshold_usd": thresholds.get(t.id, 8.0),
+        }
+        for t in tenants
+    }
+
+    for tenant_id_v, _chat_id, cost, tokens in per_user:
+        entry = agg.get(tenant_id_v)
+        if entry is None:
+            continue
+        cost = float(cost or 0.0)
+        entry["total_tokens"] += int(tokens or 0)
+        entry["total_cost_usd"] += cost
+        entry["users_count"] += 1
+        if cost >= entry["threshold_usd"] > 0:
+            entry["over_threshold_count"] += 1
+
+    rows = sorted(agg.values(), key=lambda r: r["total_cost_usd"], reverse=True)
+    for r in rows:
+        r["total_cost_usd"] = round(r["total_cost_usd"], 4)
+
+    return {
+        "currency": "USD",
+        "totals": {
+            "total_cost_usd": round(sum(r["total_cost_usd"] for r in rows), 4),
+            "total_tokens": sum(r["total_tokens"] for r in rows),
+            "tenants_count": len(rows),
+            "over_threshold_count": sum(r["over_threshold_count"] for r in rows),
+        },
+        "tenants": rows,
+    }
+
+
+@router.get("/consumo/usuarios")
+async def consumo_usuarios(
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
+    date_from: str | None = None,
+    date_to: str | None = None,
+):
+    """Consumo desglosado por usuario dentro de un cliente."""
+    from mind.db.models import Role, TokenUsage, UsageAlert, User
+    from mind.usage.tracker import get_usage_settings
+
+    tid = get_effective_tenant_id(admin, tenant_id)
+    start = _parse_dt(date_from)
+    end = _parse_dt(date_to, end=True)
+    conf = await get_usage_settings(session, tid)
+
+    stmt = (
+        select(
+            TokenUsage.chat_id,
+            sqlfunc.coalesce(sqlfunc.sum(TokenUsage.prompt_tokens), 0),
+            sqlfunc.coalesce(sqlfunc.sum(TokenUsage.completion_tokens), 0),
+            sqlfunc.coalesce(sqlfunc.sum(TokenUsage.total_tokens), 0),
+            sqlfunc.coalesce(sqlfunc.sum(TokenUsage.cost_usd), 0.0),
+            sqlfunc.max(TokenUsage.username),
+            sqlfunc.max(TokenUsage.user_id),
+            sqlfunc.max(TokenUsage.created_at),
+        )
+        .where(TokenUsage.tenant_id == tid, TokenUsage.chat_id.isnot(None))
+        .group_by(TokenUsage.chat_id)
+    )
+    if start is not None:
+        stmt = stmt.where(TokenUsage.created_at >= start)
+    if end is not None:
+        stmt = stmt.where(TokenUsage.created_at < end)
+    rows = (await session.execute(stmt)).all()
+
+    users = (await session.execute(
+        select(User).where(User.tenant_id == tid)
+    )).scalars().all()
+    users_map = {u.chat_id: u for u in users}
+    roles_map = {
+        r.id: r.name for r in (await session.execute(
+            select(Role).where(Role.tenant_id == tid)
+        )).scalars().all()
+    }
+    active_alerts = set((await session.execute(
+        select(UsageAlert.chat_id).where(
+            UsageAlert.tenant_id == tid, UsageAlert.status == "active"
+        )
+    )).scalars().all())
+
+    user_rows = []
+    for chat_id, prompt, completion, total, cost, username, user_id, last_at in rows:
+        u = users_map.get(chat_id)
+        cost = float(cost or 0.0)
+        user_rows.append({
+            "chat_id": chat_id,
+            "user_id": (u.user_id if u else user_id),
+            "username": (u.username if u and u.username else username),
+            "role_name": roles_map.get(u.role_id, "—") if u else "—",
+            "prompt_tokens": int(prompt or 0),
+            "completion_tokens": int(completion or 0),
+            "total_tokens": int(total or 0),
+            "cost_usd": round(cost, 4),
+            "is_active": bool(u.is_active) if u else False,
+            "is_paused": bool(u.is_paused) if u else False,
+            "paused_reason": u.paused_reason if u else None,
+            "has_alert": chat_id in active_alerts,
+            "over_threshold": (conf.threshold_usd > 0 and cost >= conf.threshold_usd),
+            "last_activity": last_at.isoformat() if last_at else None,
+        })
+
+    user_rows.sort(key=lambda r: r["cost_usd"], reverse=True)
+
+    return {
+        "tenant_id": tid,
+        "currency": "USD",
+        "threshold_usd": conf.threshold_usd,
+        "period": conf.period,
+        "auto_pause": conf.auto_pause,
+        "notify_telegram": conf.notify_telegram,
+        "notify_email": conf.notify_email,
+        "admin_email": conf.admin_email,
+        "totals": {
+            "total_tokens": sum(r["total_tokens"] for r in user_rows),
+            "prompt_tokens": sum(r["prompt_tokens"] for r in user_rows),
+            "completion_tokens": sum(r["completion_tokens"] for r in user_rows),
+            "total_cost_usd": round(sum(r["cost_usd"] for r in user_rows), 4),
+            "users_count": len(user_rows),
+            "over_threshold_count": sum(1 for r in user_rows if r["over_threshold"]),
+            "paused_count": sum(1 for r in user_rows if r["is_paused"]),
+        },
+        "usuarios": user_rows,
+    }
+
+
+@router.get("/consumo/historial")
+async def consumo_historial(
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
+    chat_id: int | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    source: str = "",
+    limit: int = 100,
+    offset: int = 0,
+):
+    """Historial de consumo con filtros por fecha, cliente y usuario."""
+    from mind.db.models import Tenant, TokenUsage
+
+    tid = admin.get("tenant_id") if admin.get("role") == "tenant_admin" else tenant_id
+    start = _parse_dt(date_from)
+    end = _parse_dt(date_to, end=True)
+
+    base = select(TokenUsage)
+    count_stmt = select(sqlfunc.count()).select_from(TokenUsage)
+    if tid:
+        base = base.where(TokenUsage.tenant_id == tid)
+        count_stmt = count_stmt.where(TokenUsage.tenant_id == tid)
+    if chat_id is not None:
+        base = base.where(TokenUsage.chat_id == chat_id)
+        count_stmt = count_stmt.where(TokenUsage.chat_id == chat_id)
+    if start is not None:
+        base = base.where(TokenUsage.created_at >= start)
+        count_stmt = count_stmt.where(TokenUsage.created_at >= start)
+    if end is not None:
+        base = base.where(TokenUsage.created_at < end)
+        count_stmt = count_stmt.where(TokenUsage.created_at < end)
+    if source:
+        base = base.where(TokenUsage.source == source)
+        count_stmt = count_stmt.where(TokenUsage.source == source)
+
+    total = (await session.execute(count_stmt)).scalar() or 0
+    limit = max(1, min(int(limit), 500))
+    offset = max(0, int(offset))
+    base = base.order_by(TokenUsage.created_at.desc()).limit(limit).offset(offset)
+    logs = (await session.execute(base)).scalars().all()
+
+    tenant_names = {
+        t.id: t.name for t in (await session.execute(select(Tenant))).scalars().all()
+    }
+
+    return {
+        "total": int(total),
+        "limit": limit,
+        "offset": offset,
+        "rows": [
+            {
+                "id": log.id,
+                "tenant_id": log.tenant_id,
+                "tenant_name": tenant_names.get(log.tenant_id, "—"),
+                "chat_id": log.chat_id,
+                "user_id": log.user_id,
+                "username": log.username,
+                "model": log.model,
+                "prompt_tokens": log.prompt_tokens,
+                "completion_tokens": log.completion_tokens,
+                "total_tokens": log.total_tokens,
+                "cost_usd": round(float(log.cost_usd or 0.0), 4),
+                "source": log.source,
+                "created_at": log.created_at.isoformat() if log.created_at else None,
+            }
+            for log in logs
+        ],
+    }
+
+
+@router.get("/consumo/alertas")
+async def consumo_alertas(
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
+    status_filter: str = "",
+):
+    from mind.db.models import Tenant, UsageAlert
+
+    tid = admin.get("tenant_id") if admin.get("role") == "tenant_admin" else tenant_id
+    stmt = select(UsageAlert).order_by(UsageAlert.created_at.desc()).limit(300)
+    if tid:
+        stmt = stmt.where(UsageAlert.tenant_id == tid)
+    if status_filter:
+        stmt = stmt.where(UsageAlert.status == status_filter)
+    alerts = (await session.execute(stmt)).scalars().all()
+
+    tenant_names = {
+        t.id: t.name for t in (await session.execute(select(Tenant))).scalars().all()
+    }
+    return [
+        {
+            "id": a.id,
+            "tenant_id": a.tenant_id,
+            "tenant_name": tenant_names.get(a.tenant_id, "—"),
+            "chat_id": a.chat_id,
+            "user_id": a.user_id,
+            "username": a.username,
+            "threshold_usd": a.threshold_usd,
+            "total_cost_usd": round(float(a.total_cost_usd or 0.0), 4),
+            "total_tokens": a.total_tokens,
+            "period_key": a.period_key,
+            "status": a.status,
+            "notified": a.notified,
+            "created_at": a.created_at.isoformat() if a.created_at else None,
+            "acknowledged_at": a.acknowledged_at.isoformat() if a.acknowledged_at else None,
+        }
+        for a in alerts
+    ]
+
+
+@router.patch("/consumo/alertas/{alert_id}/reconocer")
+async def consumo_alerta_reconocer(
+    alert_id: int,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+):
+    from mind.db.models import UsageAlert
+    alert = (await session.execute(
+        select(UsageAlert).where(UsageAlert.id == alert_id)
+    )).scalar_one_or_none()
+    if not alert:
+        raise HTTPException(status_code=404, detail="Alerta no encontrada")
+    alert.status = "acknowledged"
+    alert.acknowledged_at = datetime.now(timezone.utc)
+    await session.commit()
+    return {"ok": True}
+
+
+@router.post("/consumo/usuarios/{chat_id}/pausar")
+async def consumo_pausar_usuario(
+    chat_id: int,
+    body: UsagePauseRequest | None = None,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
+):
+    """Pausa el acceso de un usuario por consumo excedido y le notifica."""
+    from mind.db.models import Tenant, User
+    from mind.usage.notifier import notify_user_paused
+
+    tid = get_effective_tenant_id(admin, tenant_id)
+    user = (await session.execute(
+        select(User).where(User.chat_id == chat_id, User.tenant_id == tid)
+    )).scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    reason = (body.reason if body and body.reason else None) or "Pausado por consumo excedido"
+    user.is_paused = True
+    user.paused_reason = reason
+    user.paused_at = datetime.now(timezone.utc)
+    await session.commit()
+
+    tenant = (await session.execute(
+        select(Tenant).where(Tenant.id == tid)
+    )).scalar_one_or_none()
+    await notify_user_paused(tenant.bot_token if tenant else None, chat_id)
+    return {"ok": True, "chat_id": chat_id, "is_paused": True}
+
+
+@router.post("/consumo/usuarios/{chat_id}/reanudar")
+async def consumo_reanudar_usuario(
+    chat_id: int,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
+):
+    """Reactiva el acceso de un usuario pausado y le notifica."""
+    from mind.db.models import Tenant, User
+    from mind.usage.notifier import notify_user_resumed
+
+    tid = get_effective_tenant_id(admin, tenant_id)
+    user = (await session.execute(
+        select(User).where(User.chat_id == chat_id, User.tenant_id == tid)
+    )).scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    user.is_paused = False
+    user.paused_reason = None
+    user.paused_at = None
+    await session.commit()
+
+    tenant = (await session.execute(
+        select(Tenant).where(Tenant.id == tid)
+    )).scalar_one_or_none()
+    await notify_user_resumed(tenant.bot_token if tenant else None, chat_id)
+    return {"ok": True, "chat_id": chat_id, "is_paused": False}
+
+
+# ── PROMPTS PROGRAMADOS ───────────────────────────────────────────────────────
+
+def _prompt_to_dict(p) -> dict:
+    return {
+        "id": p.id,
+        "tenant_id": p.tenant_id,
+        "name": p.name,
+        "description": p.description or "",
+        "prompt": p.prompt,
+        "chat_id": p.chat_id,
+        "chat_label": p.chat_label or "",
+        "frequency": p.frequency,
+        "cron_expression": p.cron_expression,
+        "timezone": p.timezone,
+        "is_active": p.is_active,
+        "last_run_at": p.last_run_at.isoformat() if p.last_run_at else None,
+        "last_status": p.last_status,
+        "last_error": p.last_error,
+        "created_at": p.created_at.isoformat() if p.created_at else None,
+    }
+
+
+def _compose_and_validate_cron(
+    frequency: str, hour: int, minute: int, weekday: int, custom: str | None
+) -> str:
+    from mind.scheduler.prompts import compose_cron
+    from mind.scheduler.manager import validate_cron_expression
+
+    try:
+        cron = compose_cron(frequency, hour, minute, weekday, custom)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    valid = validate_cron_expression(cron)
+    if not valid.get("valid"):
+        raise HTTPException(status_code=422, detail=valid.get("message", "Cron inválido"))
+    return cron
+
+
+@router.get("/prompts/variables")
+async def prompts_variables(admin=Depends(require_admin)):
+    from mind.scheduler.prompts import available_variables
+    return available_variables()
+
+
+@router.get("/prompts")
+async def prompts_list(
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
+):
+    from mind.db.models import ScheduledPrompt
+    tid = get_effective_tenant_id(admin, tenant_id)
+    rows = (await session.execute(
+        select(ScheduledPrompt)
+        .where(ScheduledPrompt.tenant_id == tid)
+        .order_by(ScheduledPrompt.created_at.desc())
+    )).scalars().all()
+
+    from mind.scheduler.manager import get_scheduler
+    next_map: dict[str, str] = {}
+    try:
+        sched = get_scheduler()
+        for job in sched.get_jobs():
+            if job.id.startswith("prompt:") and job.next_run_time:
+                next_map[job.id] = job.next_run_time.isoformat()
+    except Exception:
+        pass
+
+    result = []
+    for p in rows:
+        d = _prompt_to_dict(p)
+        d["next_run_at"] = next_map.get(f"prompt:{p.id}")
+        result.append(d)
+    return result
+
+
+@router.post("/prompts")
+async def prompts_create(
+    body: ScheduledPromptCreate,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
+):
+    from mind.db.models import ScheduledPrompt
+    tid = get_effective_tenant_id(admin, tenant_id)
+    cron = _compose_and_validate_cron(
+        body.frequency, body.hour, body.minute, body.weekday, body.cron_expression
+    )
+    sp = ScheduledPrompt(
+        tenant_id=tid,
+        name=body.name.strip(),
+        description=(body.description or "").strip() or None,
+        prompt=body.prompt,
+        chat_id=body.chat_id,
+        chat_label=(body.chat_label or "").strip() or None,
+        frequency=body.frequency,
+        cron_expression=cron,
+        timezone=body.timezone or "America/Bogota",
+        is_active=body.is_active,
+    )
+    session.add(sp)
+    await session.commit()
+    await session.refresh(sp)
+
+    try:
+        from mind.scheduler.prompts import sync_prompt_job
+        sync_prompt_job(sp)
+    except Exception as exc:
+        logger.warning("No se pudo programar el prompt %s: %s", sp.id, exc)
+
+    return _prompt_to_dict(sp)
+
+
+@router.put("/prompts/{prompt_id}")
+async def prompts_update(
+    prompt_id: int,
+    body: ScheduledPromptUpdate,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
+):
+    from mind.db.models import ScheduledPrompt
+    tid = get_effective_tenant_id(admin, tenant_id)
+    sp = (await session.execute(
+        select(ScheduledPrompt).where(
+            ScheduledPrompt.id == prompt_id, ScheduledPrompt.tenant_id == tid
+        )
+    )).scalar_one_or_none()
+    if not sp:
+        raise HTTPException(status_code=404, detail="Prompt no encontrado")
+
+    if body.name is not None:
+        sp.name = body.name.strip()
+    if body.description is not None:
+        sp.description = body.description.strip() or None
+    if body.prompt is not None:
+        sp.prompt = body.prompt
+    if body.chat_id is not None:
+        sp.chat_id = body.chat_id
+    if body.chat_label is not None:
+        sp.chat_label = body.chat_label.strip() or None
+    if body.timezone is not None:
+        sp.timezone = body.timezone or "America/Bogota"
+    if body.is_active is not None:
+        sp.is_active = body.is_active
+
+    # Recalcular cron si el formulario envió la programación
+    scheduling_touched = any(v is not None for v in (
+        body.frequency, body.hour, body.minute, body.weekday, body.cron_expression
+    ))
+    if scheduling_touched:
+        freq = body.frequency or sp.frequency
+        hour = body.hour if body.hour is not None else 8
+        minute = body.minute if body.minute is not None else 0
+        weekday = body.weekday if body.weekday is not None else 0
+        custom = body.cron_expression
+        if freq == "custom" and not custom:
+            cron = sp.cron_expression
+        else:
+            cron = _compose_and_validate_cron(freq, hour, minute, weekday, custom)
+        sp.cron_expression = cron
+        sp.frequency = freq
+
+    await session.commit()
+    await session.refresh(sp)
+
+    try:
+        from mind.scheduler.prompts import sync_prompt_job
+        sync_prompt_job(sp)
+    except Exception as exc:
+        logger.warning("No se pudo reprogramar el prompt %s: %s", sp.id, exc)
+
+    return _prompt_to_dict(sp)
+
+
+@router.patch("/prompts/{prompt_id}/toggle")
+async def prompts_toggle(
+    prompt_id: int,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
+):
+    from mind.db.models import ScheduledPrompt
+    tid = get_effective_tenant_id(admin, tenant_id)
+    sp = (await session.execute(
+        select(ScheduledPrompt).where(
+            ScheduledPrompt.id == prompt_id, ScheduledPrompt.tenant_id == tid
+        )
+    )).scalar_one_or_none()
+    if not sp:
+        raise HTTPException(status_code=404, detail="Prompt no encontrado")
+    sp.is_active = not sp.is_active
+    await session.commit()
+    try:
+        from mind.scheduler.prompts import sync_prompt_job
+        sync_prompt_job(sp)
+    except Exception as exc:
+        logger.warning("No se pudo cambiar estado del prompt %s: %s", sp.id, exc)
+    return {"id": sp.id, "is_active": sp.is_active}
+
+
+@router.delete("/prompts/{prompt_id}")
+async def prompts_delete(
+    prompt_id: int,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
+):
+    from mind.db.models import ScheduledPrompt
+    tid = get_effective_tenant_id(admin, tenant_id)
+    await session.execute(
+        delete(ScheduledPrompt).where(
+            ScheduledPrompt.id == prompt_id, ScheduledPrompt.tenant_id == tid
+        )
+    )
+    await session.commit()
+    try:
+        from mind.scheduler.prompts import remove_prompt_job
+        remove_prompt_job(prompt_id)
+    except Exception:
+        pass
+    return {"ok": True}
+
+
+@router.post("/prompts/{prompt_id}/run")
+async def prompts_run_now(
+    prompt_id: int,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
+):
+    """Ejecuta el prompt de inmediato y envía el resultado por Telegram."""
+    from mind.scheduler.prompts import execute_prompt
+    tid = get_effective_tenant_id(admin, tenant_id)
+    return await execute_prompt(prompt_id, tid, send=True)
+
+
+@router.post("/prompts/preview")
+async def prompts_preview(
+    body: PromptPreviewRequest,
+    admin=Depends(require_admin),
+    tenant_id: int | None = Query(default=None),
+    session: AsyncSession = Depends(get_session),
+):
+    """Renderiza las variables {{...}} con los valores actuales del cliente."""
+    from mind.db.models import Tenant
+    from mind.scheduler.prompts import build_context, render_prompt
+    tid = get_effective_tenant_id(admin, tenant_id)
+    tenant = (await session.execute(select(Tenant).where(Tenant.id == tid))).scalar_one_or_none()
+    return {"rendered": render_prompt(body.prompt, build_context(tenant))}
+
+
+# ── BASE DE CONOCIMIENTO ──────────────────────────────────────────────────────
+
+def _knowledge_to_dict(e) -> dict:
+    return {
+        "id": e.id,
+        "tenant_id": e.tenant_id,
+        "title": e.title,
+        "content": e.content,
+        "source": e.source or "",
+        "tags": e.tags or "",
+        "is_active": e.is_active,
+        "created_at": e.created_at.isoformat() if e.created_at else None,
+        "updated_at": e.updated_at.isoformat() if e.updated_at else None,
+    }
+
+
+@router.get("/conocimiento")
+async def knowledge_list(
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
+):
+    from mind.db.models import KnowledgeEntry
+    tid = get_effective_tenant_id(admin, tenant_id)
+    rows = (await session.execute(
+        select(KnowledgeEntry)
+        .where(KnowledgeEntry.tenant_id == tid)
+        .order_by(KnowledgeEntry.updated_at.desc())
+    )).scalars().all()
+    return [_knowledge_to_dict(e) for e in rows]
+
+
+@router.post("/conocimiento")
+async def knowledge_create(
+    body: KnowledgeCreate,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
+):
+    from mind.db.models import KnowledgeEntry
+    tid = get_effective_tenant_id(admin, tenant_id)
+    entry = KnowledgeEntry(
+        tenant_id=tid,
+        title=body.title.strip(),
+        content=body.content,
+        source=(body.source or "manual").strip() or "manual",
+        tags=(body.tags or "").strip() or None,
+    )
+    session.add(entry)
+    await session.commit()
+    await session.refresh(entry)
+    return _knowledge_to_dict(entry)
+
+
+@router.put("/conocimiento/{entry_id}")
+async def knowledge_update(
+    entry_id: int,
+    body: KnowledgeUpdate,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
+):
+    from mind.db.models import KnowledgeEntry
+    tid = get_effective_tenant_id(admin, tenant_id)
+    entry = (await session.execute(
+        select(KnowledgeEntry).where(
+            KnowledgeEntry.id == entry_id, KnowledgeEntry.tenant_id == tid
+        )
+    )).scalar_one_or_none()
+    if not entry:
+        raise HTTPException(status_code=404, detail="Entrada no encontrada")
+
+    if body.title is not None:
+        entry.title = body.title.strip()
+    if body.content is not None:
+        entry.content = body.content
+    if body.source is not None:
+        entry.source = body.source.strip() or "manual"
+    if body.tags is not None:
+        entry.tags = body.tags.strip() or None
+    if body.is_active is not None:
+        entry.is_active = body.is_active
+    await session.commit()
+    await session.refresh(entry)
+    return _knowledge_to_dict(entry)
+
+
+@router.patch("/conocimiento/{entry_id}/toggle")
+async def knowledge_toggle(
+    entry_id: int,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
+):
+    from mind.db.models import KnowledgeEntry
+    tid = get_effective_tenant_id(admin, tenant_id)
+    entry = (await session.execute(
+        select(KnowledgeEntry).where(
+            KnowledgeEntry.id == entry_id, KnowledgeEntry.tenant_id == tid
+        )
+    )).scalar_one_or_none()
+    if not entry:
+        raise HTTPException(status_code=404, detail="Entrada no encontrada")
+    entry.is_active = not entry.is_active
+    await session.commit()
+    return {"id": entry.id, "is_active": entry.is_active}
+
+
+@router.delete("/conocimiento/{entry_id}")
+async def knowledge_delete(
+    entry_id: int,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
+):
+    from mind.db.models import KnowledgeEntry
+    tid = get_effective_tenant_id(admin, tenant_id)
+    await session.execute(
+        delete(KnowledgeEntry).where(
+            KnowledgeEntry.id == entry_id, KnowledgeEntry.tenant_id == tid
+        )
+    )
     await session.commit()
     return {"ok": True}

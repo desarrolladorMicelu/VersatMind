@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from mind.auth.authorization import AuthResult
 from mind.db.models import Tenant
+from mind.usage.tracker import record_usage
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +58,8 @@ async def process(
     tenant: Tenant,
     auth_result: AuthResult,
     session: AsyncSession,
+    source: str = "chat",
+    forced_permissions: frozenset[str] | None = None,
 ) -> AgentResult:
     """
     Procesa un mensaje del usuario usando el loop LLM con tool-calling.
@@ -146,6 +149,20 @@ async def process(
             "en lenguaje natural de lo que necesitas. Sé específico con fechas y nombres."
         )
 
+    # Inyectar base de conocimiento del cliente si tiene información cargada
+    try:
+        from mind.knowledge.retriever import build_knowledge_context
+        knowledge = await build_knowledge_context(session, tenant.id, message)
+        if knowledge:
+            active_system_prompt += (
+                "\n\n## Base de conocimiento del cliente\n\n"
+                f"{knowledge}\n\n"
+                "Usa esta información cuando sea relevante para responder. "
+                "No la contradigas ni inventes datos que no estén en las fuentes."
+            )
+    except Exception:
+        pass
+
     client = AsyncOpenAI(
         api_key=settings.OPENAI_API_KEY,
         base_url=settings.OPENAI_BASE_URL,
@@ -163,8 +180,12 @@ async def process(
         history = []
 
     # --- 2. Obtener permisos del usuario ---
+    # forced_permissions se usa en automatizaciones (prompts programados) que
+    # se configuran por administradores y corren con todos los permisos.
     user_permissions: frozenset[str] = frozenset()
-    if auth_result.role:
+    if forced_permissions is not None:
+        user_permissions = forced_permissions
+    elif auth_result.role:
         from sqlalchemy import select
         from mind.db.models import RolePermission
         stmt = select(RolePermission.permission_name).where(
@@ -220,6 +241,8 @@ async def process(
     file_path: str | None = None
     file_caption: str | None = None
     final_text: str = ""
+    usage_prompt_tokens: int = 0
+    usage_completion_tokens: int = 0
 
     # --- 4. Loop de tool-calling ---
     try:
@@ -236,6 +259,14 @@ async def process(
                 tools=tools if tools else None,
                 tool_choice=first_tool_choice,
             )
+
+            # Acumular consumo de tokens de esta llamada al LLM
+            response_usage = getattr(response, "usage", None)
+            if response_usage is not None:
+                usage_prompt_tokens += int(getattr(response_usage, "prompt_tokens", 0) or 0)
+                usage_completion_tokens += int(
+                    getattr(response_usage, "completion_tokens", 0) or 0
+                )
 
             choice = response.choices[0]
 
@@ -374,5 +405,17 @@ async def process(
         status="success",
         tenant_id=tenant.id,
     ))
+
+    # --- 7. Registrar consumo de tokens y evaluar umbral de alertas ---
+    await record_usage(
+        tenant_id=tenant.id,
+        chat_id=chat_id,
+        user_id=user_id,
+        username=auth_result.user.username if auth_result.user else None,
+        model=active_model,
+        prompt_tokens=usage_prompt_tokens,
+        completion_tokens=usage_completion_tokens,
+        source=source,
+    )
 
     return AgentResult(text=final_text, file_path=file_path, file_caption=file_caption)

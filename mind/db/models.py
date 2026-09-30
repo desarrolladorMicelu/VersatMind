@@ -140,6 +140,16 @@ class User(Base):
         ForeignKey("roles.id", ondelete="RESTRICT"), nullable=False
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+    # Pausa por consumo de tokens (bolsa agotada). Distinto de is_active:
+    # is_active=False dispara el flujo de solicitud de acceso; is_paused=True
+    # muestra al usuario un mensaje claro de bolsa agotada.
+    is_paused: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False, server_default="false"
+    )
+    paused_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    paused_at: Mapped[datetime | None] = mapped_column(nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(
         nullable=False, server_default=func.now()
     )
@@ -335,3 +345,195 @@ class AccessRequest(Base):
 
     def __repr__(self) -> str:
         return f"<AccessRequest tenant_id={self.tenant_id} chat_id={self.chat_id} status={self.status!r}>"
+
+
+# ---------------------------------------------------------------------------
+# Consumo de tokens y alertas
+# ---------------------------------------------------------------------------
+
+class TokenUsage(Base):
+    """
+    Consumo de tokens de una interacción con el LLM — scoped por tenant.
+    Una fila por interacción (chat, tarea programada, etc.) con el total
+    de tokens y el costo estimado en USD del modelo usado.
+    """
+    __tablename__ = "token_usage"
+    __table_args__ = (
+        Index("idx_token_usage_tenant_created", "tenant_id", "created_at"),
+        Index("idx_token_usage_tenant_chat", "tenant_id", "chat_id", "created_at"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    tenant_id: Mapped[int] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
+    )
+    chat_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    user_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    username: Mapped[str | None] = mapped_column(Text, nullable=True)
+    model: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    prompt_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    completion_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    total_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    cost_usd: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    # Origen del consumo: "chat" | "scheduler"
+    source: Mapped[str] = mapped_column(Text, nullable=False, default="chat")
+    created_at: Mapped[datetime] = mapped_column(
+        nullable=False, server_default=func.now()
+    )
+
+    def __repr__(self) -> str:
+        return (
+            f"<TokenUsage id={self.id} tenant_id={self.tenant_id} "
+            f"chat_id={self.chat_id} tokens={self.total_tokens} cost={self.cost_usd}>"
+        )
+
+
+class UsageAlert(Base):
+    """
+    Alerta generada cuando un usuario supera el umbral de consumo (USD).
+    Se crea una sola vez por (tenant, chat_id, período, umbral).
+    """
+    __tablename__ = "usage_alerts"
+    __table_args__ = (
+        Index("idx_usage_alerts_tenant_status", "tenant_id", "status"),
+        Index("idx_usage_alerts_tenant_chat", "tenant_id", "chat_id"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    tenant_id: Mapped[int] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
+    )
+    chat_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    user_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    username: Mapped[str | None] = mapped_column(Text, nullable=True)
+    threshold_usd: Mapped[float] = mapped_column(Float, nullable=False, default=8.0)
+    total_cost_usd: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    total_tokens: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
+    # "YYYY-MM" para período mensual o "total" para acumulado histórico
+    period_key: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    # "active" | "acknowledged"
+    status: Mapped[str] = mapped_column(Text, nullable=False, default="active")
+    notified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    created_at: Mapped[datetime] = mapped_column(
+        nullable=False, server_default=func.now()
+    )
+    acknowledged_at: Mapped[datetime | None] = mapped_column(nullable=True)
+
+    def __repr__(self) -> str:
+        return (
+            f"<UsageAlert id={self.id} tenant_id={self.tenant_id} "
+            f"chat_id={self.chat_id} cost={self.total_cost_usd} status={self.status!r}>"
+        )
+
+
+class UsageSettings(Base):
+    """Configuración de umbrales y notificaciones de consumo — una fila por tenant."""
+    __tablename__ = "usage_settings"
+    __table_args__ = (
+        Index("idx_usage_settings_tenant", "tenant_id"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    tenant_id: Mapped[int] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, unique=True
+    )
+    threshold_usd: Mapped[float] = mapped_column(Float, nullable=False, default=8.0)
+    # "month" (mes calendario) | "total" (acumulado histórico)
+    period: Mapped[str] = mapped_column(Text, nullable=False, default="month")
+    auto_pause: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    notify_telegram: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    notify_email: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    admin_email: Mapped[str | None] = mapped_column(Text, nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(
+        nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    def __repr__(self) -> str:
+        return (
+            f"<UsageSettings tenant_id={self.tenant_id} "
+            f"threshold={self.threshold_usd} period={self.period!r}>"
+        )
+
+
+# ---------------------------------------------------------------------------
+# Prompts programados (reportes/insights proactivos por Telegram)
+# ---------------------------------------------------------------------------
+
+class ScheduledPrompt(Base):
+    """
+    Prompt configurado por el administrador que se ejecuta de forma programada
+    y envía el resultado por Telegram a un chat/grupo — scoped por tenant.
+    """
+    __tablename__ = "scheduled_prompts"
+    __table_args__ = (
+        Index("idx_scheduled_prompts_tenant_active", "tenant_id", "is_active"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    tenant_id: Mapped[int] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
+    )
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Instrucción en lenguaje natural. Admite variables {{fecha}}, {{ayer}}, etc.
+    prompt: Mapped[str] = mapped_column(Text, nullable=False)
+    # Chat/grupo de Telegram destino
+    chat_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    chat_label: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # "daily" | "weekly" | "custom"
+    frequency: Mapped[str] = mapped_column(Text, nullable=False, default="daily")
+    # Expresión cron efectiva (siempre se almacena la resuelta)
+    cron_expression: Mapped[str] = mapped_column(Text, nullable=False)
+    timezone: Mapped[str] = mapped_column(Text, nullable=False, default="America/Bogota")
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    last_run_at: Mapped[datetime | None] = mapped_column(nullable=True)
+    last_status: Mapped[str | None] = mapped_column(Text, nullable=True)
+    last_error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    def __repr__(self) -> str:
+        return (
+            f"<ScheduledPrompt id={self.id} tenant_id={self.tenant_id} "
+            f"name={self.name!r} active={self.is_active}>"
+        )
+
+
+# ---------------------------------------------------------------------------
+# Base de conocimiento por cliente
+# ---------------------------------------------------------------------------
+
+class KnowledgeEntry(Base):
+    """
+    Fragmento de información de negocio cargado por cliente (precios,
+    políticas, catálogos, contexto de la tienda, etc.). Se inyecta en el
+    system prompt del agente cuando es relevante para la consulta.
+    """
+    __tablename__ = "knowledge_entries"
+    __table_args__ = (
+        Index("idx_knowledge_entries_tenant", "tenant_id", "is_active"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    tenant_id: Mapped[int] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
+    )
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    # Origen: "manual", nombre de archivo, etc.
+    source: Mapped[str | None] = mapped_column(Text, nullable=True)
+    tags: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    def __repr__(self) -> str:
+        return f"<KnowledgeEntry id={self.id} tenant_id={self.tenant_id} title={self.title!r}>"

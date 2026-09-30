@@ -304,6 +304,7 @@ async def _execute_task(task_id: str, tenant_id: int) -> None:
                 tenant=tenant,
                 auth_result=auth,
                 session=session,
+                source="scheduler",
             )
 
             await _send(chat_id, f"⏰ *Tarea programada*\n\n{agent_result.text}")
