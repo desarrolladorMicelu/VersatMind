@@ -303,6 +303,13 @@ export interface PromptVariable {
   desc: string;
 }
 
+export interface Destino {
+  chat_id: number;
+  label: string;
+  type: "user" | "group";
+  username: string | null;
+}
+
 export const promptsApi = {
   list: (tenantId: number) =>
     api.get<ScheduledPrompt[]>("/prompts", { params: { tenant_id: tenantId } }).then((r) => r.data),
@@ -325,6 +332,8 @@ export const promptsApi = {
   preview: (tenantId: number, prompt: string) =>
     api.post<{ rendered: string }>("/prompts/preview", { prompt }, { params: { tenant_id: tenantId } }).then((r) => r.data),
   variables: () => api.get<PromptVariable[]>("/prompts/variables").then((r) => r.data),
+  destinos: (tenantId: number) =>
+    api.get<Destino[]>("/destinos", { params: { tenant_id: tenantId } }).then((r) => r.data),
 };
 
 // ── Base de conocimiento ──────────────────────────────────────────────────────

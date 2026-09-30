@@ -9,11 +9,13 @@ from datetime import datetime
 from sqlalchemy import (
     BigInteger,
     Boolean,
+    DateTime,
     ForeignKey,
     Index,
     Text,
     Float,
     Integer,
+    UniqueConstraint,
     func,
 )
 from sqlalchemy.dialects.postgresql import JSONB
@@ -152,7 +154,9 @@ class User(Base):
         Boolean, default=False, nullable=False, server_default="false"
     )
     paused_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
-    paused_at: Mapped[datetime | None] = mapped_column(nullable=True)
+    paused_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     created_at: Mapped[datetime] = mapped_column(
         nullable=False, server_default=func.now()
@@ -382,7 +386,7 @@ class TokenUsage(Base):
     # Origen del consumo: "chat" | "scheduler"
     source: Mapped[str] = mapped_column(Text, nullable=False, default="chat")
     created_at: Mapped[datetime] = mapped_column(
-        nullable=False, server_default=func.now()
+        DateTime(timezone=True), nullable=False, server_default=func.now()
     )
 
     def __repr__(self) -> str:
@@ -419,9 +423,11 @@ class UsageAlert(Base):
     status: Mapped[str] = mapped_column(Text, nullable=False, default="active")
     notified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_at: Mapped[datetime] = mapped_column(
-        nullable=False, server_default=func.now()
+        DateTime(timezone=True), nullable=False, server_default=func.now()
     )
-    acknowledged_at: Mapped[datetime | None] = mapped_column(nullable=True)
+    acknowledged_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     def __repr__(self) -> str:
         return (
@@ -449,7 +455,7 @@ class UsageSettings(Base):
     notify_email: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     admin_email: Mapped[str | None] = mapped_column(Text, nullable=True)
     updated_at: Mapped[datetime] = mapped_column(
-        nullable=False, server_default=func.now(), onupdate=func.now()
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
     )
 
     def __repr__(self) -> str:
@@ -490,14 +496,16 @@ class ScheduledPrompt(Base):
     cron_expression: Mapped[str] = mapped_column(Text, nullable=False)
     timezone: Mapped[str] = mapped_column(Text, nullable=False, default="America/Bogota")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    last_run_at: Mapped[datetime | None] = mapped_column(nullable=True)
+    last_run_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     last_status: Mapped[str | None] = mapped_column(Text, nullable=True)
     last_error: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        nullable=False, server_default=func.now()
+        DateTime(timezone=True), nullable=False, server_default=func.now()
     )
     updated_at: Mapped[datetime] = mapped_column(
-        nullable=False, server_default=func.now(), onupdate=func.now()
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
     )
 
     def __repr__(self) -> str:
@@ -533,11 +541,52 @@ class KnowledgeEntry(Base):
     tags: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        nullable=False, server_default=func.now()
+        DateTime(timezone=True), nullable=False, server_default=func.now()
     )
     updated_at: Mapped[datetime] = mapped_column(
-        nullable=False, server_default=func.now(), onupdate=func.now()
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
     )
 
     def __repr__(self) -> str:
         return f"<KnowledgeEntry id={self.id} tenant_id={self.tenant_id} title={self.title!r}>"
+
+
+# ---------------------------------------------------------------------------
+# Registro de chats de Telegram conocidos por el bot
+# ---------------------------------------------------------------------------
+
+class TelegramChat(Base):
+    """
+    Usuarios y grupos que el bot ha visto (se registran al recibir mensajes).
+    Permite elegir el destino de los prompts programados desde una lista,
+    sin que el administrador tenga que conocer el chat_id.
+    """
+    __tablename__ = "telegram_chats"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "chat_id", name="uq_telegram_chats_tenant_chat"),
+        Index("idx_telegram_chats_tenant", "tenant_id"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    tenant_id: Mapped[int] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
+    )
+    chat_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    # "private" | "group" | "supergroup" | "channel"
+    chat_type: Mapped[str] = mapped_column(Text, nullable=False, default="private")
+    title: Mapped[str | None] = mapped_column(Text, nullable=True)
+    username: Mapped[str | None] = mapped_column(Text, nullable=True)
+    first_name: Mapped[str | None] = mapped_column(Text, nullable=True)
+    last_name: Mapped[str | None] = mapped_column(Text, nullable=True)
+    last_seen_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    def __repr__(self) -> str:
+        return (
+            f"<TelegramChat tenant_id={self.tenant_id} chat_id={self.chat_id} "
+            f"type={self.chat_type!r}>"
+        )

@@ -62,6 +62,13 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         await update.message.reply_text(ERROR_MSG)
         return
 
+    # Registrar el chat como destino conocido (usuarios y grupos)
+    try:
+        from mind.telegram.chat_registry import record_chat
+        await record_chat(tenant.id, update.message.chat, update.message.from_user)
+    except Exception:
+        pass
+
     # Verificar autorización (scoped por tenant)
     try:
         async with _session_factory() as session:

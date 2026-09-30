@@ -172,6 +172,21 @@ async def process(
             "\"summary\": \"Total activos: $5.000.000\"}"
         )
         active_system_prompt += prompt
+    # Inyectar contexto temporal (fechas de hoy/ayer/mes) para que el modelo
+    # entienda expresiones relativas sin que el usuario use variables.
+    try:
+        from mind.scheduler.prompts import build_context
+        ctx = build_context(tenant)
+        active_system_prompt += (
+            "\n\n## Contexto temporal\n"
+            f"Hoy es {ctx['fecha_larga']} ({ctx['fecha']}). "
+            f"Ayer fue {ctx['ayer']}. Inicio de la semana: {ctx['inicio_semana']}. "
+            f"Inicio del mes: {ctx['inicio_mes']}. "
+            "Interpreta expresiones relativas ('hoy', 'ayer', 'esta semana', "
+            "'este mes', 'el día anterior') usando estas fechas."
+        )
+    except Exception:
+        pass
 
     # Inyectar base de conocimiento del cliente si tiene información cargada
     try:

@@ -197,7 +197,8 @@ async def record_usage(
         total_tokens = prompt_tokens + completion_tokens
         cost = compute_cost_usd(model, prompt_tokens, completion_tokens)
 
-        notification = None
+        # 1) Persistir el consumo en su propia transacción: nunca se pierde
+        #    aunque después falle la evaluación del umbral o la notificación.
         async with _session_factory() as session:
             session.add(TokenUsage(
                 tenant_id=tenant_id,
@@ -211,13 +212,22 @@ async def record_usage(
                 cost_usd=cost,
                 source=source,
             ))
-            await session.flush()
-
-            if chat_id is not None:
-                notification = await _evaluate_and_maybe_alert(
-                    session, tenant_id, chat_id, username, user_id
-                )
             await session.commit()
+
+        # 2) Evaluar el umbral en una transacción aparte.
+        notification = None
+        if chat_id is not None:
+            try:
+                async with _session_factory() as session:
+                    notification = await _evaluate_and_maybe_alert(
+                        session, tenant_id, chat_id, username, user_id
+                    )
+                    await session.commit()
+            except Exception as exc:
+                logger.warning(
+                    "No se pudo evaluar el umbral de consumo tenant=%s chat_id=%s: %s",
+                    tenant_id, chat_id, exc,
+                )
 
         if notification is not None:
             await notify_usage_alert(notification)

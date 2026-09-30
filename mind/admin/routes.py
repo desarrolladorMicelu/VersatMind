@@ -1741,6 +1741,59 @@ async def prompts_variables(admin=Depends(require_admin)):
     return available_variables()
 
 
+@router.get("/destinos")
+async def destinos_list(
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
+):
+    """Usuarios y grupos conocidos por el bot, para elegir el destino de un prompt."""
+    from mind.db.models import TelegramChat, User
+
+    tid = get_effective_tenant_id(admin, tenant_id)
+    items: dict[int, dict] = {}
+
+    chats = (await session.execute(
+        select(TelegramChat)
+        .where(TelegramChat.tenant_id == tid)
+        .order_by(TelegramChat.last_seen_at.desc())
+    )).scalars().all()
+    for c in chats:
+        is_group = (c.chat_type or "private") in ("group", "supergroup", "channel")
+        if is_group:
+            label = c.title or f"Grupo {c.chat_id}"
+            ctype = "group"
+        else:
+            label = (
+                c.title
+                or (f"@{c.username}" if c.username else None)
+                or " ".join(p for p in [c.first_name, c.last_name] if p)
+                or f"Usuario {c.chat_id}"
+            )
+            ctype = "user"
+        items[c.chat_id] = {
+            "chat_id": c.chat_id,
+            "label": label,
+            "type": ctype,
+            "username": c.username,
+        }
+
+    users = (await session.execute(
+        select(User).where(User.tenant_id == tid)
+    )).scalars().all()
+    for u in users:
+        if u.chat_id in items:
+            continue
+        items[u.chat_id] = {
+            "chat_id": u.chat_id,
+            "label": (f"@{u.username}" if u.username else f"Usuario {u.user_id}"),
+            "type": "user",
+            "username": u.username,
+        }
+
+    return sorted(items.values(), key=lambda x: (x["type"], (x["label"] or "").lower()))
+
+
 @router.get("/prompts")
 async def prompts_list(
     admin=Depends(require_admin),

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Play, Power, Trash2, Pencil, Plus, Send } from "lucide-react";
 import { promptsApi } from "../lib/api";
-import type { Frequency, ScheduledPrompt, ScheduledPromptPayload } from "../lib/api";
+import type { Frequency, ScheduledPrompt, ScheduledPromptPayload, Destino } from "../lib/api";
 import { fmtDate } from "../lib/utils";
 import PageHeader from "../components/PageHeader";
 import { useTenant } from "../contexts/TenantContext";
@@ -84,6 +84,7 @@ export default function Programados() {
   const [form, setForm] = useState<FormState | null>(null);
   const [preview, setPreview] = useState("");
   const [error, setError] = useState("");
+  const [manualDestino, setManualDestino] = useState(false);
 
   const { data: prompts = [], isLoading } = useQuery({
     queryKey: ["prompts", tenantId],
@@ -91,11 +92,14 @@ export default function Programados() {
     enabled: tenantId !== null,
   });
 
-  const { data: variables = [] } = useQuery({
-    queryKey: ["prompt-variables"],
-    queryFn: () => promptsApi.variables(),
+  const { data: destinos = [] } = useQuery({
+    queryKey: ["destinos", tenantId],
+    queryFn: () => promptsApi.destinos(tenantId as number),
     enabled: tenantId !== null,
   });
+
+  const users = destinos.filter((d) => d.type === "user");
+  const groups = destinos.filter((d) => d.type === "group");
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["prompts", tenantId] });
 
@@ -106,8 +110,8 @@ export default function Programados() {
         ? promptsApi.update(tenantId as number, f.id, payload)
         : promptsApi.create(tenantId as number, payload);
     },
-    onSuccess: () => { setForm(null); setPreview(""); setError(""); invalidate(); },
-    onError: () => setError("No se pudo guardar. Revisa la expresión cron y los campos."),
+    onSuccess: () => { setForm(null); setPreview(""); setError(""); setManualDestino(false); invalidate(); },
+    onError: () => setError("No se pudo guardar. Revisa el destino y la programación."),
   });
 
   const toggle = useMutation({
@@ -139,8 +143,28 @@ export default function Programados() {
     }
   };
 
-  const insertVar = (key: string) => {
-    setForm((f) => (f ? { ...f, prompt: `${f.prompt}{{${key}}}` } : f));
+  const openNew = () => {
+    setForm({ ...EMPTY_FORM });
+    setManualDestino(false);
+    setPreview(""); setError("");
+  };
+
+  const openEdit = (p: ScheduledPrompt) => {
+    setForm(promptToForm(p));
+    const known = destinos.some((d) => String(d.chat_id) === String(p.chat_id));
+    setManualDestino(!known);
+    setPreview(""); setError("");
+  };
+
+  const selectDestino = (value: string, current: FormState) => {
+    if (value === "__manual__") {
+      setManualDestino(true);
+      setForm({ ...current, chat_id: "" });
+      return;
+    }
+    setManualDestino(false);
+    const d = destinos.find((x) => String(x.chat_id) === value);
+    setForm({ ...current, chat_id: value, chat_label: d ? d.label : current.chat_label });
   };
 
   if (!tenantId) {
@@ -154,6 +178,11 @@ export default function Programados() {
     );
   }
 
+  const isKnownDestino = form
+    ? destinos.some((d) => String(d.chat_id) === form.chat_id)
+    : false;
+  const manualMode = manualDestino || (form !== null && form.chat_id !== "" && !isKnownDestino);
+
   return (
     <div>
       <PageHeader
@@ -161,7 +190,7 @@ export default function Programados() {
         title="Prompts programados"
         description="Reportes e insights automáticos enviados por Telegram"
         action={
-          <button className="btn-primary" onClick={() => { setForm({ ...EMPTY_FORM }); setPreview(""); setError(""); }}>
+          <button className="btn-primary" onClick={openNew}>
             <Plus className="w-3.5 h-3.5" /> Nuevo prompt
           </button>
         }
@@ -174,61 +203,90 @@ export default function Programados() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
-                <label className="label">Nombre</label>
+                <label className="label text-white">Nombre</label>
                 <input className="input" value={form.name}
                   placeholder="Resumen matutino"
                   onChange={(e) => setForm({ ...form, name: e.target.value })} />
               </div>
               <div>
-                <label className="label">Descripción</label>
+                <label className="label text-white">Descripción</label>
                 <input className="input" value={form.description}
                   placeholder="Resumen de ventas del día anterior"
                   onChange={(e) => setForm({ ...form, description: e.target.value })} />
               </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-1 gap-5">
               <div>
-                <label className="label">Chat ID destino (usuario o grupo)</label>
-                <input className="input" value={form.chat_id} inputMode="numeric"
-                  placeholder="123456789"
-                  onChange={(e) => setForm({ ...form, chat_id: e.target.value.replace(/[^0-9-]/g, "") })} />
-              </div>
-              <div>
-                <label className="label">Etiqueta del destino</label>
+                <label className="label text-white">¿A quién se le envía?</label>
+                <select
+                  className="input"
+                  value={manualMode ? "__manual__" : form.chat_id}
+                  onChange={(e) => selectDestino(e.target.value, form)}
+                >
+                  <option value="">Selecciona una persona o grupo…</option>
+                  {users.length > 0 && (
+                    <optgroup label="Personas">
+                      {users.map((d: Destino) => (
+                        <option key={d.chat_id} value={String(d.chat_id)}>{d.label}</option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {groups.length > 0 && (
+                    <optgroup label="Grupos">
+                      {groups.map((d: Destino) => (
+                        <option key={d.chat_id} value={String(d.chat_id)}>{d.label}</option>
+                      ))}
+                    </optgroup>
+                  )}
+                  <option value="__manual__">Otro (escribir el ID a mano)</option>
+                </select>
+
+                {manualMode && (
+                  <input className="input mt-2" value={form.chat_id} inputMode="numeric"
+                    placeholder="Ej: 123456789 (o -1001234567890 para un grupo)"
+                    onChange={(e) => setForm({ ...form, chat_id: e.target.value.replace(/[^0-9-]/g, "") })} />
+                )}
+
+                {destinos.length === 0 && (
+                  <p className="font-mono text-[10px] text-white mt-2 leading-relaxed">
+                    Aún no hay destinos conocidos. Pídele a la persona que le escriba al bot, o
+                    agrega el bot a un grupo y escribe un mensaje allí; aparecerá en esta lista.
+                  </p>
+                )}
+
+                <label className="label text-white mt-4">Nombre para identificarlo (opcional)</label>
                 <input className="input" value={form.chat_label}
-                  placeholder="Cristian (jefe)"
+                  placeholder="Se llena solo al elegir; puedes cambiarlo"
                   onChange={(e) => setForm({ ...form, chat_label: e.target.value })} />
               </div>
             </div>
 
             <div>
-              <label className="label">Prompt</label>
+              <label className="label text-white">¿Qué quieres que envíe?</label>
               <textarea className="input" rows={5} value={form.prompt}
-                placeholder="Genera el resumen de ventas de ayer ({{ayer}}) y valida si los márgenes estuvieron dentro de lo aprobado."
+                placeholder="Ej: Resume las ventas de ayer, calcula el margen y compara con los márgenes aprobados que cargaste en la base de conocimiento."
                 onChange={(e) => setForm({ ...form, prompt: e.target.value })} />
-              <div className="flex flex-wrap gap-1.5 mt-2">
-                {variables.map((v) => (
-                  <button key={v.key} type="button" title={v.desc}
-                    onClick={() => insertVar(v.key)}
-                    className="font-mono text-[10px] px-2 py-1 border border-[#2a2a2a] text-white hover:border-[#00e5a0] hover:text-[#00e5a0] transition-colors">
-                    {`{{${v.key}}}`}
-                  </button>
-                ))}
-              </div>
+              <p className="font-mono text-[10px] text-white mt-2 leading-relaxed">
+                Escríbelo como se lo pedirías a una persona. Mind ya sabe qué día es hoy, así que
+                entiende "ayer", "esta semana" o "este mes" por sí solo — no necesitas nada especial.
+              </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               <div>
-                <label className="label">Frecuencia</label>
+                <label className="label text-white">¿Cada cuánto?</label>
                 <select className="input" value={form.frequency}
                   onChange={(e) => setForm({ ...form, frequency: e.target.value as Frequency })}>
-                  <option value="daily">Diaria</option>
-                  <option value="weekly">Semanal</option>
-                  <option value="custom">Personalizada (cron)</option>
+                  <option value="daily">Todos los días</option>
+                  <option value="weekly">Una vez por semana</option>
+                  <option value="custom">Personalizado (avanzado)</option>
                 </select>
               </div>
 
               {form.frequency !== "custom" && (
                 <div>
-                  <label className="label">Hora</label>
+                  <label className="label text-white">¿A qué hora? (hora Colombia)</label>
                   <input type="time" className="input" value={form.time}
                     onChange={(e) => setForm({ ...form, time: e.target.value })} />
                 </div>
@@ -236,7 +294,7 @@ export default function Programados() {
 
               {form.frequency === "weekly" && (
                 <div>
-                  <label className="label">Día de la semana</label>
+                  <label className="label text-white">¿Qué día?</label>
                   <select className="input" value={form.weekday}
                     onChange={(e) => setForm({ ...form, weekday: parseInt(e.target.value, 10) })}>
                     {WEEKDAY_LABELS.map((d, i) => <option key={d} value={i}>{d}</option>)}
@@ -246,11 +304,11 @@ export default function Programados() {
 
               {form.frequency === "custom" && (
                 <div className="md:col-span-2">
-                  <label className="label">Expresión cron (5 campos)</label>
+                  <label className="label text-white">Regla avanzada (cron de 5 campos)</label>
                   <input className="input" value={form.cron}
                     placeholder="0 8 * * 1-5"
                     onChange={(e) => setForm({ ...form, cron: e.target.value })} />
-                  <p className="font-mono text-[10px] text-white mt-1">Ej: <span className="text-[#00e5a0]">0 8 * * *</span> (diaria 8:00), <span className="text-[#00e5a0]">30 7 * * mon</span> (lunes 7:30)</p>
+                  <p className="font-mono text-[10px] text-white mt-1">Ej: <span className="text-[#00e5a0]">0 8 * * *</span> (todos los días 8:00), <span className="text-[#00e5a0]">30 7 * * mon</span> (lunes 7:30)</p>
                 </div>
               )}
             </div>
@@ -267,14 +325,14 @@ export default function Programados() {
                 <Send className="w-3.5 h-3.5" /> Guardar
               </button>
               <button className="btn-secondary" onClick={doPreview}>Vista previa</button>
-              <button className="btn-ghost" onClick={() => { setForm(null); setPreview(""); setError(""); }}>Cancelar</button>
+              <button className="btn-ghost" onClick={() => { setForm(null); setPreview(""); setError(""); setManualDestino(false); }}>Cancelar</button>
             </div>
 
             {error && <p className="font-mono text-[10px] text-red-500">{error}</p>}
 
             {preview && (
               <div className="border border-[#1a1a1a] bg-black p-4">
-                <p className="section-tag mb-2">// Vista previa con variables resueltas</p>
+                <p className="section-tag mb-2">// Así se verá el mensaje (fechas resueltas)</p>
                 <pre className="font-mono text-xs text-white whitespace-pre-wrap">{preview}</pre>
               </div>
             )}
@@ -327,7 +385,7 @@ export default function Programados() {
                       className="p-1.5 text-white hover:text-[#00e5a0] transition-colors">
                       <Play className="w-3.5 h-3.5" />
                     </button>
-                    <button title="Editar" onClick={() => { setForm(promptToForm(p)); setPreview(""); setError(""); }}
+                    <button title="Editar" onClick={() => openEdit(p)}
                       className="p-1.5 text-white hover:text-[#00e5a0] transition-colors">
                       <Pencil className="w-3.5 h-3.5" />
                     </button>
