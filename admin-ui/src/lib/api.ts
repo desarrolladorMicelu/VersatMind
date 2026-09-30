@@ -66,6 +66,8 @@ export interface Tenant {
   external_sheets: ExternalSheetsInfo | null;
   external_alegra_configured: boolean;
   external_alegra: AlegraInfo | null;
+  report_config_configured: boolean;
+  report_config: ReportConfigInfo | null;
   created_at: string | null;
 }
 
@@ -83,6 +85,7 @@ export interface TenantPayload {
   external_db?: ExternalDbPayload;
   external_sheets?: ExternalSheetsPayload;
   external_alegra?: AlegraPayload;
+  report_config?: ReportConfig;
 }
 
 // ── Tenants API ───────────────────────────────────────────────────────────────
@@ -125,6 +128,22 @@ export interface AlegraPayload {
 export interface AlegraInfo {
   email: string;
   schema_description?: string;
+}
+
+// ── Reportes contables ─────────────────────────────────────────────────────
+
+export interface ReportConfig {
+  company_name: string;
+  company_logo?: string;
+  sections: string[];
+  additional_instructions?: string;
+  template_style?: string;
+}
+
+export interface ReportConfigInfo {
+  company_name: string;
+  sections: string[];
+  additional_instructions?: string;
 }
 
 export const alegraApi = {

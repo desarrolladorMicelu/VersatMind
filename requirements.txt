@@ -19,3 +19,5 @@ bcrypt==5.0.0
 itsdangerous==2.2.0
 gspread==6.2.1
 mcp>=2.0,<3
+jinja2>=3.1,<4
+xhtml2pdf>=0.3

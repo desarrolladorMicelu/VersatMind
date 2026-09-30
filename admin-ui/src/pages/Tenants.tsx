@@ -7,6 +7,7 @@ import PageHeader from "../components/PageHeader";
 import ExternalDbConfig from "../components/ExternalDbConfig";
 import ExternalSheetsConfig from "../components/ExternalSheetsConfig";
 import AlegraConfig from "../components/AlegraConfig";
+import ReportConfig from "../components/ReportConfig";
 
 const EMPTY: TenantPayload = {
   name: "",
@@ -241,6 +242,12 @@ function TenantModal({
             value={form.external_alegra ?? null}
             onChange={(v) => setForm((f) => ({ ...f, external_alegra: v ?? undefined }))}
             tenantId={form.id}
+          />
+
+          {/* Informes contables */}
+          <ReportConfig
+            value={form.report_config ?? null}
+            onChange={(v) => setForm((f) => ({ ...f, report_config: v ?? undefined }))}
           />
 
         </div>
@@ -512,6 +519,13 @@ external_sheets: t.external_sheets_configured && t.external_sheets
             schema_description: t.external_alegra.schema_description,
           }
         : undefined,
+      report_config: t.report_config_configured && t.report_config
+        ? {
+            company_name: t.report_config.company_name ?? "",
+            sections: t.report_config.sections ?? [],
+            additional_instructions: t.report_config.additional_instructions,
+          }
+        : undefined,
     });
   };
 
@@ -625,6 +639,9 @@ external_sheets: t.external_sheets_configured && t.external_sheets
                 )}
                 {t.external_alegra_configured && (
                   <p className="font-mono text-[10px] text-[#00e5a0] mt-1">✓ Alegra</p>
+                )}
+                {t.report_config_configured && (
+                  <p className="font-mono text-[10px] text-[#00e5a0] mt-1">✓ Informes</p>
                 )}
               </div>
 

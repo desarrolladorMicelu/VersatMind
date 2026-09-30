@@ -149,6 +149,30 @@ async def process(
             "en lenguaje natural de lo que necesitas. Sé específico con fechas y nombres."
         )
 
+    # Inyectar configuración de informes contables si existe
+    report_cfg = getattr(tenant, "report_config", None)
+    if report_cfg and report_cfg.get("company_name"):
+        sections_list = ", ".join(report_cfg.get("sections", ["balance", "income", "expenses"]))
+        instructions = report_cfg.get("additional_instructions", "")
+        prompt = (
+            "\n\n## Informes contables personalizados\n\n"
+            f"Puedes generar informes contables PDF para {report_cfg['company_name']}. "
+            f"Secciones habilitadas: {sections_list}.\n"
+        )
+        if instructions:
+            prompt += f"Instrucciones: {instructions}\n"
+        prompt += (
+            "Para generar un informe: (1) consulta los datos con 'ejecutar_consulta' o "
+            "'consultar_alegra', (2) organiza los datos en secciones con título, "
+            "encabezados y filas, (3) llama 'generar_informe_contable' con el array "
+            "de secciones y el período.\n"
+            "Ejemplo de sección: {\"title\": \"Balance General\", "
+            "\"headers\": [\"Cuenta\", \"Valor\"], "
+            "\"rows\": [[\"Efectivo\", \"$5.000.000\"]], "
+            "\"summary\": \"Total activos: $5.000.000\"}"
+        )
+        active_system_prompt += prompt
+
     # Inyectar base de conocimiento del cliente si tiene información cargada
     try:
         from mind.knowledge.retriever import build_knowledge_context

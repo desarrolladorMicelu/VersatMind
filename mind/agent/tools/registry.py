@@ -76,6 +76,7 @@ def _register_all_tools() -> None:
     from mind.agent.tools.external_db_tool import ejecutar_consulta
     from mind.agent.tools.sheets_tool import consultar_sheet
     from mind.agent.tools.alegra_tool import consultar_alegra
+    from mind.agent.tools.report_tool import generar_informe_contable
 
     TOOL_REGISTRY["consultar_ventas"] = ToolDefinition(
         fn=consultar_ventas,
@@ -312,6 +313,45 @@ def _register_all_tools() -> None:
                     },
                 },
                 "required": ["consulta"],
+            },
+        },
+    )
+    TOOL_REGISTRY["generar_informe_contable"] = ToolDefinition(
+        fn=generar_informe_contable,
+        permission=Permission.GENERATE_REPORT,
+        schema={
+            "name": "generar_informe_contable",
+            "description": "Genera un PDF con informe contable personalizado del cliente. "
+                           "Ej: balance general, estado de resultados, flujo de caja.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "secciones": {
+                        "type": "array",
+                        "description": "Lista de secciones del informe. Cada sección tiene: "
+                                       "title (str), headers (list[str]), rows (list[list]), "
+                                       "summary (str opcional).",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "title": {"type": "string"},
+                                "headers": {"type": "array", "items": {"type": "string"}},
+                                "rows": {"type": "array", "items": {"type": "array"}},
+                                "summary": {"type": "string"},
+                            },
+                            "required": ["title", "headers", "rows"],
+                        },
+                    },
+                    "periodo": {
+                        "type": "string",
+                        "description": "Período del informe. Ej: 'Septiembre 2026'",
+                    },
+                    "titulo": {
+                        "type": "string",
+                        "description": "Título opcional del informe. Default: 'Informe Contable'",
+                    },
+                },
+                "required": ["secciones", "periodo"],
             },
         },
     )

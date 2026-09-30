@@ -60,6 +60,7 @@ class TenantCreate(BaseModel):
     external_db: dict | None = None
     external_sheets: dict | None = None
     external_alegra: dict | None = None
+    report_config: dict | None = None
 
 class TenantUpdate(BaseModel):
     name: str | None = None
@@ -75,6 +76,7 @@ class TenantUpdate(BaseModel):
     external_db: dict | None = None
     external_sheets: dict | None = None
     external_alegra: dict | None = None
+    report_config: dict | None = None
 
 class ExternalDbPayload(BaseModel):
     engine: str = "postgresql"
@@ -377,6 +379,16 @@ async def tenants_list(
                 if t.external_alegra
                 else None
             ),
+            "report_config_configured": t.report_config is not None,
+            "report_config": (
+                {
+                    "company_name": t.report_config.get("company_name", ""),
+                    "sections": t.report_config.get("sections", []),
+                    "additional_instructions": t.report_config.get("additional_instructions"),
+                }
+                if t.report_config
+                else None
+            ),
             "created_at": t.created_at.isoformat() if t.created_at else None,
         }
         for t in tenants
@@ -474,7 +486,7 @@ async def tenant_update(
         raise HTTPException(status_code=404, detail="Tenant no encontrado")
 
     old_token = tenant.bot_token
-    updates = body.model_dump(exclude_none=True, exclude={"external_db", "external_sheets", "external_alegra"})
+    updates = body.model_dump(exclude_none=True, exclude={"external_db", "external_sheets", "external_alegra", "report_config"})
     for key, val in updates.items():
         setattr(tenant, key, val)
 
@@ -542,6 +554,16 @@ async def tenant_update(
             if schema_desc:
                 merged["schema_description"] = schema_desc
             tenant.external_alegra = merged
+
+    # report_config: merge sobre lo almacenado
+    if body.report_config is not None:
+        stored = tenant.report_config or {}
+        merged = dict(stored)
+        for k in ("company_name", "company_logo", "sections", "additional_instructions", "template_style"):
+            v = body.report_config.get(k)
+            if v is not None:
+                merged[k] = v
+        tenant.report_config = merged if merged else None
 
     await session.commit()
 

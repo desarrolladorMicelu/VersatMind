@@ -60,6 +60,10 @@ class Tenant(Base):
     # Alegra (MCP): email, token y schema_description
     external_alegra: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
+    # Configuración de informes contables (JSONB): company_name, company_logo,
+    # sections, additional_instructions, template_style
+    report_config: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(
         nullable=False, server_default=func.now()
     )
