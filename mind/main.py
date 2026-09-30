@@ -129,6 +129,13 @@ async def lifespan(app: FastAPI):
     sched.start()
     logger.info("Scheduler iniciado.")
 
+    # 7b. Registrar prompts programados por tenant (reportes proactivos)
+    try:
+        from mind.scheduler.prompts import register_all_prompt_jobs
+        await register_all_prompt_jobs()
+    except Exception as exc:
+        logger.warning("No se pudieron registrar los prompts programados: %s", exc)
+
     logger.info("Mind by Versat listo en puerto %s. Tenants activos: %s",
                 settings.PORT, [t.slug for t in tenants])
     yield

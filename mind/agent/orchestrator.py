@@ -59,6 +59,7 @@ async def process(
     auth_result: AuthResult,
     session: AsyncSession,
     source: str = "chat",
+    forced_permissions: frozenset[str] | None = None,
 ) -> AgentResult:
     """
     Procesa un mensaje del usuario usando el loop LLM con tool-calling.
@@ -148,6 +149,20 @@ async def process(
             "en lenguaje natural de lo que necesitas. Sé específico con fechas y nombres."
         )
 
+    # Inyectar base de conocimiento del cliente si tiene información cargada
+    try:
+        from mind.knowledge.retriever import build_knowledge_context
+        knowledge = await build_knowledge_context(session, tenant.id, message)
+        if knowledge:
+            active_system_prompt += (
+                "\n\n## Base de conocimiento del cliente\n\n"
+                f"{knowledge}\n\n"
+                "Usa esta información cuando sea relevante para responder. "
+                "No la contradigas ni inventes datos que no estén en las fuentes."
+            )
+    except Exception:
+        pass
+
     client = AsyncOpenAI(
         api_key=settings.OPENAI_API_KEY,
         base_url=settings.OPENAI_BASE_URL,
@@ -165,8 +180,12 @@ async def process(
         history = []
 
     # --- 2. Obtener permisos del usuario ---
+    # forced_permissions se usa en automatizaciones (prompts programados) que
+    # se configuran por administradores y corren con todos los permisos.
     user_permissions: frozenset[str] = frozenset()
-    if auth_result.role:
+    if forced_permissions is not None:
+        user_permissions = forced_permissions
+    elif auth_result.role:
         from sqlalchemy import select
         from mind.db.models import RolePermission
         stmt = select(RolePermission.permission_name).where(

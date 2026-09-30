@@ -453,3 +453,87 @@ class UsageSettings(Base):
             f"<UsageSettings tenant_id={self.tenant_id} "
             f"threshold={self.threshold_usd} period={self.period!r}>"
         )
+
+
+# ---------------------------------------------------------------------------
+# Prompts programados (reportes/insights proactivos por Telegram)
+# ---------------------------------------------------------------------------
+
+class ScheduledPrompt(Base):
+    """
+    Prompt configurado por el administrador que se ejecuta de forma programada
+    y envía el resultado por Telegram a un chat/grupo — scoped por tenant.
+    """
+    __tablename__ = "scheduled_prompts"
+    __table_args__ = (
+        Index("idx_scheduled_prompts_tenant_active", "tenant_id", "is_active"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    tenant_id: Mapped[int] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
+    )
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Instrucción en lenguaje natural. Admite variables {{fecha}}, {{ayer}}, etc.
+    prompt: Mapped[str] = mapped_column(Text, nullable=False)
+    # Chat/grupo de Telegram destino
+    chat_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    chat_label: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # "daily" | "weekly" | "custom"
+    frequency: Mapped[str] = mapped_column(Text, nullable=False, default="daily")
+    # Expresión cron efectiva (siempre se almacena la resuelta)
+    cron_expression: Mapped[str] = mapped_column(Text, nullable=False)
+    timezone: Mapped[str] = mapped_column(Text, nullable=False, default="America/Bogota")
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    last_run_at: Mapped[datetime | None] = mapped_column(nullable=True)
+    last_status: Mapped[str | None] = mapped_column(Text, nullable=True)
+    last_error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    def __repr__(self) -> str:
+        return (
+            f"<ScheduledPrompt id={self.id} tenant_id={self.tenant_id} "
+            f"name={self.name!r} active={self.is_active}>"
+        )
+
+
+# ---------------------------------------------------------------------------
+# Base de conocimiento por cliente
+# ---------------------------------------------------------------------------
+
+class KnowledgeEntry(Base):
+    """
+    Fragmento de información de negocio cargado por cliente (precios,
+    políticas, catálogos, contexto de la tienda, etc.). Se inyecta en el
+    system prompt del agente cuando es relevante para la consulta.
+    """
+    __tablename__ = "knowledge_entries"
+    __table_args__ = (
+        Index("idx_knowledge_entries_tenant", "tenant_id", "is_active"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    tenant_id: Mapped[int] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
+    )
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    # Origen: "manual", nombre de archivo, etc.
+    source: Mapped[str | None] = mapped_column(Text, nullable=True)
+    tags: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    def __repr__(self) -> str:
+        return f"<KnowledgeEntry id={self.id} tenant_id={self.tenant_id} title={self.title!r}>"

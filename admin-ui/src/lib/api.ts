@@ -241,6 +241,107 @@ export interface UsageAlertRow {
   acknowledged_at: string | null;
 }
 
+// ── Prompts programados ───────────────────────────────────────────────────────
+
+export type Frequency = "daily" | "weekly" | "custom";
+
+export interface ScheduledPrompt {
+  id: number;
+  tenant_id: number;
+  name: string;
+  description: string;
+  prompt: string;
+  chat_id: number;
+  chat_label: string;
+  frequency: Frequency;
+  cron_expression: string;
+  timezone: string;
+  is_active: boolean;
+  last_run_at: string | null;
+  last_status: string | null;
+  last_error: string | null;
+  created_at: string | null;
+  next_run_at?: string | null;
+}
+
+export interface ScheduledPromptPayload {
+  name: string;
+  description?: string;
+  prompt: string;
+  chat_id: number;
+  chat_label?: string;
+  frequency: Frequency;
+  hour: number;
+  minute: number;
+  weekday: number;
+  cron_expression?: string | null;
+  timezone?: string;
+  is_active: boolean;
+}
+
+export interface PromptVariable {
+  key: string;
+  desc: string;
+}
+
+export const promptsApi = {
+  list: (tenantId: number) =>
+    api.get<ScheduledPrompt[]>("/prompts", { params: { tenant_id: tenantId } }).then((r) => r.data),
+  create: (tenantId: number, payload: ScheduledPromptPayload) =>
+    api.post<ScheduledPrompt>("/prompts", payload, { params: { tenant_id: tenantId } }).then((r) => r.data),
+  update: (tenantId: number, id: number, payload: Partial<ScheduledPromptPayload>) =>
+    api.put<ScheduledPrompt>(`/prompts/${id}`, payload, { params: { tenant_id: tenantId } }).then((r) => r.data),
+  toggle: (tenantId: number, id: number) =>
+    api.patch(`/prompts/${id}/toggle`, null, { params: { tenant_id: tenantId } }).then((r) => r.data),
+  remove: (tenantId: number, id: number) =>
+    api.delete(`/prompts/${id}`, { params: { tenant_id: tenantId } }).then((r) => r.data),
+  runNow: (tenantId: number, id: number) =>
+    api
+      .post<{ ok: boolean; text?: string; error?: string; rendered_prompt?: string }>(
+        `/prompts/${id}/run`,
+        null,
+        { params: { tenant_id: tenantId } }
+      )
+      .then((r) => r.data),
+  preview: (tenantId: number, prompt: string) =>
+    api.post<{ rendered: string }>("/prompts/preview", { prompt }, { params: { tenant_id: tenantId } }).then((r) => r.data),
+  variables: () => api.get<PromptVariable[]>("/prompts/variables").then((r) => r.data),
+};
+
+// ── Base de conocimiento ──────────────────────────────────────────────────────
+
+export interface KnowledgeEntry {
+  id: number;
+  tenant_id: number;
+  title: string;
+  content: string;
+  source: string;
+  tags: string;
+  is_active: boolean;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export interface KnowledgePayload {
+  title: string;
+  content: string;
+  source?: string;
+  tags?: string;
+}
+
+export const knowledgeApi = {
+  list: (tenantId: number) =>
+    api.get<KnowledgeEntry[]>("/conocimiento", { params: { tenant_id: tenantId } }).then((r) => r.data),
+  create: (tenantId: number, payload: KnowledgePayload) =>
+    api.post<KnowledgeEntry>("/conocimiento", payload, { params: { tenant_id: tenantId } }).then((r) => r.data),
+  update: (tenantId: number, id: number, payload: Partial<KnowledgePayload> & { is_active?: boolean }) =>
+    api.put<KnowledgeEntry>(`/conocimiento/${id}`, payload, { params: { tenant_id: tenantId } }).then((r) => r.data),
+  toggle: (tenantId: number, id: number) =>
+    api.patch(`/conocimiento/${id}/toggle`, null, { params: { tenant_id: tenantId } }).then((r) => r.data),
+  remove: (tenantId: number, id: number) =>
+    api.delete(`/conocimiento/${id}`, { params: { tenant_id: tenantId } }).then((r) => r.data),
+};
+
 export const consumoApi = {
   global: (params?: { date_from?: string; date_to?: string }) =>
     api.get<UsageGlobalResponse>("/consumo/global", { params }).then((r) => r.data),

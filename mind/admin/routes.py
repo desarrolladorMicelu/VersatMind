@@ -107,6 +107,50 @@ class UsageSettingsUpdate(BaseModel):
 class UsagePauseRequest(BaseModel):
     reason: str | None = None
 
+class ScheduledPromptCreate(BaseModel):
+    name: str
+    description: str = ""
+    prompt: str
+    chat_id: int
+    chat_label: str = ""
+    frequency: str = "daily"          # "daily" | "weekly" | "custom"
+    hour: int = 8
+    minute: int = 0
+    weekday: int = 0                  # 0 = lunes ... 6 = domingo
+    cron_expression: str | None = None  # requerido si frequency = "custom"
+    timezone: str = "America/Bogota"
+    is_active: bool = True
+
+class ScheduledPromptUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    prompt: str | None = None
+    chat_id: int | None = None
+    chat_label: str | None = None
+    frequency: str | None = None
+    hour: int | None = None
+    minute: int | None = None
+    weekday: int | None = None
+    cron_expression: str | None = None
+    timezone: str | None = None
+    is_active: bool | None = None
+
+class KnowledgeCreate(BaseModel):
+    title: str
+    content: str
+    source: str = ""
+    tags: str = ""
+
+class KnowledgeUpdate(BaseModel):
+    title: str | None = None
+    content: str | None = None
+    source: str | None = None
+    tags: str | None = None
+    is_active: bool | None = None
+
+class PromptPreviewRequest(BaseModel):
+    prompt: str
+
 
 # ── AUTH ─────────────────────────────────────────────────────────────────────
 
@@ -1626,3 +1670,382 @@ async def consumo_reanudar_usuario(
     )).scalar_one_or_none()
     await notify_user_resumed(tenant.bot_token if tenant else None, chat_id)
     return {"ok": True, "chat_id": chat_id, "is_paused": False}
+
+
+# ── PROMPTS PROGRAMADOS ───────────────────────────────────────────────────────
+
+def _prompt_to_dict(p) -> dict:
+    return {
+        "id": p.id,
+        "tenant_id": p.tenant_id,
+        "name": p.name,
+        "description": p.description or "",
+        "prompt": p.prompt,
+        "chat_id": p.chat_id,
+        "chat_label": p.chat_label or "",
+        "frequency": p.frequency,
+        "cron_expression": p.cron_expression,
+        "timezone": p.timezone,
+        "is_active": p.is_active,
+        "last_run_at": p.last_run_at.isoformat() if p.last_run_at else None,
+        "last_status": p.last_status,
+        "last_error": p.last_error,
+        "created_at": p.created_at.isoformat() if p.created_at else None,
+    }
+
+
+def _compose_and_validate_cron(
+    frequency: str, hour: int, minute: int, weekday: int, custom: str | None
+) -> str:
+    from mind.scheduler.prompts import compose_cron
+    from mind.scheduler.manager import validate_cron_expression
+
+    try:
+        cron = compose_cron(frequency, hour, minute, weekday, custom)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    valid = validate_cron_expression(cron)
+    if not valid.get("valid"):
+        raise HTTPException(status_code=422, detail=valid.get("message", "Cron inválido"))
+    return cron
+
+
+@router.get("/prompts/variables")
+async def prompts_variables(admin=Depends(require_admin)):
+    from mind.scheduler.prompts import available_variables
+    return available_variables()
+
+
+@router.get("/prompts")
+async def prompts_list(
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
+):
+    from mind.db.models import ScheduledPrompt
+    tid = get_effective_tenant_id(admin, tenant_id)
+    rows = (await session.execute(
+        select(ScheduledPrompt)
+        .where(ScheduledPrompt.tenant_id == tid)
+        .order_by(ScheduledPrompt.created_at.desc())
+    )).scalars().all()
+
+    from mind.scheduler.manager import get_scheduler
+    next_map: dict[str, str] = {}
+    try:
+        sched = get_scheduler()
+        for job in sched.get_jobs():
+            if job.id.startswith("prompt:") and job.next_run_time:
+                next_map[job.id] = job.next_run_time.isoformat()
+    except Exception:
+        pass
+
+    result = []
+    for p in rows:
+        d = _prompt_to_dict(p)
+        d["next_run_at"] = next_map.get(f"prompt:{p.id}")
+        result.append(d)
+    return result
+
+
+@router.post("/prompts")
+async def prompts_create(
+    body: ScheduledPromptCreate,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
+):
+    from mind.db.models import ScheduledPrompt
+    tid = get_effective_tenant_id(admin, tenant_id)
+    cron = _compose_and_validate_cron(
+        body.frequency, body.hour, body.minute, body.weekday, body.cron_expression
+    )
+    sp = ScheduledPrompt(
+        tenant_id=tid,
+        name=body.name.strip(),
+        description=(body.description or "").strip() or None,
+        prompt=body.prompt,
+        chat_id=body.chat_id,
+        chat_label=(body.chat_label or "").strip() or None,
+        frequency=body.frequency,
+        cron_expression=cron,
+        timezone=body.timezone or "America/Bogota",
+        is_active=body.is_active,
+    )
+    session.add(sp)
+    await session.commit()
+    await session.refresh(sp)
+
+    try:
+        from mind.scheduler.prompts import sync_prompt_job
+        sync_prompt_job(sp)
+    except Exception as exc:
+        logger.warning("No se pudo programar el prompt %s: %s", sp.id, exc)
+
+    return _prompt_to_dict(sp)
+
+
+@router.put("/prompts/{prompt_id}")
+async def prompts_update(
+    prompt_id: int,
+    body: ScheduledPromptUpdate,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
+):
+    from mind.db.models import ScheduledPrompt
+    tid = get_effective_tenant_id(admin, tenant_id)
+    sp = (await session.execute(
+        select(ScheduledPrompt).where(
+            ScheduledPrompt.id == prompt_id, ScheduledPrompt.tenant_id == tid
+        )
+    )).scalar_one_or_none()
+    if not sp:
+        raise HTTPException(status_code=404, detail="Prompt no encontrado")
+
+    if body.name is not None:
+        sp.name = body.name.strip()
+    if body.description is not None:
+        sp.description = body.description.strip() or None
+    if body.prompt is not None:
+        sp.prompt = body.prompt
+    if body.chat_id is not None:
+        sp.chat_id = body.chat_id
+    if body.chat_label is not None:
+        sp.chat_label = body.chat_label.strip() or None
+    if body.timezone is not None:
+        sp.timezone = body.timezone or "America/Bogota"
+    if body.is_active is not None:
+        sp.is_active = body.is_active
+
+    # Recalcular cron si el formulario envió la programación
+    scheduling_touched = any(v is not None for v in (
+        body.frequency, body.hour, body.minute, body.weekday, body.cron_expression
+    ))
+    if scheduling_touched:
+        freq = body.frequency or sp.frequency
+        hour = body.hour if body.hour is not None else 8
+        minute = body.minute if body.minute is not None else 0
+        weekday = body.weekday if body.weekday is not None else 0
+        custom = body.cron_expression
+        if freq == "custom" and not custom:
+            cron = sp.cron_expression
+        else:
+            cron = _compose_and_validate_cron(freq, hour, minute, weekday, custom)
+        sp.cron_expression = cron
+        sp.frequency = freq
+
+    await session.commit()
+    await session.refresh(sp)
+
+    try:
+        from mind.scheduler.prompts import sync_prompt_job
+        sync_prompt_job(sp)
+    except Exception as exc:
+        logger.warning("No se pudo reprogramar el prompt %s: %s", sp.id, exc)
+
+    return _prompt_to_dict(sp)
+
+
+@router.patch("/prompts/{prompt_id}/toggle")
+async def prompts_toggle(
+    prompt_id: int,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
+):
+    from mind.db.models import ScheduledPrompt
+    tid = get_effective_tenant_id(admin, tenant_id)
+    sp = (await session.execute(
+        select(ScheduledPrompt).where(
+            ScheduledPrompt.id == prompt_id, ScheduledPrompt.tenant_id == tid
+        )
+    )).scalar_one_or_none()
+    if not sp:
+        raise HTTPException(status_code=404, detail="Prompt no encontrado")
+    sp.is_active = not sp.is_active
+    await session.commit()
+    try:
+        from mind.scheduler.prompts import sync_prompt_job
+        sync_prompt_job(sp)
+    except Exception as exc:
+        logger.warning("No se pudo cambiar estado del prompt %s: %s", sp.id, exc)
+    return {"id": sp.id, "is_active": sp.is_active}
+
+
+@router.delete("/prompts/{prompt_id}")
+async def prompts_delete(
+    prompt_id: int,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
+):
+    from mind.db.models import ScheduledPrompt
+    tid = get_effective_tenant_id(admin, tenant_id)
+    await session.execute(
+        delete(ScheduledPrompt).where(
+            ScheduledPrompt.id == prompt_id, ScheduledPrompt.tenant_id == tid
+        )
+    )
+    await session.commit()
+    try:
+        from mind.scheduler.prompts import remove_prompt_job
+        remove_prompt_job(prompt_id)
+    except Exception:
+        pass
+    return {"ok": True}
+
+
+@router.post("/prompts/{prompt_id}/run")
+async def prompts_run_now(
+    prompt_id: int,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
+):
+    """Ejecuta el prompt de inmediato y envía el resultado por Telegram."""
+    from mind.scheduler.prompts import execute_prompt
+    tid = get_effective_tenant_id(admin, tenant_id)
+    return await execute_prompt(prompt_id, tid, send=True)
+
+
+@router.post("/prompts/preview")
+async def prompts_preview(
+    body: PromptPreviewRequest,
+    admin=Depends(require_admin),
+    tenant_id: int | None = Query(default=None),
+    session: AsyncSession = Depends(get_session),
+):
+    """Renderiza las variables {{...}} con los valores actuales del cliente."""
+    from mind.db.models import Tenant
+    from mind.scheduler.prompts import build_context, render_prompt
+    tid = get_effective_tenant_id(admin, tenant_id)
+    tenant = (await session.execute(select(Tenant).where(Tenant.id == tid))).scalar_one_or_none()
+    return {"rendered": render_prompt(body.prompt, build_context(tenant))}
+
+
+# ── BASE DE CONOCIMIENTO ──────────────────────────────────────────────────────
+
+def _knowledge_to_dict(e) -> dict:
+    return {
+        "id": e.id,
+        "tenant_id": e.tenant_id,
+        "title": e.title,
+        "content": e.content,
+        "source": e.source or "",
+        "tags": e.tags or "",
+        "is_active": e.is_active,
+        "created_at": e.created_at.isoformat() if e.created_at else None,
+        "updated_at": e.updated_at.isoformat() if e.updated_at else None,
+    }
+
+
+@router.get("/conocimiento")
+async def knowledge_list(
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
+):
+    from mind.db.models import KnowledgeEntry
+    tid = get_effective_tenant_id(admin, tenant_id)
+    rows = (await session.execute(
+        select(KnowledgeEntry)
+        .where(KnowledgeEntry.tenant_id == tid)
+        .order_by(KnowledgeEntry.updated_at.desc())
+    )).scalars().all()
+    return [_knowledge_to_dict(e) for e in rows]
+
+
+@router.post("/conocimiento")
+async def knowledge_create(
+    body: KnowledgeCreate,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
+):
+    from mind.db.models import KnowledgeEntry
+    tid = get_effective_tenant_id(admin, tenant_id)
+    entry = KnowledgeEntry(
+        tenant_id=tid,
+        title=body.title.strip(),
+        content=body.content,
+        source=(body.source or "manual").strip() or "manual",
+        tags=(body.tags or "").strip() or None,
+    )
+    session.add(entry)
+    await session.commit()
+    await session.refresh(entry)
+    return _knowledge_to_dict(entry)
+
+
+@router.put("/conocimiento/{entry_id}")
+async def knowledge_update(
+    entry_id: int,
+    body: KnowledgeUpdate,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
+):
+    from mind.db.models import KnowledgeEntry
+    tid = get_effective_tenant_id(admin, tenant_id)
+    entry = (await session.execute(
+        select(KnowledgeEntry).where(
+            KnowledgeEntry.id == entry_id, KnowledgeEntry.tenant_id == tid
+        )
+    )).scalar_one_or_none()
+    if not entry:
+        raise HTTPException(status_code=404, detail="Entrada no encontrada")
+
+    if body.title is not None:
+        entry.title = body.title.strip()
+    if body.content is not None:
+        entry.content = body.content
+    if body.source is not None:
+        entry.source = body.source.strip() or "manual"
+    if body.tags is not None:
+        entry.tags = body.tags.strip() or None
+    if body.is_active is not None:
+        entry.is_active = body.is_active
+    await session.commit()
+    await session.refresh(entry)
+    return _knowledge_to_dict(entry)
+
+
+@router.patch("/conocimiento/{entry_id}/toggle")
+async def knowledge_toggle(
+    entry_id: int,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
+):
+    from mind.db.models import KnowledgeEntry
+    tid = get_effective_tenant_id(admin, tenant_id)
+    entry = (await session.execute(
+        select(KnowledgeEntry).where(
+            KnowledgeEntry.id == entry_id, KnowledgeEntry.tenant_id == tid
+        )
+    )).scalar_one_or_none()
+    if not entry:
+        raise HTTPException(status_code=404, detail="Entrada no encontrada")
+    entry.is_active = not entry.is_active
+    await session.commit()
+    return {"id": entry.id, "is_active": entry.is_active}
+
+
+@router.delete("/conocimiento/{entry_id}")
+async def knowledge_delete(
+    entry_id: int,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
+):
+    from mind.db.models import KnowledgeEntry
+    tid = get_effective_tenant_id(admin, tenant_id)
+    await session.execute(
+        delete(KnowledgeEntry).where(
+            KnowledgeEntry.id == entry_id, KnowledgeEntry.tenant_id == tid
+        )
+    )
+    await session.commit()
+    return {"ok": True}

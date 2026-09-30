@@ -15,6 +15,8 @@ import Tareas from "./pages/Tareas";
 import Historial from "./pages/Historial";
 import Auditoria from "./pages/Auditoria";
 import Consumo from "./pages/Consumo";
+import Programados from "./pages/Programados";
+import Conocimiento from "./pages/Conocimiento";
 
 const qc = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30000 } },
@@ -46,6 +48,8 @@ export default function App() {
                 <Route path="historial" element={<Historial />} />
                 <Route path="auditoria" element={<Auditoria />} />
                 <Route path="consumo" element={<Consumo />} />
+                <Route path="programados" element={<Programados />} />
+                <Route path="conocimiento" element={<Conocimiento />} />
               </Route>
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
