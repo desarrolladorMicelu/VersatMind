@@ -76,3 +76,21 @@ async def record_chat(tenant_id: int, chat, from_user=None) -> None:
             await session.commit()
     except Exception as exc:
         logger.debug("No se pudo registrar el chat tenant=%s: %s", tenant_id, exc)
+
+
+async def resolve_all_chat_ids(session, tenant_id: int) -> list[int]:
+    """
+    Devuelve los chat_ids de los usuarios **aprobados** del tenant que pueden
+    hablar con el bot (activos y no pausados). Solo estos reciben el broadcast
+    de un prompt programado marcado como "todos los contactos".
+    """
+    from mind.db.models import User
+
+    rows = (await session.execute(
+        select(User.chat_id).where(
+            User.tenant_id == tenant_id,
+            User.is_active.is_(True),
+            User.is_paused.is_(False),
+        )
+    )).scalars().all()
+    return sorted(set(rows))

@@ -490,6 +490,11 @@ class ScheduledPrompt(Base):
     # Chat/grupo de Telegram destino
     chat_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     chat_label: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Si es True, se envía a todos los contactos conocidos del tenant
+    # (usuarios aprobados + chats que el bot ha visto). chat_id se ignora.
+    send_to_all: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False, server_default="false"
+    )
     # "daily" | "weekly" | "custom"
     frequency: Mapped[str] = mapped_column(Text, nullable=False, default="daily")
     # Expresión cron efectiva (siempre se almacena la resuelta)
@@ -590,3 +595,37 @@ class TelegramChat(Base):
             f"<TelegramChat tenant_id={self.tenant_id} chat_id={self.chat_id} "
             f"type={self.chat_type!r}>"
         )
+
+
+# ---------------------------------------------------------------------------
+# Chat web (interfaz tipo Claude dentro del panel)
+# ---------------------------------------------------------------------------
+
+class ChatConversation(Base):
+    """
+    Conversación de la interfaz web de chat. Cada conversación usa un chat_id
+    sintético (fuera del rango de Telegram) para reutilizar el historial de
+    `conversation_history` como memoria del agente.
+    """
+    __tablename__ = "chat_conversations"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "chat_id", name="uq_chat_conversations_tenant_chat"),
+        Index("idx_chat_conversations_tenant_owner", "tenant_id", "owner", "updated_at"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    tenant_id: Mapped[int] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
+    )
+    owner: Mapped[str] = mapped_column(Text, nullable=False)
+    title: Mapped[str] = mapped_column(Text, nullable=False, default="Nueva conversación")
+    chat_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    def __repr__(self) -> str:
+        return f"<ChatConversation id={self.id} tenant_id={self.tenant_id} title={self.title!r}>"

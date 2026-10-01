@@ -136,6 +136,10 @@ async def lifespan(app: FastAPI):
     except Exception as exc:
         logger.warning("No se pudieron registrar los prompts programados: %s", exc)
 
+    # 7c. Auto-reparación de webhooks de Telegram (revisa y re-registra si falta)
+    from mind.telegram.webhook_guard import webhook_guard_loop
+    guard_task = asyncio.create_task(webhook_guard_loop())
+
     logger.info("Mind by Versat listo en puerto %s. Tenants activos: %s",
                 settings.PORT, [t.slug for t in tenants])
     yield
@@ -144,6 +148,14 @@ async def lifespan(app: FastAPI):
     logger.info("Apagando Mind by Versat...")
     sched.shutdown(wait=False)
 
+    guard_task.cancel()
+    try:
+        await guard_task
+    except asyncio.CancelledError:
+        pass
+
+    # No se borran los webhooks: se conservan en Telegram para que el bot siga
+    # respondiendo tras el despliegue sin intervención manual.
     from mind.telegram.bot import get_all_applications, teardown_bot
     for token in list(get_all_applications().keys()):
         await teardown_bot(token)
@@ -171,6 +183,10 @@ app.add_middleware(
 # Panel de administración
 from mind.admin.routes import router as admin_router
 app.include_router(admin_router)
+
+# Interfaz web de chat (tipo Claude)
+from mind.chat.routes import router as chat_router
+app.include_router(chat_router)
 
 # Servir assets del SPA React
 from pathlib import Path as _Path

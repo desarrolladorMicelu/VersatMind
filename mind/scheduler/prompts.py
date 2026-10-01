@@ -231,8 +231,24 @@ async def execute_prompt(prompt_id: int, tenant_id: int, *, send: bool = True) -
         set_tenant(tenant)
         rendered = render_prompt(sp.prompt, build_context(tenant))
 
+        send_to_all = bool(getattr(sp, "send_to_all", False))
+        if send_to_all:
+            from mind.telegram.chat_registry import resolve_all_chat_ids
+            targets = await resolve_all_chat_ids(session, tenant_id)
+            if not targets:
+                sp.last_run_at = datetime.now(timezone.utc)
+                sp.last_status = "error"
+                sp.last_error = "No hay contactos registrados para enviar."
+                await session.commit()
+                return {"ok": False, "error": "No hay contactos registrados.",
+                        "rendered_prompt": rendered}
+            run_chat_id = 0
+        else:
+            targets = [sp.chat_id]
+            run_chat_id = sp.chat_id
+
         user = (await session.execute(
-            select(User).where(User.chat_id == sp.chat_id, User.tenant_id == tenant_id)
+            select(User).where(User.chat_id == run_chat_id, User.tenant_id == tenant_id)
         )).scalar_one_or_none()
 
         from mind.auth.authorization import AuthResult, Permission
@@ -246,12 +262,13 @@ async def execute_prompt(prompt_id: int, tenant_id: int, *, send: bool = True) -
             from mind.agent.orchestrator import process
             result = await process(
                 message=rendered,
-                chat_id=sp.chat_id,
+                chat_id=run_chat_id,
                 tenant=tenant,
                 auth_result=auth,
                 session=session,
                 source="scheduled_prompt",
                 forced_permissions=full_permissions,
+                persist_history=not send_to_all,
             )
             text = result.text or ""
         except Exception as exc:
@@ -266,16 +283,22 @@ async def execute_prompt(prompt_id: int, tenant_id: int, *, send: bool = True) -
             return {"ok": False, "error": str(exc), "rendered_prompt": rendered}
 
         send_error: str | None = None
+        sent_count = 0
         if send:
-            try:
-                from mind.telegram.bot import send_text
-                await send_text(sp.chat_id, text, tenant.bot_token)
-            except Exception as exc:
-                logger.warning(
-                    "Prompt id=%s generado pero falló el envío por Telegram: %s",
-                    prompt_id, exc,
-                )
-                send_error = f"No se pudo enviar por Telegram: {exc}"
+            from mind.telegram.bot import send_text
+            failed = 0
+            for target in targets:
+                try:
+                    await send_text(target, text, tenant.bot_token, parse_mode="")
+                    sent_count += 1
+                except Exception as exc:
+                    failed += 1
+                    logger.warning(
+                        "Prompt id=%s no se pudo enviar a chat_id=%s: %s",
+                        prompt_id, target, exc,
+                    )
+            if failed:
+                send_error = f"No se pudo enviar a {failed} de {len(targets)} destinos."
 
         sp.last_run_at = datetime.now(timezone.utc)
         sp.last_status = "error" if send_error else "success"
@@ -297,8 +320,9 @@ async def execute_prompt(prompt_id: int, tenant_id: int, *, send: bool = True) -
         pass
 
     if send_error:
-        return {"ok": False, "error": send_error, "text": text, "rendered_prompt": rendered}
-    return {"ok": True, "text": text, "rendered_prompt": rendered}
+        return {"ok": False, "error": send_error, "text": text,
+                "rendered_prompt": rendered, "destinos": sent_count}
+    return {"ok": True, "text": text, "rendered_prompt": rendered, "destinos": sent_count}
 
 
 async def _execute_prompt(prompt_id: int, tenant_id: int) -> None:

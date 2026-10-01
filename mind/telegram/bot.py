@@ -47,45 +47,89 @@ def init_bot(bot_token: str) -> Application:
     return app
 
 
-async def setup_webhook(webhook_url: str, bot_token: str) -> None:
-    """Registra el webhook para el bot del tenant y verifica que esté activo."""
-    import asyncio
-    app = get_application(bot_token)
-    full_url = f"{webhook_url.rstrip('/')}/webhook/{bot_token}"
+def _resolve_webhook_base(tenant_webhook_url: str | None) -> str:
+    """
+    Base pública del webhook. Prioriza TELEGRAM_WEBHOOK_URL (el host real del
+    despliegue); si no está configurada usa la del tenant.
+    """
+    from mind.config import settings
+    env_base = (settings.TELEGRAM_WEBHOOK_URL or "").strip()
+    if env_base.startswith("http") and "example.com" not in env_base:
+        return env_base.rstrip("/")
+    if tenant_webhook_url and tenant_webhook_url.startswith("http"):
+        return tenant_webhook_url.rstrip("/")
+    return ""
 
-    # Intentar registrar hasta 3 veces
-    for attempt in range(3):
-        result = await app.bot.set_webhook(url=full_url)
-        if result:
-            break
-        logger.warning(
-            "Intento %d/3 — setWebhook falló para bot ...%s", attempt + 1, bot_token[-6:],
+
+def webhook_full_url(bot_token: str, tenant_webhook_url: str | None) -> str:
+    base = _resolve_webhook_base(tenant_webhook_url)
+    if not base:
+        return ""
+    return f"{base}/webhook/{bot_token}"
+
+
+async def ensure_webhook(bot_token: str, tenant_webhook_url: str | None) -> bool:
+    """
+    Garantiza que el webhook del bot apunte a la URL pública correcta.
+    Idempotente: si ya está bien, no hace nada. Devuelve True si queda correcto.
+    """
+    full_url = webhook_full_url(bot_token, tenant_webhook_url)
+    if not full_url:
+        logger.error(
+            "No hay base de webhook configurada para bot ...%s "
+            "(revisa TELEGRAM_WEBHOOK_URL o tenants.webhook_url)", bot_token[-6:],
         )
+        return False
+
+    app = get_application(bot_token)
+
+    for attempt in range(3):
+        try:
+            info = await app.bot.get_webhook_info()
+            if info.url == full_url:
+                logger.info(
+                    "Webhook OK para bot ...%s (pendientes=%d)",
+                    bot_token[-6:], info.pending_update_count or 0,
+                )
+                return True
+            await app.bot.set_webhook(url=full_url)
+            info = await app.bot.get_webhook_info()
+            if info.url == full_url:
+                logger.info("Webhook registrado para bot ...%s → %s", bot_token[-6:], full_url)
+                return True
+            logger.warning(
+                "Webhook no coincide para bot ...%s — esperado=%s actual=%s",
+                bot_token[-6:], full_url, info.url,
+            )
+        except Exception as exc:
+            logger.warning(
+                "Intento %d/3 de webhook falló para bot ...%s: %s",
+                attempt + 1, bot_token[-6:], exc,
+            )
         await asyncio.sleep(2)
 
-    # Verificar que el webhook esté activo
-    webhook_info = await app.bot.get_webhook_info()
-    if webhook_info.url == full_url:
-        logger.info(
-            "Webhook OK para bot ...%s → %s (pendientes=%d)",
-            bot_token[-6:], full_url, webhook_info.pending_update_count or 0,
-        )
-    else:
-        logger.warning(
-            "Webhook no coincide para bot ...%s — esperado=%s actual=%s",
-            bot_token[-6:], full_url, webhook_info.url,
-        )
-        await app.bot.set_webhook(url=full_url)
-        logger.info("Webhook re-registrado para bot ...%s", bot_token[-6:])
+    logger.error("No se pudo asegurar el webhook para bot ...%s", bot_token[-6:])
+    return False
+
+
+async def setup_webhook(webhook_url: str, bot_token: str) -> bool:
+    """Compatibilidad: registra/verifica el webhook del bot del tenant."""
+    return await ensure_webhook(bot_token, webhook_url)
 
 
 async def teardown_bot(bot_token: str) -> None:
-    """Elimina el webhook y apaga la Application del tenant."""
+    """
+    Apaga la Application del tenant SIN borrar el webhook.
+
+    El webhook se conserva en Telegram apuntando a la URL pública, así que
+    sobrevive a reinicios y despliegues. Borrarlo aquí causaba que el bot
+    dejara de responder tras cada push (y con despliegues solapados, que la
+    instancia vieja borrara el webhook que la nueva acababa de registrar).
+    """
     app = _applications.pop(bot_token, None)
     if app is None:
         return
     try:
-        await app.bot.delete_webhook()
         await app.shutdown()
     except Exception as exc:
         logger.warning("Error apagando bot ...%s: %s", bot_token[-6:], exc)
