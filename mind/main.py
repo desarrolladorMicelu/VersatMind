@@ -172,6 +172,10 @@ app.add_middleware(
 from mind.admin.routes import router as admin_router
 app.include_router(admin_router)
 
+# Interfaz web de chat (tipo Claude)
+from mind.chat.routes import router as chat_router
+app.include_router(chat_router)
+
 # Servir assets del SPA React
 from pathlib import Path as _Path
 _static_dir = _Path(__file__).parent / "admin" / "static"

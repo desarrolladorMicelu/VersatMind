@@ -15,6 +15,7 @@ import Tareas from "./pages/Tareas";
 import Historial from "./pages/Historial";
 import Auditoria from "./pages/Auditoria";
 import Consumo from "./pages/Consumo";
+import Chat from "./pages/Chat";
 import Programados from "./pages/Programados";
 import Conocimiento from "./pages/Conocimiento";
 
@@ -48,6 +49,7 @@ export default function App() {
                 <Route path="historial" element={<Historial />} />
                 <Route path="auditoria" element={<Auditoria />} />
                 <Route path="consumo" element={<Consumo />} />
+                <Route path="chat" element={<Chat />} />
                 <Route path="programados" element={<Programados />} />
                 <Route path="conocimiento" element={<Conocimiento />} />
               </Route>

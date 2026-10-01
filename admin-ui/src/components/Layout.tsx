@@ -4,13 +4,14 @@ import { useTenant } from "../contexts/TenantContext";
 import {
   LayoutDashboard, Bot, Users, KeyRound,
   Shield, Clock, MessageSquare, Activity, LogOut,
-  Building2, ChevronDown, Coins, CalendarClock, BookOpen,
+  Building2, ChevronDown, Coins, CalendarClock, BookOpen, MessagesSquare,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import type { Tenant } from "../lib/api";
 
 const NAV_SUPERADMIN = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
+  { to: "/chat", icon: MessagesSquare, label: "Chat" },
   { to: "/tenants", icon: Building2, label: "Clientes" },
   { to: "/consumo", icon: Coins, label: "Consumo" },
   { to: "/programados", icon: CalendarClock, label: "Programados" },
@@ -26,6 +27,7 @@ const NAV_SUPERADMIN = [
 
 const NAV_TENANT = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
+  { to: "/chat", icon: MessagesSquare, label: "Chat" },
   { to: "/consumo", icon: Coins, label: "Consumo" },
   { to: "/programados", icon: CalendarClock, label: "Programados" },
   { to: "/conocimiento", icon: BookOpen, label: "Conocimiento" },
