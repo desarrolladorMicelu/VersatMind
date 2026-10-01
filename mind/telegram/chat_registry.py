@@ -80,22 +80,17 @@ async def record_chat(tenant_id: int, chat, from_user=None) -> None:
 
 async def resolve_all_chat_ids(session, tenant_id: int) -> list[int]:
     """
-    Devuelve todos los chats destino conocidos del tenant (sin duplicados):
-    los que el bot ha visto y los usuarios aprobados y activos.
+    Devuelve los chat_ids de los usuarios **aprobados** del tenant que pueden
+    hablar con el bot (activos y no pausados). Solo estos reciben el broadcast
+    de un prompt programado marcado como "todos los contactos".
     """
-    from mind.db.models import TelegramChat, User
+    from mind.db.models import User
 
-    ids: set[int] = set()
-    ids.update(
-        (await session.execute(
-            select(TelegramChat.chat_id).where(TelegramChat.tenant_id == tenant_id)
-        )).scalars().all()
-    )
-    ids.update(
-        (await session.execute(
-            select(User.chat_id).where(
-                User.tenant_id == tenant_id, User.is_active.is_(True)
-            )
-        )).scalars().all()
-    )
-    return sorted(ids)
+    rows = (await session.execute(
+        select(User.chat_id).where(
+            User.tenant_id == tenant_id,
+            User.is_active.is_(True),
+            User.is_paused.is_(False),
+        )
+    )).scalars().all()
+    return sorted(set(rows))

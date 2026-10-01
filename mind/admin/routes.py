@@ -1750,7 +1750,11 @@ async def destinos_list(
     session: AsyncSession = Depends(get_session),
     tenant_id: int | None = Query(default=None),
 ):
-    """Usuarios y grupos conocidos por el bot, para elegir el destino de un prompt."""
+    """
+    Destinos válidos para un prompt: usuarios **aprobados** (activos y no
+    pausados) y grupos donde el bot esté presente. No se incluyen chats de
+    personas sin autorización.
+    """
     from mind.db.models import TelegramChat, User
 
     tid = get_effective_tenant_id(admin, tenant_id)
@@ -1761,37 +1765,42 @@ async def destinos_list(
         .where(TelegramChat.tenant_id == tid)
         .order_by(TelegramChat.last_seen_at.desc())
     )).scalars().all()
-    for c in chats:
-        is_group = (c.chat_type or "private") in ("group", "supergroup", "channel")
-        if is_group:
-            label = c.title or f"Grupo {c.chat_id}"
-            ctype = "group"
-        else:
-            label = (
-                c.title
-                or (f"@{c.username}" if c.username else None)
-                or " ".join(p for p in [c.first_name, c.last_name] if p)
-                or f"Usuario {c.chat_id}"
-            )
-            ctype = "user"
-        items[c.chat_id] = {
-            "chat_id": c.chat_id,
-            "label": label,
-            "type": ctype,
-            "username": c.username,
-        }
+    chat_by_id = {c.chat_id: c for c in chats}
 
+    # Grupos/canales donde el bot ha sido agregado
+    for c in chats:
+        if (c.chat_type or "private") in ("group", "supergroup", "channel"):
+            items[c.chat_id] = {
+                "chat_id": c.chat_id,
+                "label": c.title or f"Grupo {c.chat_id}",
+                "type": "group",
+                "username": c.username,
+            }
+
+    # Usuarios aprobados que pueden hablar con el bot
     users = (await session.execute(
-        select(User).where(User.tenant_id == tid)
+        select(User).where(
+            User.tenant_id == tid,
+            User.is_active.is_(True),
+            User.is_paused.is_(False),
+        )
     )).scalars().all()
     for u in users:
-        if u.chat_id in items:
-            continue
+        c = chat_by_id.get(u.chat_id)
+        name = " ".join(p for p in [
+            getattr(c, "first_name", None), getattr(c, "last_name", None)
+        ] if p) if c else ""
+        label = (
+            name
+            or (f"@{u.username}" if u.username else None)
+            or (f"@{c.username}" if c and c.username else None)
+            or f"Usuario {u.user_id}"
+        )
         items[u.chat_id] = {
             "chat_id": u.chat_id,
-            "label": (f"@{u.username}" if u.username else f"Usuario {u.user_id}"),
+            "label": label,
             "type": "user",
-            "username": u.username,
+            "username": u.username or (c.username if c else None),
         }
 
     return sorted(items.values(), key=lambda x: (x["type"], (x["label"] or "").lower()))

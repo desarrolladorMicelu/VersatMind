@@ -162,7 +162,7 @@ export default function Programados() {
   const selectDestino = (value: string, current: FormState) => {
     if (value === "__all__") {
       setManualDestino(false);
-      setForm({ ...current, send_to_all: true, chat_id: "", chat_label: "Todos los contactos" });
+      setForm({ ...current, send_to_all: true, chat_id: "", chat_label: "Todos los usuarios aprobados" });
       return;
     }
     if (value === "__manual__") {
@@ -232,7 +232,7 @@ export default function Programados() {
                   value={form.send_to_all ? "__all__" : manualMode ? "__manual__" : form.chat_id}
                   onChange={(e) => selectDestino(e.target.value, form)}
                 >
-                  <option value="__all__">Todos los contactos ({destinos.length})</option>
+                  <option value="__all__">Todos los usuarios aprobados ({users.length})</option>
                   <option value="">Selecciona una persona o grupo…</option>
                   {users.length > 0 && (
                     <optgroup label="Personas">
@@ -259,8 +259,9 @@ export default function Programados() {
 
                 {destinos.length === 0 && (
                   <p className="font-mono text-[10px] text-white mt-2 leading-relaxed">
-                    Aún no hay destinos conocidos. Pídele a la persona que le escriba al bot, o
-                    agrega el bot a un grupo y escribe un mensaje allí; aparecerá en esta lista.
+                    Aún no hay usuarios aprobados ni grupos. Aprueba usuarios en la sección
+                    Accesos, o agrega el bot a un grupo y escribe un mensaje allí para que
+                    aparezca en esta lista.
                   </p>
                 )}
 
@@ -370,7 +371,7 @@ export default function Programados() {
                   <p className="font-mono text-[10px] text-white truncate">{p.description || p.cron_expression}</p>
                 </div>
                 <div className="col-span-2 td">
-                  <p className="text-xs text-white">{p.send_to_all ? "Todos los contactos" : (p.chat_label || "—")}</p>
+                  <p className="text-xs text-white">{p.send_to_all ? "Todos los usuarios aprobados" : (p.chat_label || "—")}</p>
                   <p className="font-mono text-[10px] text-white">{p.send_to_all ? "todos" : p.chat_id}</p>
                 </div>
                 <div className="col-span-2 td">
