@@ -1,5 +1,12 @@
 import { useState } from "react";
-import { Check, FileText, X, Upload } from "lucide-react";
+import { FileText, Upload } from "lucide-react";
+
+interface ReportConfigData {
+  company_name: string;
+  sections: string[];
+  company_logo?: string;
+  additional_instructions?: string;
+}
 
 const ALL_SECTIONS = [
   { id: "balance", label: "Balance General" },
@@ -16,27 +23,27 @@ function ReportConfig({
   value,
   onChange,
 }: {
-  value: ReportConfig | null;
-  onChange: (v: ReportConfig | null) => void;
+  value: ReportConfigData | null;
+  onChange: (v: ReportConfigData | null) => void;
 }) {
-  const [local, setLocal] = useState<ReportConfig>(
+  const [local, setLocal] = useState<ReportConfigData>(
     value ?? { company_name: "", sections: ["balance", "income", "expenses"] }
   );
   const [logoPreview, setLogoPreview] = useState("");
 
-  const emit = (next: ReportConfig) => {
+  const emit = (next: ReportConfigData) => {
     setLocal(next);
     onChange(next.company_name ? next : null);
   };
 
-  const setField = (k: keyof ReportConfig, v: string | string[]) => {
+  const setField = (k: keyof ReportConfigData, v: string | string[]) => {
     emit({ ...local, [k]: v });
   };
 
   const toggleSection = (id: string) => {
     const current = local.sections;
     const next = current.includes(id)
-      ? current.filter((s) => s !== id)
+      ? current.filter((s: string) => s !== id)
       : [...current, id];
     emit({ ...local, sections: next });
   };
@@ -45,9 +52,10 @@ function ReportConfig({
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
-      const b64 = reader.result?.split(",")[1] ?? "";
+      const result = reader.result as string;
+      const b64 = result.split(",")[1] ?? "";
       emit({ ...local, company_logo: b64 });
-      setLogoPreview(reader.result as string);
+      setLogoPreview(result);
     };
     reader.readAsDataURL(file);
   };
