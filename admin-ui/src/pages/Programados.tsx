@@ -17,6 +17,7 @@ const EMPTY_FORM = {
   prompt: "",
   chat_id: "",
   chat_label: "",
+  send_to_all: false,
   frequency: "daily" as Frequency,
   time: "08:00",
   weekday: 0,
@@ -44,6 +45,7 @@ function promptToForm(p: ScheduledPrompt): FormState {
     prompt: p.prompt,
     chat_id: String(p.chat_id),
     chat_label: p.chat_label || "",
+    send_to_all: !!p.send_to_all,
     frequency: p.frequency,
     time: `${hh}:${mm}`,
     weekday,
@@ -60,8 +62,9 @@ function formToPayload(f: FormState): ScheduledPromptPayload {
     name: f.name,
     description: f.description,
     prompt: f.prompt,
-    chat_id: parseInt(f.chat_id, 10),
+    chat_id: f.send_to_all ? 0 : parseInt(f.chat_id, 10),
     chat_label: f.chat_label,
+    send_to_all: f.send_to_all,
     frequency: f.frequency,
     hour: isNaN(hour) ? 8 : hour,
     minute: isNaN(minute) ? 0 : minute,
@@ -157,14 +160,19 @@ export default function Programados() {
   };
 
   const selectDestino = (value: string, current: FormState) => {
+    if (value === "__all__") {
+      setManualDestino(false);
+      setForm({ ...current, send_to_all: true, chat_id: "", chat_label: "Todos los contactos" });
+      return;
+    }
     if (value === "__manual__") {
       setManualDestino(true);
-      setForm({ ...current, chat_id: "" });
+      setForm({ ...current, send_to_all: false, chat_id: "" });
       return;
     }
     setManualDestino(false);
     const d = destinos.find((x) => String(x.chat_id) === value);
-    setForm({ ...current, chat_id: value, chat_label: d ? d.label : current.chat_label });
+    setForm({ ...current, send_to_all: false, chat_id: value, chat_label: d ? d.label : current.chat_label });
   };
 
   if (!tenantId) {
@@ -181,7 +189,7 @@ export default function Programados() {
   const isKnownDestino = form
     ? destinos.some((d) => String(d.chat_id) === form.chat_id)
     : false;
-  const manualMode = manualDestino || (form !== null && form.chat_id !== "" && !isKnownDestino);
+  const manualMode = manualDestino || (form !== null && !form.send_to_all && form.chat_id !== "" && !isKnownDestino);
 
   return (
     <div>
@@ -221,9 +229,10 @@ export default function Programados() {
                 <label className="label text-white">¿A quién se le envía?</label>
                 <select
                   className="input"
-                  value={manualMode ? "__manual__" : form.chat_id}
+                  value={form.send_to_all ? "__all__" : manualMode ? "__manual__" : form.chat_id}
                   onChange={(e) => selectDestino(e.target.value, form)}
                 >
+                  <option value="__all__">Todos los contactos ({destinos.length})</option>
                   <option value="">Selecciona una persona o grupo…</option>
                   {users.length > 0 && (
                     <optgroup label="Personas">
@@ -320,7 +329,7 @@ export default function Programados() {
             </label>
 
             <div className="flex items-center gap-3">
-              <button className="btn-primary" disabled={save.isPending || !form.name || !form.prompt || !form.chat_id}
+              <button className="btn-primary" disabled={save.isPending || !form.name || !form.prompt || (!form.send_to_all && !form.chat_id)}
                 onClick={() => save.mutate(form)}>
                 <Send className="w-3.5 h-3.5" /> Guardar
               </button>
@@ -361,8 +370,8 @@ export default function Programados() {
                   <p className="font-mono text-[10px] text-white truncate">{p.description || p.cron_expression}</p>
                 </div>
                 <div className="col-span-2 td">
-                  <p className="text-xs text-white">{p.chat_label || "—"}</p>
-                  <p className="font-mono text-[10px] text-white">{p.chat_id}</p>
+                  <p className="text-xs text-white">{p.send_to_all ? "Todos los contactos" : (p.chat_label || "—")}</p>
+                  <p className="font-mono text-[10px] text-white">{p.send_to_all ? "todos" : p.chat_id}</p>
                 </div>
                 <div className="col-span-2 td">
                   <p className="text-xs text-white"><FrequencyLabel p={p} /></p>

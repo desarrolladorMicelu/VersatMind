@@ -115,6 +115,7 @@ class ScheduledPromptCreate(BaseModel):
     prompt: str
     chat_id: int
     chat_label: str = ""
+    send_to_all: bool = False
     frequency: str = "daily"          # "daily" | "weekly" | "custom"
     hour: int = 8
     minute: int = 0
@@ -129,6 +130,7 @@ class ScheduledPromptUpdate(BaseModel):
     prompt: str | None = None
     chat_id: int | None = None
     chat_label: str | None = None
+    send_to_all: bool | None = None
     frequency: str | None = None
     hour: int | None = None
     minute: int | None = None
@@ -1707,6 +1709,7 @@ def _prompt_to_dict(p) -> dict:
         "prompt": p.prompt,
         "chat_id": p.chat_id,
         "chat_label": p.chat_label or "",
+        "send_to_all": bool(getattr(p, "send_to_all", False)),
         "frequency": p.frequency,
         "cron_expression": p.cron_expression,
         "timezone": p.timezone,
@@ -1845,6 +1848,7 @@ async def prompts_create(
         prompt=body.prompt,
         chat_id=body.chat_id,
         chat_label=(body.chat_label or "").strip() or None,
+        send_to_all=body.send_to_all,
         frequency=body.frequency,
         cron_expression=cron,
         timezone=body.timezone or "America/Bogota",
@@ -1891,6 +1895,8 @@ async def prompts_update(
         sp.chat_id = body.chat_id
     if body.chat_label is not None:
         sp.chat_label = body.chat_label.strip() or None
+    if body.send_to_all is not None:
+        sp.send_to_all = body.send_to_all
     if body.timezone is not None:
         sp.timezone = body.timezone or "America/Bogota"
     if body.is_active is not None:

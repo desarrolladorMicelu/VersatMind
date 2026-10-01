@@ -272,6 +272,7 @@ export interface ScheduledPrompt {
   prompt: string;
   chat_id: number;
   chat_label: string;
+  send_to_all: boolean;
   frequency: Frequency;
   cron_expression: string;
   timezone: string;
@@ -289,6 +290,7 @@ export interface ScheduledPromptPayload {
   prompt: string;
   chat_id: number;
   chat_label?: string;
+  send_to_all: boolean;
   frequency: Frequency;
   hour: number;
   minute: number;
@@ -323,7 +325,7 @@ export const promptsApi = {
     api.delete(`/prompts/${id}`, { params: { tenant_id: tenantId } }).then((r) => r.data),
   runNow: (tenantId: number, id: number) =>
     api
-      .post<{ ok: boolean; text?: string; error?: string; rendered_prompt?: string }>(
+      .post<{ ok: boolean; text?: string; error?: string; rendered_prompt?: string; destinos?: number }>(
         `/prompts/${id}/run`,
         null,
         { params: { tenant_id: tenantId } }

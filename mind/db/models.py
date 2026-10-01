@@ -490,6 +490,11 @@ class ScheduledPrompt(Base):
     # Chat/grupo de Telegram destino
     chat_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     chat_label: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Si es True, se envía a todos los contactos conocidos del tenant
+    # (usuarios aprobados + chats que el bot ha visto). chat_id se ignora.
+    send_to_all: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False, server_default="false"
+    )
     # "daily" | "weekly" | "custom"
     frequency: Mapped[str] = mapped_column(Text, nullable=False, default="daily")
     # Expresión cron efectiva (siempre se almacena la resuelta)

@@ -60,6 +60,7 @@ async def process(
     session: AsyncSession,
     source: str = "chat",
     forced_permissions: frozenset[str] | None = None,
+    persist_history: bool = True,
 ) -> AgentResult:
     """
     Procesa un mensaje del usuario usando el loop LLM con tool-calling.
@@ -424,14 +425,15 @@ async def process(
         new_messages.append(Message(role="assistant", content=final_text))
 
     # --- 5. Persistir historial ---
-    try:
-        await append_messages(chat_id, tenant.id, new_messages, session)
-        await session.commit()
-    except Exception as exc:
-        logger.warning(
-            "No se pudo persistir historial tenant=%s chat_id=%s: %s",
-            tenant.slug, chat_id, type(exc).__name__,
-        )
+    if persist_history:
+        try:
+            await append_messages(chat_id, tenant.id, new_messages, session)
+            await session.commit()
+        except Exception as exc:
+            logger.warning(
+                "No se pudo persistir historial tenant=%s chat_id=%s: %s",
+                tenant.slug, chat_id, type(exc).__name__,
+            )
 
     # --- 6. Registrar en auditoría ---
     user_id = auth_result.user.user_id if auth_result.user else None
