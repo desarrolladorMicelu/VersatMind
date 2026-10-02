@@ -17,6 +17,21 @@ from mind.data.sqlserver import (
     get_cuadre_caja as _get_cuadre_caja,
     get_productos as _get_productos,
     get_series_utilidad as _get_series_utilidad,
+    get_catalogo_precios as _get_catalogo_precios,
+    get_stock_celulares as _get_stock_celulares,
+    get_gangazos as _get_gangazos,
+    get_ventas_recientes as _get_ventas_recientes,
+    get_inventario_bodega as _get_inventario_bodega,
+    get_imei as _get_imei,
+    get_historial_cliente as _get_historial_cliente,
+    get_cliente_por_nit as _get_cliente_por_nit,
+    get_direccion_proveedor as _get_direccion_proveedor,
+    get_estado_sync_clientes as _get_estado_sync_clientes,
+    get_inventario_activos as _get_inventario_activos,
+    get_cliente_completo as _get_cliente_completo,
+    get_factura_reciente as _get_factura_reciente,
+    get_medios_pago as _get_medios_pago,
+    get_movimientos_contables as _get_movimientos_contables,
 )
 
 
@@ -59,3 +74,65 @@ def get_productos(filtro: str = "", creds: TenantCredentials | None = None) -> l
 
 def get_series_utilidad(start: date, end: date, creds: TenantCredentials | None = None) -> list[dict[str, Any]]:
     return _get_series_utilidad(start, end, _creds(creds))
+
+
+# ── Consultas adicionales ─────────────────────────────────────────────────────
+
+def get_catalogo_precios(filtro: str = "", limite: int = 200, creds: TenantCredentials | None = None) -> list[dict[str, Any]]:
+    return _get_catalogo_precios(filtro, limite, creds=_creds(creds))
+
+
+def get_stock_celulares(creds: TenantCredentials | None = None) -> list[dict[str, Any]]:
+    return _get_stock_celulares(creds=_creds(creds))
+
+
+def get_gangazos(creds: TenantCredentials | None = None) -> list[dict[str, Any]]:
+    return _get_gangazos(creds=_creds(creds))
+
+
+def get_ventas_recientes(dias: int = 90, limite: int = 1000, creds: TenantCredentials | None = None) -> list[dict[str, Any]]:
+    return _get_ventas_recientes(dias, limite, creds=_creds(creds))
+
+
+def get_inventario_bodega(bodega: str, limite: int = 1000, creds: TenantCredentials | None = None) -> list[dict[str, Any]]:
+    return _get_inventario_bodega(bodega, limite, creds=_creds(creds))
+
+
+def get_imei(imei: str, creds: TenantCredentials | None = None) -> list[dict[str, Any]]:
+    return _get_imei(imei, creds=_creds(creds))
+
+
+def get_historial_cliente(nit: str, limite: int = 200, creds: TenantCredentials | None = None) -> list[dict[str, Any]]:
+    return _get_historial_cliente(nit, limite, creds=_creds(creds))
+
+
+def get_cliente_por_nit(nit: str, creds: TenantCredentials | None = None) -> list[dict[str, Any]]:
+    return _get_cliente_por_nit(nit, creds=_creds(creds))
+
+
+def get_direccion_proveedor(nombre: str, creds: TenantCredentials | None = None) -> list[dict[str, Any]]:
+    return _get_direccion_proveedor(nombre, creds=_creds(creds))
+
+
+def get_estado_sync_clientes(creds: TenantCredentials | None = None) -> list[dict[str, Any]]:
+    return _get_estado_sync_clientes(creds=_creds(creds))
+
+
+def get_inventario_activos(limite: int = 2000, creds: TenantCredentials | None = None) -> list[dict[str, Any]]:
+    return _get_inventario_activos(limite, creds=_creds(creds))
+
+
+def get_cliente_completo(nit: str, creds: TenantCredentials | None = None) -> list[dict[str, Any]]:
+    return _get_cliente_completo(nit, creds=_creds(creds))
+
+
+def get_factura_reciente(nit: str, creds: TenantCredentials | None = None) -> list[dict[str, Any]]:
+    return _get_factura_reciente(nit, creds=_creds(creds))
+
+
+def get_medios_pago(creds: TenantCredentials | None = None) -> list[dict[str, Any]]:
+    return _get_medios_pago(creds=_creds(creds))
+
+
+def get_movimientos_contables(start: date, end: date, limite: int = 500, creds: TenantCredentials | None = None) -> list[dict[str, Any]]:
+    return _get_movimientos_contables(start, end, limite, creds=_creds(creds))

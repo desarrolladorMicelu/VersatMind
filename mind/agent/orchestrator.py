@@ -40,8 +40,26 @@ Herramientas disponibles:
 - consultar_finanzas: CxP, abonos, cuadre de caja
 - consultar_productos: catálogo de productos
 - consultar_cxp: cuentas por pagar
+- catalogo_precios: productos con precio, marca/categoría (búsqueda por texto)
+- stock_celulares: stock en tiempo real de celulares por referencia y bodega
+- gangazos: equipos de servicio técnico listos para venta como gangazo
+- ventas_recientes: ventas de los últimos días (qué, cuándo, quién, a qué cliente)
+- inventario_bodega: inventario físico de una bodega (arqueo, IMEI a IMEI)
+- validar_imei: si un IMEI/serie existe, en qué bodega y qué producto es
+- historial_cliente: compras de un cliente por NIT (qué, cuándo, cuánto)
+- buscar_cliente: verifica si un NIT existe como cliente y devuelve su nombre
+- direccion_proveedor: dirección registrada de un proveedor por nombre
+- estado_sincronizacion_clientes: estado de sincronización de clientes ventas↔Ofima
+- inventario_activos: equipos activos en inventario con descripción
+- cliente_completo: datos del cliente por NIT (dirección, teléfonos, email) para firmas
+- factura_reciente_cliente: última factura de un cliente (para asociar pedidos)
+- medios_pago: medios de pago / bancos registrados
+- movimientos_contables: movimientos de caja/contables por rango de fechas
 - generar_informe: genera PDF o Excel
-- crear_tarea_programada / listar_tareas / eliminar_tarea / modificar_tarea"""
+- crear_tarea_programada / listar_tareas / eliminar_tarea / modificar_tarea
+
+Cuando pregunten por precios, stock, IMEI, gangazos, historial de un cliente, proveedores,
+arqueos o sincronización, USA la herramienta correspondiente (no inventes datos)."""
 
 
 @dataclass
@@ -253,6 +271,11 @@ async def process(
     ofima_tools = {
         "consultar_ventas", "consultar_ventas_detalle", "consultar_indicadores",
         "consultar_finanzas", "consultar_productos", "consultar_cxp", "generar_informe",
+        "catalogo_precios", "stock_celulares", "gangazos", "ventas_recientes",
+        "inventario_bodega", "validar_imei", "historial_cliente", "buscar_cliente",
+        "direccion_proveedor", "estado_sincronizacion_clientes",
+        "inventario_activos", "cliente_completo", "factura_reciente_cliente",
+        "medios_pago", "movimientos_contables",
     }
     # Tools de tareas programadas — solo si el tenant tiene OFIMA
     task_tools = {"crear_tarea_programada", "listar_tareas", "eliminar_tarea", "modificar_tarea"}

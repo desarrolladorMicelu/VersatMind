@@ -66,6 +66,23 @@ def _register_all_tools() -> None:
         consultar_productos,
         consultar_cxp,
     )
+    from mind.agent.tools.ofima_tools import (
+        catalogo_precios,
+        stock_celulares,
+        gangazos,
+        ventas_recientes,
+        inventario_bodega,
+        validar_imei,
+        historial_cliente,
+        buscar_cliente,
+        direccion_proveedor,
+        estado_sincronizacion_clientes,
+        inventario_activos,
+        cliente_completo,
+        factura_reciente_cliente,
+        medios_pago,
+        movimientos_contables,
+    )
     from mind.agent.tools.report_tools import generar_informe
     from mind.agent.tools.scheduler_tools import (
         crear_tarea_programada,
@@ -181,6 +198,210 @@ def _register_all_tools() -> None:
                     "fecha_fin": {"type": "string", "description": "YYYY-MM-DD (opcional)"},
                 },
                 "required": ["tipo", "formato"],
+            },
+        },
+    )
+    # ── Consultas OFIMA adicionales ──────────────────────────────────────────
+    TOOL_REGISTRY["catalogo_precios"] = ToolDefinition(
+        fn=catalogo_precios,
+        permission=Permission.READ_SALES,
+        schema={
+            "name": "catalogo_precios",
+            "description": "Catálogo de productos con precio, marca/categoría, línea y disponibilidad (OFIMA). "
+                           "Úsala para saber qué productos existen y a qué precio.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "filtro": {"type": "string", "description": "Texto a buscar en descripción o código (opcional)"},
+                    "limite": {"type": "integer", "description": "Máximo de filas (default 200)"},
+                },
+                "required": [],
+            },
+        },
+    )
+    TOOL_REGISTRY["stock_celulares"] = ToolDefinition(
+        fn=stock_celulares,
+        permission=Permission.READ_SALES,
+        schema={
+            "name": "stock_celulares",
+            "description": "Stock en tiempo real de celulares por referencia y bodega (OFIMA). "
+                           "Úsala para saber cuántas unidades hay disponibles.",
+            "parameters": {"type": "object", "properties": {}, "required": []},
+        },
+    )
+    TOOL_REGISTRY["gangazos"] = ToolDefinition(
+        fn=gangazos,
+        permission=Permission.READ_SALES,
+        schema={
+            "name": "gangazos",
+            "description": "Equipos de servicio técnico con estado 'C' disponibles para venta como gangazo, "
+                           "con su nota/precio en XNOTA (OFIMA).",
+            "parameters": {"type": "object", "properties": {}, "required": []},
+        },
+    )
+    TOOL_REGISTRY["ventas_recientes"] = ToolDefinition(
+        fn=ventas_recientes,
+        permission=Permission.READ_SALES,
+        schema={
+            "name": "ventas_recientes",
+            "description": "Ventas de los últimos N días: qué se vendió, cuándo, quién lo vendió y a qué cliente "
+                           "(OFIMA, vista ventas_bodega, facturas FB/FM/FI).",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "dias": {"type": "integer", "description": "Días hacia atrás (default 90)"},
+                    "limite": {"type": "integer", "description": "Máximo de filas (default 1000)"},
+                },
+                "required": [],
+            },
+        },
+    )
+    TOOL_REGISTRY["inventario_bodega"] = ToolDefinition(
+        fn=inventario_bodega,
+        permission=Permission.READ_SALES,
+        schema={
+            "name": "inventario_bodega",
+            "description": "Inventario físico exacto (serie/IMEI a serie) de una bodega, para arqueo (OFIMA).",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "bodega": {"type": "string", "description": "Código de bodega. Ej: 'BM', 'BB', 'BCAL'"},
+                    "limite": {"type": "integer", "description": "Máximo de filas (default 1000)"},
+                },
+                "required": ["bodega"],
+            },
+        },
+    )
+    TOOL_REGISTRY["validar_imei"] = ToolDefinition(
+        fn=validar_imei,
+        permission=Permission.READ_SALES,
+        schema={
+            "name": "validar_imei",
+            "description": "Dado un IMEI/serie, indica si existe en Ofima, en qué bodega está y qué producto es.",
+            "parameters": {
+                "type": "object",
+                "properties": {"imei": {"type": "string", "description": "IMEI o serie a validar"}},
+                "required": ["imei"],
+            },
+        },
+    )
+    TOOL_REGISTRY["historial_cliente"] = ToolDefinition(
+        fn=historial_cliente,
+        permission=Permission.READ_SALES,
+        schema={
+            "name": "historial_cliente",
+            "description": "Historial de compras de un cliente por NIT/cédula: qué compró, cuándo y cuánto pagó (OFIMA).",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "nit": {"type": "string", "description": "NIT o cédula del cliente"},
+                    "limite": {"type": "integer", "description": "Máximo de filas (default 200)"},
+                },
+                "required": ["nit"],
+            },
+        },
+    )
+    TOOL_REGISTRY["buscar_cliente"] = ToolDefinition(
+        fn=buscar_cliente,
+        permission=Permission.READ_SALES,
+        schema={
+            "name": "buscar_cliente",
+            "description": "Busca si un NIT/cédula existe como cliente en Ofima y devuelve su nombre.",
+            "parameters": {
+                "type": "object",
+                "properties": {"nit": {"type": "string", "description": "NIT o cédula a buscar"}},
+                "required": ["nit"],
+            },
+        },
+    )
+    TOOL_REGISTRY["direccion_proveedor"] = ToolDefinition(
+        fn=direccion_proveedor,
+        permission=Permission.READ_FINANCE,
+        schema={
+            "name": "direccion_proveedor",
+            "description": "Obtiene la dirección registrada de un proveedor por su nombre (OFIMA).",
+            "parameters": {
+                "type": "object",
+                "properties": {"proveedor": {"type": "string", "description": "Nombre del proveedor"}},
+                "required": ["proveedor"],
+            },
+        },
+    )
+    TOOL_REGISTRY["estado_sincronizacion_clientes"] = ToolDefinition(
+        fn=estado_sincronizacion_clientes,
+        permission=Permission.READ_FINANCE,
+        schema={
+            "name": "estado_sincronizacion_clientes",
+            "description": "Estado de sincronización de clientes entre el sistema de ventas y Ofima "
+                           "(pendientes y sincronizados en la última hora).",
+            "parameters": {"type": "object", "properties": {}, "required": []},
+        },
+    )
+    TOOL_REGISTRY["inventario_activos"] = ToolDefinition(
+        fn=inventario_activos,
+        permission=Permission.READ_SALES,
+        schema={
+            "name": "inventario_activos",
+            "description": "Todos los equipos activos en inventario (series/IMEI) con su descripción (OFIMA). "
+                           "Úsala para inventario consolidado de los equipos vigentes.",
+            "parameters": {
+                "type": "object",
+                "properties": {"limite": {"type": "integer", "description": "Máximo de filas (default 2000)"}},
+                "required": [],
+            },
+        },
+    )
+    TOOL_REGISTRY["cliente_completo"] = ToolDefinition(
+        fn=cliente_completo,
+        permission=Permission.READ_SALES,
+        schema={
+            "name": "cliente_completo",
+            "description": "Datos completos de un cliente por NIT: dirección, teléfonos y email. "
+                           "Úsala para firmar documentos (mandato, comodato, antifraude).",
+            "parameters": {
+                "type": "object",
+                "properties": {"nit": {"type": "string", "description": "NIT o cédula del cliente"}},
+                "required": ["nit"],
+            },
+        },
+    )
+    TOOL_REGISTRY["factura_reciente_cliente"] = ToolDefinition(
+        fn=factura_reciente_cliente,
+        permission=Permission.READ_SALES,
+        schema={
+            "name": "factura_reciente_cliente",
+            "description": "Factura más reciente de un cliente (tipo y número) para asociar pedidos online.",
+            "parameters": {
+                "type": "object",
+                "properties": {"nit": {"type": "string", "description": "NIT o cédula del cliente"}},
+                "required": ["nit"],
+            },
+        },
+    )
+    TOOL_REGISTRY["medios_pago"] = ToolDefinition(
+        fn=medios_pago,
+        permission=Permission.READ_FINANCE,
+        schema={
+            "name": "medios_pago",
+            "description": "Lista de medios de pago / bancos registrados en Ofima (efectivo, bancos, datáfono, etc.).",
+            "parameters": {"type": "object", "properties": {}, "required": []},
+        },
+    )
+    TOOL_REGISTRY["movimientos_contables"] = ToolDefinition(
+        fn=movimientos_contables,
+        permission=Permission.READ_FINANCE,
+        schema={
+            "name": "movimientos_contables",
+            "description": "Movimientos contables/caja por rango de fechas, con tercero y ciudad "
+                           "(crédito/débito). Úsala para flujo de caja y revisión contable.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "fecha_inicio": {"type": "string", "description": "YYYY-MM-DD"},
+                    "fecha_fin": {"type": "string", "description": "YYYY-MM-DD (exclusivo)"},
+                    "limite": {"type": "integer", "description": "Máximo de filas (default 500)"},
+                },
+                "required": ["fecha_inicio", "fecha_fin"],
             },
         },
     )

@@ -140,6 +140,11 @@ def _filter_tools(tools: list[dict], tenant: Tenant) -> list[dict]:
     ofima_tools = {
         "consultar_ventas", "consultar_ventas_detalle", "consultar_indicadores",
         "consultar_finanzas", "consultar_productos", "consultar_cxp", "generar_informe",
+        "catalogo_precios", "stock_celulares", "gangazos", "ventas_recientes",
+        "inventario_bodega", "validar_imei", "historial_cliente", "buscar_cliente",
+        "direccion_proveedor", "estado_sincronizacion_clientes",
+        "inventario_activos", "cliente_completo", "factura_reciente_cliente",
+        "medios_pago", "movimientos_contables",
     }
     task_tools = {"crear_tarea_programada", "listar_tareas", "eliminar_tarea", "modificar_tarea"}
     result = []
