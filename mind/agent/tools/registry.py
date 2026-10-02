@@ -398,7 +398,7 @@ def _register_all_tools() -> None:
                 "type": "object",
                 "properties": {
                     "fecha_inicio": {"type": "string", "description": "YYYY-MM-DD"},
-                    "fecha_fin": {"type": "string", "description": "YYYY-MM-DD (exclusivo)"},
+                    "fecha_fin": {"type": "string", "description": "YYYY-MM-DD (último día incluido)"},
                     "limite": {"type": "integer", "description": "Máximo de filas (default 500)"},
                 },
                 "required": ["fecha_inicio", "fecha_fin"],

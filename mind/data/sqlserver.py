@@ -13,13 +13,21 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import Any
 
 import pyodbc
 
 logger = logging.getLogger(__name__)
+
+
+def _incl(end: date) -> str:
+    """
+    Convierte el último día (inclusivo) en el límite superior exclusivo que
+    usan las consultas. Así 'fecha_fin = 2026-08-31' incluye todo el 31.
+    """
+    return str(end + timedelta(days=1))
 
 
 # ---------------------------------------------------------------------------
@@ -119,7 +127,7 @@ def get_sales(start: date, end: date, creds: TenantCredentials) -> list[dict[str
     """
     with _get_connection(creds) as conn:
         cur = conn.cursor()
-        cur.execute(sql, str(start), str(end))
+        cur.execute(sql, str(start), _incl(end))
         return _rows_to_dicts(cur)
 
 
@@ -141,7 +149,7 @@ def get_sales_summary(start: date, end: date, creds: TenantCredentials) -> list[
     """
     with _get_connection(creds) as conn:
         cur = conn.cursor()
-        cur.execute(sql, str(start), str(end))
+        cur.execute(sql, str(start), _incl(end))
         return _rows_to_dicts(cur)
 
 
@@ -166,7 +174,7 @@ def get_cuentas_por_pagar(start: date, end: date, creds: TenantCredentials) -> l
     """
     with _get_connection(creds) as conn:
         cur = conn.cursor()
-        cur.execute(sql, str(start), str(end))
+        cur.execute(sql, str(start), _incl(end))
         return _rows_to_dicts(cur)
 
 
@@ -188,7 +196,7 @@ def get_abonos(start: date, end: date, creds: TenantCredentials) -> list[dict[st
     """
     with _get_connection(creds) as conn:
         cur = conn.cursor()
-        cur.execute(sql, str(start), str(end))
+        cur.execute(sql, str(start), _incl(end))
         return _rows_to_dicts(cur)
 
 
@@ -210,7 +218,7 @@ def get_cuadre_caja(start: date, end: date, creds: TenantCredentials) -> list[di
     """
     with _get_connection(creds) as conn:
         cur = conn.cursor()
-        cur.execute(sql, str(start), str(end))
+        cur.execute(sql, str(start), _incl(end))
         return _rows_to_dicts(cur)
 
 
@@ -542,5 +550,5 @@ def get_movimientos_contables(
     """
     with _get_connection(creds) as conn:
         cur = conn.cursor()
-        cur.execute(sql, str(start), str(end))
+        cur.execute(sql, str(start), _incl(end))
         return _rows_to_dicts(cur)

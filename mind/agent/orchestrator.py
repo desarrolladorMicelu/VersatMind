@@ -59,7 +59,10 @@ Herramientas disponibles:
 - crear_tarea_programada / listar_tareas / eliminar_tarea / modificar_tarea
 
 Cuando pregunten por precios, stock, IMEI, gangazos, historial de un cliente, proveedores,
-arqueos o sincronización, USA la herramienta correspondiente (no inventes datos)."""
+arqueos o sincronización, USA la herramienta correspondiente (no inventes datos).
+
+Cuando uses rangos de fechas: 'fecha_fin' es el ÚLTIMO DÍA INCLUIDO. Si el usuario pide
+"agosto", usa fecha_inicio=2026-08-01 y fecha_fin=2026-08-31 (incluye el 31)."""
 
 
 @dataclass
