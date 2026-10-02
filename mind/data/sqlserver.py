@@ -123,6 +123,8 @@ def get_sales(start: date, end: date, creds: TenantCredentials) -> list[dict[str
             origen
         FROM MvTrade
         WHERE fhcompra >= ? AND fhcompra < ?
+          AND TIPODCTO IN ('FT','FM','FB','FC','FI')
+          AND ORIGEN = 'fac'
         ORDER BY fhcompra DESC
     """
     with _get_connection(creds) as conn:
@@ -144,6 +146,8 @@ def get_sales_summary(start: date, end: date, creds: TenantCredentials) -> list[
             AVG(CAST(vlrventa  AS DECIMAL(18,2)))       AS promedio_venta
         FROM MvTrade
         WHERE fhcompra >= ? AND fhcompra < ?
+          AND TIPODCTO IN ('FT','FM','FB','FC','FI')
+          AND ORIGEN = 'fac'
         GROUP BY DATEADD(month, DATEDIFF(month, 0, fhcompra), 0)
         ORDER BY periodo DESC
     """
