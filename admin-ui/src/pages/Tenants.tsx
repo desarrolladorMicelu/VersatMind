@@ -248,6 +248,7 @@ function TenantModal({
           <ReportConfig
             value={form.report_config ?? null}
             onChange={(v) => setForm((f) => ({ ...f, report_config: v ?? undefined }))}
+            tenantId={form.id}
           />
 
         </div>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FileText, Upload } from "lucide-react";
+import { Eye, FileText, Upload } from "lucide-react";
 
 interface ReportConfigData {
   company_name: string;
@@ -22,9 +22,11 @@ const ALL_SECTIONS = [
 function ReportConfig({
   value,
   onChange,
+  tenantId,
 }: {
   value: ReportConfigData | null;
   onChange: (v: ReportConfigData | null) => void;
+  tenantId?: number;
 }) {
   const [local, setLocal] = useState<ReportConfigData>(
     value ?? { company_name: "", sections: ["balance", "income", "expenses"] }
@@ -60,11 +62,25 @@ function ReportConfig({
     reader.readAsDataURL(file);
   };
 
+  const preview = () => {
+    if (!tenantId) return;
+    window.open(`/api/admin/tenants/${tenantId}/report-preview`, "_blank");
+  };
+
   return (
     <div className="border border-[#1a1a1a]">
       <div className="px-4 py-2.5 border-b border-[#1a1a1a] bg-[#050505] flex items-center gap-2">
         <FileText className="w-3 h-3 text-[#00e5a0]" />
         <span className="section-tag">// INFORMES CONTABLES</span>
+        {tenantId && (
+          <button
+            onClick={preview}
+            className="btn-secondary ml-auto inline-flex items-center gap-1.5"
+          >
+            <Eye className="w-3 h-3" />
+            VISTA PREVIA
+          </button>
+        )}
       </div>
 
       <div className="p-4 grid grid-cols-1 gap-4">

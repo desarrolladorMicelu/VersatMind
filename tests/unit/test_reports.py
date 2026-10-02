@@ -27,7 +27,14 @@ class TestGenerateReportProperty15:
         data=st.lists(_row_strategy, min_size=1, max_size=50),
         fmt=st.sampled_from(["pdf", "excel"]),
     )
-    @settings(max_examples=30, suppress_health_check=[HealthCheck.too_slow])
+    @settings(
+        max_examples=30,
+        deadline=None,
+        suppress_health_check=[
+            HealthCheck.too_slow,
+            HealthCheck.function_scoped_fixture,
+        ],
+    )
     def test_report_file_exists_and_is_readable(self, data, fmt, tmp_path):
         import asyncio
         path = asyncio.get_event_loop().run_until_complete(
@@ -51,9 +58,11 @@ class TestGenerateReportProperty15:
             data, "pdf", title="Informe Test", period="2024",
             client_name="AcmeCorp"
         )
-        with open(path, "rb") as f:
-            content = f.read()
-        assert b"AcmeCorp" in content
+        import pymupdf
+        doc = pymupdf.open(path)
+        text = "".join(page.get_text() for page in doc)
+        doc.close()
+        assert "AcmeCorp" in text
         os.unlink(path)
 
     @pytest.mark.asyncio

@@ -587,6 +587,61 @@ async def tenant_update(
     return {"ok": True}
 
 
+@router.get("/tenants/{tenant_id}/report-preview")
+async def tenant_report_preview(
+    tenant_id: int,
+    admin=Depends(require_superadmin),
+    session: AsyncSession = Depends(get_session),
+):
+    """Vista previa HTML del informe contable con la configuración del tenant."""
+    from mind.db.models import Tenant
+    from mind.reports.generator import render_report_html
+
+    tenant = (await session.execute(
+        select(Tenant).where(Tenant.id == tenant_id)
+    )).scalar_one_or_none()
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant no encontrado")
+
+    sample_sections = [
+        {
+            "title": "Balance General",
+            "headers": ["Cuenta", "Valor"],
+            "rows": [
+                ["Órdenes Confirmadas", "$3.296.800"],
+                ["Órdenes Pendientes", "$0"],
+                ["Total Órdenes", "$8.187.965"],
+            ],
+            "summary": "Comparativa de órdenes confirmadas y pendientes.",
+        },
+        {
+            "title": "Estado de Resultados (Ingresos)",
+            "headers": ["Mes", "Ingresos Confirmados", "Ingresos Pendientes"],
+            "rows": [["Septiembre 2026", "$4.426.795", "$0"]],
+            "summary": "Total de ingresos para septiembre de 2026.",
+        },
+        {
+            "title": "Cuentas por Cobrar",
+            "headers": ["Cliente", "Monto", "Estado"],
+            "rows": [],
+            "summary": "No hay órdenes pendientes de pago.",
+        },
+        {
+            "title": "Inventario",
+            "headers": [],
+            "rows": [],
+            "summary": "",
+        },
+    ]
+    html = render_report_html(
+        sample_sections,
+        tenant.report_config or {},
+        period="Septiembre 2026",
+        title="Informe Contable",
+    )
+    return Response(content=html, media_type="text/html")
+
+
 @router.delete("/tenants/{tenant_id}")
 async def tenant_delete(
     tenant_id: int,
