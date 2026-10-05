@@ -5,10 +5,14 @@ import api from "../lib/api";
 import PageHeader from "../components/PageHeader";
 import { useTenant } from "../contexts/TenantContext";
 
-const ALL_PERMISSIONS = ["READ_SALES","READ_KPI","READ_FINANCE","GENERATE_REPORT","MANAGE_TASKS"];
+const ALL_PERMISSIONS = [
+  "READ_SALES","READ_KPI","READ_FINANCE","GENERATE_REPORT","MANAGE_TASKS",
+  "READ_EXTERNAL_DB","READ_MAIL","READ_CALENDAR",
+];
 const PERM_LABELS: Record<string, string> = {
   READ_SALES: "VER VENTAS", READ_KPI: "VER KPIS",
   READ_FINANCE: "VER FINANZAS", GENERATE_REPORT: "INFORMES", MANAGE_TASKS: "TAREAS",
+  READ_EXTERNAL_DB: "DB EXTERNA", READ_MAIL: "CORREO", READ_CALENDAR: "CALENDARIO",
 };
 
 export default function Roles() {

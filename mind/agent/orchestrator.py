@@ -266,6 +266,13 @@ async def process(
     openai_messages.append({"role": "user", "content": message})
 
     tools = get_tool_schemas()
+    # Proveedores de correo/calendario vinculados (para gatear sus tools)
+    try:
+        from mind.integrations.store import get_active_providers
+        email_providers = await get_active_providers(session, tenant.id)
+    except Exception:
+        email_providers = set()
+
     # Filtrar tools no configuradas para este tenant
     tenant_ofima = bool(tenant.sqlserver_host)
     tenant_ext_db = bool(tenant.external_db)
@@ -282,12 +289,17 @@ async def process(
     }
     # Tools de tareas programadas — solo si el tenant tiene OFIMA
     task_tools = {"crear_tarea_programada", "listar_tareas", "eliminar_tarea", "modificar_tarea"}
+    # Tools de correo/calendario — solo si hay una cuenta vinculada
+    mail_tools = {"correos_recientes", "buscar_correos", "leer_correo", "guardar_borrador_respuesta"}
+    calendar_tools = {"eventos_calendario", "proximos_eventos"}
     filtered_tools = []
     for t in tools:
         name = t["function"]["name"]
         if name in ofima_tools and not tenant_ofima:
             continue
         if name in task_tools and not tenant_ofima:
+            continue
+        if (name in mail_tools or name in calendar_tools) and not email_providers:
             continue
         if name == "ejecutar_consulta" and not tenant_ext_db:
             continue

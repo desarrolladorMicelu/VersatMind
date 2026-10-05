@@ -629,3 +629,55 @@ class ChatConversation(Base):
 
     def __repr__(self) -> str:
         return f"<ChatConversation id={self.id} tenant_id={self.tenant_id} title={self.title!r}>"
+
+
+# ---------------------------------------------------------------------------
+# Integraciones OAuth (Outlook / Google: correo y calendario)
+# ---------------------------------------------------------------------------
+
+class IntegrationConnection(Base):
+    """
+    Conexión OAuth de un tenant con un proveedor de correo/calendario.
+    Los tokens se guardan cifrados (Fernet) y se renuevan automáticamente.
+    """
+    __tablename__ = "integration_connections"
+    __table_args__ = (
+        UniqueConstraint(
+            "tenant_id", "provider", "account_email",
+            name="uq_integration_connections_tenant_provider_account",
+        ),
+        Index("idx_integration_connections_tenant", "tenant_id", "provider"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    tenant_id: Mapped[int] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
+    )
+    # "outlook" | "google"
+    provider: Mapped[str] = mapped_column(Text, nullable=False)
+    # sub del admin que vinculó la cuenta
+    owner: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    account_email: Mapped[str] = mapped_column(Text, nullable=False)
+    external_account_id: Mapped[str | None] = mapped_column(Text, nullable=True)
+    access_token_encrypted: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    refresh_token_encrypted: Mapped[str | None] = mapped_column(Text, nullable=True)
+    token_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    scopes: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    # "connected" | "error" | "revoked"
+    status: Mapped[str] = mapped_column(Text, nullable=False, default="connected")
+    last_error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    def __repr__(self) -> str:
+        return (
+            f"<IntegrationConnection id={self.id} tenant_id={self.tenant_id} "
+            f"provider={self.provider!r} account={self.account_email!r}>"
+        )

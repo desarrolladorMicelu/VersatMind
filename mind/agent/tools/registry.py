@@ -94,6 +94,14 @@ def _register_all_tools() -> None:
     from mind.agent.tools.sheets_tool import consultar_sheet
     from mind.agent.tools.alegra_tool import consultar_alegra
     from mind.agent.tools.report_tool import generar_informe_contable
+    from mind.agent.tools.email_tools import (
+        correos_recientes,
+        buscar_correos,
+        leer_correo,
+        guardar_borrador_respuesta,
+        eventos_calendario,
+        proximos_eventos,
+    )
 
     TOOL_REGISTRY["consultar_ventas"] = ToolDefinition(
         fn=consultar_ventas,
@@ -573,6 +581,110 @@ def _register_all_tools() -> None:
                     },
                 },
                 "required": ["secciones", "periodo"],
+            },
+        },
+    )
+    TOOL_REGISTRY["correos_recientes"] = ToolDefinition(
+        fn=correos_recientes,
+        permission=Permission.READ_MAIL,
+        schema={
+            "name": "correos_recientes",
+            "description": "Lista los correos más recientes de la bandeja de entrada del usuario "
+                           "(Outlook o Gmail). Úsala para resúmenes de correo pendiente.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "proveedor": {"type": "string", "enum": ["outlook", "google"],
+                                  "description": "Proveedor. Omitir si hay uno solo vinculado."},
+                    "limite": {"type": "integer", "description": "Máximo de correos (default 10)"},
+                },
+                "required": [],
+            },
+        },
+    )
+    TOOL_REGISTRY["buscar_correos"] = ToolDefinition(
+        fn=buscar_correos,
+        permission=Permission.READ_MAIL,
+        schema={
+            "name": "buscar_correos",
+            "description": "Busca correos por texto (asunto, remitente o contenido).",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "consulta": {"type": "string", "description": "Texto a buscar"},
+                    "proveedor": {"type": "string", "enum": ["outlook", "google"]},
+                    "limite": {"type": "integer", "description": "Máximo de resultados (default 10)"},
+                },
+                "required": ["consulta"],
+            },
+        },
+    )
+    TOOL_REGISTRY["leer_correo"] = ToolDefinition(
+        fn=leer_correo,
+        permission=Permission.READ_MAIL,
+        schema={
+            "name": "leer_correo",
+            "description": "Lee el contenido completo de un correo por su id (usa el id que "
+                           "devuelven correos_recientes o buscar_correos).",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "correo_id": {"type": "string", "description": "Id del correo"},
+                    "proveedor": {"type": "string", "enum": ["outlook", "google"]},
+                },
+                "required": ["correo_id"],
+            },
+        },
+    )
+    TOOL_REGISTRY["guardar_borrador_respuesta"] = ToolDefinition(
+        fn=guardar_borrador_respuesta,
+        permission=Permission.READ_MAIL,
+        schema={
+            "name": "guardar_borrador_respuesta",
+            "description": "Guarda un borrador de respuesta a un correo (NO lo envía). "
+                           "Redacta tú el cuerpo con el contexto del correo original.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "correo_id": {"type": "string", "description": "Id del correo a responder"},
+                    "cuerpo": {"type": "string", "description": "Texto del borrador de respuesta"},
+                    "proveedor": {"type": "string", "enum": ["outlook", "google"]},
+                },
+                "required": ["correo_id", "cuerpo"],
+            },
+        },
+    )
+    TOOL_REGISTRY["eventos_calendario"] = ToolDefinition(
+        fn=eventos_calendario,
+        permission=Permission.READ_CALENDAR,
+        schema={
+            "name": "eventos_calendario",
+            "description": "Lista eventos de calendario en un rango de fechas. Sin fechas, devuelve hoy.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "inicio": {"type": "string", "description": "YYYY-MM-DD"},
+                    "fin": {"type": "string", "description": "YYYY-MM-DD (incluido)"},
+                    "proveedor": {"type": "string", "enum": ["outlook", "google"]},
+                    "limite": {"type": "integer", "description": "Máximo de eventos (default 20)"},
+                },
+                "required": [],
+            },
+        },
+    )
+    TOOL_REGISTRY["proximos_eventos"] = ToolDefinition(
+        fn=proximos_eventos,
+        permission=Permission.READ_CALENDAR,
+        schema={
+            "name": "proximos_eventos",
+            "description": "Lista los próximos eventos desde ahora en los siguientes N días.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "dias": {"type": "integer", "description": "Días hacia adelante (default 7)"},
+                    "proveedor": {"type": "string", "enum": ["outlook", "google"]},
+                },
+                "required": [],
             },
         },
     )

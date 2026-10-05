@@ -153,6 +153,40 @@ export const alegraApi = {
     api.post(`/tenants/${tenantId}/alegra/discover`, payload).then((r) => r.data),
 };
 
+// ── Integraciones (Outlook / Google) ──────────────────────────────────────────
+
+export interface IntegrationProviderStatus {
+  provider: "outlook" | "google";
+  label: string;
+  configured: boolean;
+  connected: boolean;
+  account_email: string | null;
+  status: string | null;
+  connection_id: number | null;
+  last_error: string | null;
+}
+
+export const integrationsApi = {
+  providers: (tenantId: number) =>
+    api
+      .get<IntegrationProviderStatus[]>("/integrations/providers", { params: { tenant_id: tenantId } })
+      .then((r) => r.data),
+  start: (tenantId: number, provider: string) =>
+    api
+      .get<{ authorize_url: string; provider: string }>(`/integrations/${provider}/start`, {
+        params: { tenant_id: tenantId },
+      })
+      .then((r) => r.data),
+  test: (tenantId: number, connectionId: number) =>
+    api
+      .post(`/integrations/connections/${connectionId}/test`, null, { params: { tenant_id: tenantId } })
+      .then((r) => r.data),
+  remove: (tenantId: number, connectionId: number) =>
+    api
+      .delete(`/integrations/connections/${connectionId}`, { params: { tenant_id: tenantId } })
+      .then((r) => r.data),
+};
+
 // ── Consumo de tokens ─────────────────────────────────────────────────────────
 
 export interface UsageSettings {

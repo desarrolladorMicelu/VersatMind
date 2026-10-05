@@ -61,6 +61,19 @@ class Settings(BaseSettings):
     SMTP_FROM: str = ""
     SMTP_TLS: bool = True
 
+    # --- Integraciones OAuth (Outlook / Google: correo y calendario) ---
+    # Base pública para el redirect del callback: <base>/api/admin/integrations/<p>/callback
+    INTEGRATIONS_BASE_URL: str = ""
+    # Clave Fernet para cifrar tokens; si vacío se deriva de ADMIN_SECRET_KEY
+    INTEGRATIONS_ENCRYPTION_KEY: str = ""
+    # Microsoft 365 (Outlook)
+    MS_CLIENT_ID: str = ""
+    MS_CLIENT_SECRET: str = ""
+    MS_TENANT_ID: str = "common"
+    # Google (Gmail / Calendar)
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

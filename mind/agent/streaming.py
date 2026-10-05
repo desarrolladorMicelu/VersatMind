@@ -132,7 +132,9 @@ async def _build_system_prompt(
     return prompt
 
 
-def _filter_tools(tools: list[dict], tenant: Tenant) -> list[dict]:
+def _filter_tools(
+    tools: list[dict], tenant: Tenant, email_providers: frozenset[str] | set[str] = frozenset()
+) -> list[dict]:
     tenant_ofima = bool(tenant.sqlserver_host)
     tenant_ext_db = bool(tenant.external_db)
     tenant_ext_sheets = bool(tenant.external_sheets)
@@ -147,12 +149,16 @@ def _filter_tools(tools: list[dict], tenant: Tenant) -> list[dict]:
         "medios_pago", "movimientos_contables",
     }
     task_tools = {"crear_tarea_programada", "listar_tareas", "eliminar_tarea", "modificar_tarea"}
+    mail_tools = {"correos_recientes", "buscar_correos", "leer_correo", "guardar_borrador_respuesta"}
+    calendar_tools = {"eventos_calendario", "proximos_eventos"}
     result = []
     for t in tools:
         name = t["function"]["name"]
         if name in ofima_tools and not tenant_ofima:
             continue
         if name in task_tools and not tenant_ofima:
+            continue
+        if (name in mail_tools or name in calendar_tools) and not email_providers:
             continue
         if name == "ejecutar_consulta" and not tenant_ext_db:
             continue
@@ -227,7 +233,12 @@ async def stream_chat(
     openai_messages.extend(m.to_openai_dict() for m in truncated)
     openai_messages.append({"role": "user", "content": message})
 
-    tools = _filter_tools(get_tool_schemas(), tenant)
+    try:
+        from mind.integrations.store import get_active_providers
+        email_providers = await get_active_providers(session, tenant.id)
+    except Exception:
+        email_providers = set()
+    tools = _filter_tools(get_tool_schemas(), tenant, email_providers)
 
     new_messages: list[Message] = [Message(role="user", content=message)]
     final_text = ""
