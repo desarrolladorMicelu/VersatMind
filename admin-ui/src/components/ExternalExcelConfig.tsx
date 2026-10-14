@@ -298,14 +298,24 @@ function ExternalExcelConfig({
               )}
             </div>
 
-            {schemaPreview && (
+            {schemaPreview ? (
               <div>
-                <label className="label">Descripción detectada (vista previa)</label>
-                <pre className="font-mono text-xs text-white p-3 border border-[#1a1a1a] bg-[#050505] max-h-60 overflow-y-auto whitespace-pre-wrap">
-                  {schemaPreview}
-                </pre>
+                <label className="label">Descripción detectada — editable (se guarda con el cliente)</label>
+                <textarea
+                  className="font-mono text-xs text-white p-3 border border-[#1a1a1a] bg-[#050505] min-h-[160px] resize-y w-full"
+                  value={schemaPreview}
+                  onChange={(e) => {
+                    setSchemaPreview(e.target.value);
+                    const next = { ...local, schema_description: e.target.value };
+                    setLocal(next);
+                    onChange(next);
+                  }}
+                />
+                <p className="font-mono text-[10px] text-white mt-1.5">
+                  Podés corregir lo que la IA detectó antes de guardar el cliente.
+                </p>
               </div>
-            )}
+            ) : null}
           </>
         ) : null}
 

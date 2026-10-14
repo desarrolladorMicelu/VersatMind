@@ -319,14 +319,25 @@ function ExternalDbConfig({
               )}
             </div>
 
-            {schemaPreview && (
+            {schemaPreview ? (
               <div className="col-span-2">
-                <label className="label">Esquema detectado (vista previa)</label>
-                <pre className="font-mono text-xs text-white p-3 border border-[#1a1a1a] bg-[#050505] max-h-60 overflow-y-auto">
-                  {schemaPreview}
-                </pre>
+                <label className="label">Esquema detectado — editable (se guarda con el cliente)</label>
+                <textarea
+                  className="font-mono text-xs text-white p-3 border border-[#1a1a1a] bg-[#050505] min-h-[160px] resize-y w-full"
+                  value={schemaPreview}
+                  onChange={(e) => {
+                    setSchemaPreview(e.target.value);
+                    const next = { ...local, schema_description: e.target.value };
+                    setLocal(next);
+                    onChange(next);
+                  }}
+                />
+                <p className="font-mono text-[10px] text-white mt-1.5">
+                  Podés corregir lo que la IA detectó (quitar tablas/JOINs que no correspondan)
+                  antes de guardar el cliente.
+                </p>
               </div>
-            )}
+            ) : null}
           </>
         ) : (
           <p className="col-span-2 font-mono text-[10px] text-white leading-relaxed">
