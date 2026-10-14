@@ -70,8 +70,15 @@ async def _build_system_prompt(
             "2. Siempre haz JOIN entre tablas relacionadas (FK) para mostrar nombres "
             "legibles, NUNCA IDs numéricos.\n"
             "3. Usa SOLO los nombres de columna exactos del esquema.\n"
-            "4. Si una consulta falla, intenta una versión más simple antes de rendirte.\n"
-            "5. Los valores como status están en INGLÉS y MAYÚSCULAS; usa los exactos.\n"
+            "4. Si un nombre de tabla o columna tiene MAYÚSCULAS o caracteres "
+            "especiales (ej: Usuarios, Tickets, Puntos_Clientes), escríbelo "
+            "SIEMPRE entre comillas dobles en el SQL: \"Usuarios\". Sin comillas "
+            "PostgreSQL lo convierte a minúsculas y falla con 'relation ... does not exist'.\n"
+            "5. Si una columna numérica es de tipo texto (character varying, ej: "
+            "total de facturas) y necesitas sumarla o promediarla, convierte el "
+            "valor: CAST(columna AS numeric) o columna::numeric.\n"
+            "6. Si una consulta falla, intenta una versión más simple antes de rendirte.\n"
+            "7. Los valores como status están en INGLÉS y MAYÚSCULAS; usa los exactos.\n"
             "Limita resultados con LIMIT."
         )
 
