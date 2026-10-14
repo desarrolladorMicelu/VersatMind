@@ -88,6 +88,7 @@ class ExternalDbPayload(BaseModel):
     user: str = ""
     password: str = ""
     schema: str = ""
+    tables: list[str] = []
 
 class ExternalSheetsPayload(BaseModel):
     spreadsheet_url: str = ""
@@ -368,6 +369,7 @@ async def tenants_list(
                     "database": t.external_db.get("database") or "",
                     "user": t.external_db.get("user") or "",
                     "schema": t.external_db.get("schema") or "public",
+                    "tables": t.external_db.get("tables") or [],
                     "schema_description": t.external_db.get("schema_description"),
                 }
                 if t.external_db
@@ -526,6 +528,8 @@ async def tenant_update(
                 val = body.external_db.get(key)
                 if val:
                     merged[key] = int(val) if key == "port" else val
+            if "tables" in body.external_db:
+                merged["tables"] = body.external_db["tables"] or []
             tenant.external_db = merged
 
     # external_sheets: merge sobre lo almacenado
@@ -799,6 +803,33 @@ async def tenant_test_external_db(
         return {"ok": False, "error": str(exc)}
 
 
+@router.post("/tenants/{tenant_id}/list-external-tables")
+async def tenant_list_external_tables(
+    tenant_id: int,
+    body: ExternalDbPayload,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+):
+    """Lista las tablas disponibles del schema de la base externa."""
+    from mind.db.models import Tenant
+    from mind.data.external.schema_discovery import list_tables
+
+    tenant = (await session.execute(
+        select(Tenant).where(Tenant.id == tenant_id)
+    )).scalar_one_or_none()
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant no encontrado")
+
+    creds = _resolve_external_creds(body, tenant.external_db)
+    try:
+        tables = await asyncio.wait_for(list_tables(creds), timeout=20)
+        return {"ok": True, "tables": tables}
+    except asyncio.TimeoutError:
+        return {"ok": False, "error": "Timeout listando tablas (20 s)."}
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)}
+
+
 @router.post("/tenants/{tenant_id}/discover-schema")
 async def tenant_discover_schema(
     tenant_id: int,
@@ -820,7 +851,8 @@ async def tenant_discover_schema(
     )
 
     async def _discover() -> tuple[str | None, bool]:
-        raw = await introspect_schema(creds)
+        tables = (creds.get("tables") or []) if isinstance(creds.get("tables"), list) else []
+        raw = await introspect_schema(creds, tables=tables)
         if not raw:
             return None, True
         return (await generate_schema_description(raw)), False

@@ -179,7 +179,11 @@ async def process(
             f"{excel_description}\n\n"
             "Para consultarlo usa la herramienta 'consultar_excel' con el nombre exacto de la hoja. "
             "Aplica 'filtros' por columna cuando el usuario pida un subconjunto. "
-            "Usa 'limite' para acotar (default 1000)."
+            "Usa 'limite' para acotar (default 1000).\n\n"
+            "IMPORTANTE: el Excel NO es parte de la base de datos. Sus hojas NO son "
+            "tablas SQL: nunca hagas FROM a una hoja (ej: ASESOR) en una consulta "
+            "'ejecutar_consulta'. Los datos del Excel (metas, nombres, períodos) se "
+            "usan SOLO como referencia para cruzar con los datos reales de la DB."
         )
 
     # Inyectar descripción de Alegra si existe

@@ -29,16 +29,19 @@ function ExternalDbConfig({
       user: "",
       password: "",
       schema: "public",
+      tables: [] as string[],
     }
   );
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [schemaPreview, setSchemaPreview] = useState(value?.schema_description ?? "");
   const [showPass, setShowPass] = useState(false);
+  const [availableTables, setAvailableTables] = useState<string[]>([]);
+  const [tablesBusy, setTablesBusy] = useState(false);
 
   const isEdit = tenantId !== undefined;
 
-  const setField = (k: keyof ExternalDbPayload, v: string | number) => {
+  const setField = (k: keyof ExternalDbPayload, v: string | number | string[]) => {
     const next = { ...local, [k]: v };
     setLocal(next);
     onChange(next);
@@ -92,6 +95,38 @@ function ExternalDbConfig({
           "Error al detectar el esquema."
       );
     }
+  };
+
+  const handleListTables = async () => {
+    if (!tenantId) return;
+    setTablesBusy(true);
+    setErrorMessage("");
+    try {
+      const res = await externalDbApi.listTables(tenantId, local);
+      if (res.ok && res.tables) {
+        setAvailableTables(res.tables);
+      } else {
+        setAvailableTables([]);
+        setErrorMessage(res.error ?? "No se pudieron listar las tablas.");
+      }
+    } catch (e: unknown) {
+      setAvailableTables([]);
+      setErrorMessage(
+        (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
+          (e as Error)?.message ??
+          "Error listando tablas."
+      );
+    } finally {
+      setTablesBusy(false);
+    }
+  };
+
+  const toggleTable = (name: string) => {
+    const current = local.tables ?? [];
+    const next = current.includes(name)
+      ? current.filter((t) => t !== name)
+      : [...current, name];
+    setField("tables", next);
   };
 
   return (
@@ -159,6 +194,54 @@ function ExternalDbConfig({
           />
           <p className="font-mono text-[10px] text-white mt-1.5">
             Si la base tiene varios esquemas, indicá cuál usar (default: public)
+          </p>
+        </div>
+
+        {/* Selección de tablas */}
+        <div className="col-span-2">
+          <label className="label">Tablas a analizar (opcional)</label>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={tablesBusy}
+              onClick={handleListTables}
+            >
+              {tablesBusy && <Loader2 className="w-3 h-3 animate-spin" />}
+              LISTAR TABLAS
+            </button>
+            {local.tables && local.tables.length > 0 && (
+              <span className="font-mono text-[10px] text-[#00e5a0]">
+                {local.tables.length} seleccionada(s)
+              </span>
+            )}
+          </div>
+
+          {availableTables.length > 0 && (
+            <div className="mt-2 max-h-40 overflow-y-auto border border-[#1a1a1a] bg-[#050505] p-2 grid grid-cols-2 gap-1">
+              {availableTables.map((t) => {
+                const checked = (local.tables ?? []).includes(t);
+                return (
+                  <label
+                    key={t}
+                    className={`flex items-center gap-2 font-mono text-[11px] px-2 py-1 cursor-pointer hover:bg-[#111] ${
+                      checked ? "text-[#00e5a0]" : "text-white"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleTable(t)}
+                    />
+                    {t}
+                  </label>
+                );
+              })}
+            </div>
+          )}
+          <p className="font-mono text-[10px] text-white mt-1.5">
+            Si dejás vacío se analizan todas las tablas del schema. Si elegís
+            algunas, "Detectar esquema" se enfocará solo en ellas.
           </p>
         </div>
 

@@ -53,22 +53,38 @@ def _schema_name(creds: dict) -> str:
     return name or "public"
 
 
-async def introspect_schema(creds: dict) -> list[dict]:
+async def introspect_schema(creds: dict, tables: list[str] | None = None) -> list[dict]:
     """
     Conecta a la base externa y retorna su esquema:
     [{table: str, columns: [{name, type, nullable, is_pk}]}]
     Timeout total 30 s.
+
+    Si `tables` (lista de nombres) se provee, solo se analizan esas tablas.
     """
     schema = _schema_name(creds)
     try:
         conn = await _connect(creds)
         try:
             table_rows = await conn.fetch(_TABLES_SQL, schema, timeout=25)
-            tables = [r["table_name"] for r in table_rows]
+            tables_found = [r["table_name"] for r in table_rows]
+
+            wanted: set[str] | None = None
+            if tables:
+                wanted = {t.strip() for t in tables if t and t.strip()}
+                if wanted:
+                    tables_found = [t for t in tables_found if t in wanted]
+            else:
+                wanted = None
+
+            selected = tables_found
+            if not selected:
+                return []
 
             column_rows = await conn.fetch(_COLUMNS_SQL, schema, timeout=25)
             columns_by_table: dict[str, list[dict[str, Any]]] = {}
             for r in column_rows:
+                if r["table_name"] not in selected:
+                    continue
                 columns_by_table.setdefault(r["table_name"], []).append({
                     "name": r["column_name"],
                     "type": r["data_type"],
@@ -78,6 +94,8 @@ async def introspect_schema(creds: dict) -> list[dict]:
 
             pk_rows = await conn.fetch(_PKS_SQL, schema, timeout=25)
             for r in pk_rows:
+                if r["table_name"] not in selected:
+                    continue
                 for col in columns_by_table.get(r["table_name"], []):
                     if col["name"] == r["column_name"]:
                         col["is_pk"] = True
@@ -97,8 +115,28 @@ async def introspect_schema(creds: dict) -> list[dict]:
             "table": table,
             "columns": columns_by_table.get(table, []),
         }
-        for table in tables
+        for table in selected
     ]
+
+
+async def list_tables(creds: dict) -> list[str]:
+    """Retorna los nombres de tablas del schema configurado (sin detalle)."""
+    schema = _schema_name(creds)
+    try:
+        conn = await _connect(creds)
+        try:
+            rows = await conn.fetch(_TABLES_SQL, schema, timeout=15)
+            return [r["table_name"] for r in rows]
+        finally:
+            await conn.close()
+    except ExternalDbError:
+        raise
+    except asyncio.TimeoutError:
+        raise ExternalDbError("Timeout listando tablas de la base externa.") from None
+    except asyncpg.PostgresError as exc:
+        raise ExternalDbError(f"Error de PostgreSQL al listar tablas: {exc}") from exc
+    except Exception as exc:
+        raise ExternalDbError(f"Error al listar tablas: {type(exc).__name__}: {exc}") from exc
 
 
 def _format_raw_schema(raw: list[dict]) -> str:

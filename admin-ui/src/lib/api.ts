@@ -23,6 +23,7 @@ export interface ExternalDbPayload {
   user: string;
   password: string;
   schema?: string;
+  tables?: string[];
   schema_description?: string;
 }
 
@@ -33,6 +34,7 @@ export interface ExternalDbInfo {
   database: string;
   user: string;
   schema: string;
+  tables: string[];
   schema_description?: string;
 }
 
@@ -110,6 +112,8 @@ export const externalDbApi = {
     api.post(`/tenants/${tenantId}/test-external-db`, payload).then((r) => r.data),
   discoverSchema: (tenantId: number, payload: ExternalDbPayload) =>
     api.post(`/tenants/${tenantId}/discover-schema`, payload).then((r) => r.data),
+  listTables: (tenantId: number, payload: ExternalDbPayload) =>
+    api.post(`/tenants/${tenantId}/list-external-tables`, payload).then((r) => r.data),
 };
 
 // ── Google Sheets externa ──────────────────────────────────────────────────

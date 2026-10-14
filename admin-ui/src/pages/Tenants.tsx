@@ -512,6 +512,7 @@ export default function Tenants() {
             user: t.external_db.user ?? "",
 password: "", // nunca pre-rellenamos la contraseña
             schema: t.external_db.schema ?? "public",
+            tables: t.external_db.tables ?? [],
             schema_description: t.external_db.schema_description,
           }
         : undefined,

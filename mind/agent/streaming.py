@@ -97,7 +97,11 @@ async def _build_system_prompt(
             "\n\n## Archivo Excel del cliente (OneDrive/SharePoint)\n\n"
             "Tienes disponible un archivo Excel con este contenido:\n\n"
             f"{excel_description}\n\n"
-            "Para consultarlo usa 'consultar_excel' con el nombre exacto de la hoja."
+            "Para consultarlo usa 'consultar_excel' con el nombre exacto de la hoja.\n"
+            "IMPORTANTE: el Excel NO es parte de la base de datos. Sus hojas NO son "
+            "tablas SQL: nunca hagas FROM a una hoja (ej: ASESOR) en una consulta "
+            "'ejecutar_consulta'. Los datos del Excel se usan SOLO como referencia "
+            "para cruzar con los datos reales de la DB."
         )
 
     alegra_description = (getattr(tenant, "external_alegra", None) or {}).get("schema_description")
