@@ -28,6 +28,11 @@ async def consultar_excel(
 
     tenant = get_tenant()
     conf = getattr(tenant, "external_excel", None)
+    logger.info(
+        "consultar_excel tenant=%s hoja=%s filtros=%s limite=%s conf_keys=%s",
+        tenant.slug, hoja, filtros, limite,
+        list(conf.keys()) if conf else "NO CONF",
+    )
     if not conf:
         return {"error": True, "mensaje": "No hay Excel configurado (OneDrive/SharePoint)."}
 
@@ -47,6 +52,10 @@ async def consultar_excel(
     try:
         rows = await read_sheet(conf, hoja, filters=filtros, limit=limite)
         columns = list(rows[0].keys()) if rows else []
+        logger.info(
+            "consultar_excel tenant=%s hoja=%s ok filas=%s",
+            tenant.slug, hoja, len(rows),
+        )
         return {
             "error": False,
             "data": rows,
@@ -55,7 +64,14 @@ async def consultar_excel(
             "row_count": len(rows),
         }
     except ExternalExcelError as exc:
+        logger.warning(
+            "consultar_excel tenant=%s hoja=%s ExternalExcelError: %s",
+            tenant.slug, hoja, exc,
+        )
         return {"error": True, "mensaje": str(exc)}
     except Exception as exc:
-        logger.warning("Error en consultar_excel tenant=%s: %s", tenant.slug, exc)
+        logger.warning(
+            "consultar_excel tenant=%s hoja=%s Exception: %s",
+            tenant.slug, hoja, exc,
+        )
         return {"error": True, "mensaje": str(exc)}
