@@ -52,20 +52,28 @@ def _client() -> httpx.AsyncClient:
     )
 
 
-def _read_private_key(path: str) -> str:
-    """Lee la clave privada RSA desde un archivo PEM."""
-    try:
-        with open(path, "r") as f:
-            return f.read()
-    except FileNotFoundError:
-        raise ExternalExcelError(
-            f"Archivo de clave privada no encontrado: {path!r}. "
-            "Verificá EXCEL_CLIENT_PRIVATE_KEY en el .env."
-        ) from None
-    except Exception as exc:
-        raise ExternalExcelError(
-            f"Error al leer clave privada {path!r}: {exc}"
-        ) from None
+def _read_private_key(path_or_key: str) -> str:
+    """
+    Lee la clave privada RSA.
+    - Si es una ruta de archivo existente, la lee del disco.
+    - Caso contrario, asume que es el contenido PEM directamente.
+    """
+    import os as _os
+    if _os.path.isfile(path_or_key):
+        try:
+            with open(path_or_key, "r") as f:
+                return f.read()
+        except Exception as exc:
+            raise ExternalExcelError(
+                f"Error al leer archivo de clave {path_or_key!r}: {exc}"
+            ) from None
+    # No es archivo → tratarlo como el PEM directo
+    if "-----BEGIN" in path_or_key:
+        return path_or_key
+    raise ExternalExcelError(
+        "EXCEL_CLIENT_PRIVATE_KEY debe ser la ruta a un archivo .key existente "
+        "o el contenido PEM de la clave privada (incluyendo -----BEGIN RSA PRIVATE KEY-----)."
+    )
 
 
 def _make_client_assertion(client_id: str) -> tuple[str, str]:
