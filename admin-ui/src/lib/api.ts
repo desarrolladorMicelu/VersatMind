@@ -22,6 +22,7 @@ export interface ExternalDbPayload {
   database: string;
   user: string;
   password: string;
+  schema?: string;
   schema_description?: string;
 }
 
@@ -31,6 +32,7 @@ export interface ExternalDbInfo {
   port: number;
   database: string;
   user: string;
+  schema: string;
   schema_description?: string;
 }
 
@@ -66,6 +68,8 @@ export interface Tenant {
   external_sheets: ExternalSheetsInfo | null;
   external_alegra_configured: boolean;
   external_alegra: AlegraInfo | null;
+  external_excel_configured: boolean;
+  external_excel: ExternalExcelInfo | null;
   report_config_configured: boolean;
   report_config: ReportConfigInfo | null;
   created_at: string | null;
@@ -85,6 +89,7 @@ export interface TenantPayload {
   external_db?: ExternalDbPayload;
   external_sheets?: ExternalSheetsPayload;
   external_alegra?: AlegraPayload;
+  external_excel?: ExternalExcelPayload;
   report_config?: ReportConfig;
 }
 
@@ -151,6 +156,35 @@ export const alegraApi = {
     api.post(`/tenants/${tenantId}/alegra/test`, payload).then((r) => r.data),
   discoverTools: (tenantId: number, payload: AlegraPayload) =>
     api.post(`/tenants/${tenantId}/alegra/discover`, payload).then((r) => r.data),
+};
+
+// ── Excel externo (OneDrive/SharePoint) ─────────────────────────────────────
+
+export interface ExternalExcelPayload {
+  file_id?: string;
+  file_name?: string;
+  file_url?: string;
+  schema_description?: string;
+}
+
+export interface ExternalExcelInfo {
+  file_id: string;
+  file_name: string;
+  file_url: string;
+  schema_description?: string;
+}
+
+export const externalExcelApi = {
+  getAuthUrl: (tenantId: number) =>
+    api.get(`/tenants/${tenantId}/excel-auth-url`).then((r) => r.data),
+  listFiles: (tenantId: number) =>
+    api.post(`/tenants/${tenantId}/list-excel-files`).then((r) => r.data),
+  resolveFile: (tenantId: number, payload: ExternalExcelPayload) =>
+    api.post(`/tenants/${tenantId}/resolve-excel`, payload).then((r) => r.data),
+  testConnection: (tenantId: number, payload: ExternalExcelPayload) =>
+    api.post(`/tenants/${tenantId}/test-excel`, payload).then((r) => r.data),
+  discoverSheets: (tenantId: number, payload: ExternalExcelPayload) =>
+    api.post(`/tenants/${tenantId}/discover-excel`, payload).then((r) => r.data),
 };
 
 // ── Integraciones (Outlook / Google) ──────────────────────────────────────────

@@ -74,6 +74,13 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_ID: str = ""
     GOOGLE_CLIENT_SECRET: str = ""
 
+    # --- OneDrive / SharePoint (Excel externo) ---
+    EXCEL_CLIENT_ID: str = ""
+    EXCEL_CLIENT_PRIVATE_KEY: str = ""
+    EXCEL_CLIENT_CERT_FILE: str = ""
+    EXCEL_CLIENT_SECRET: str = ""
+    EXCEL_REDIRECT_URI: str = ""
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

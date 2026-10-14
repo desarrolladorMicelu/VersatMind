@@ -28,6 +28,7 @@ function ExternalDbConfig({
       database: "",
       user: "",
       password: "",
+      schema: "public",
     }
   );
   const [status, setStatus] = useState<Status>("idle");
@@ -146,6 +147,19 @@ function ExternalDbConfig({
             value={local.database}
             onChange={(e) => setField("database", e.target.value)}
           />
+        </div>
+
+        <div>
+          <label className="label">Schema (opcional)</label>
+          <input
+            className="input font-mono text-xs"
+            placeholder="public"
+            value={local.schema ?? ""}
+            onChange={(e) => setField("schema", e.target.value)}
+          />
+          <p className="font-mono text-[10px] text-white mt-1.5">
+            Si la base tiene varios esquemas, indicá cuál usar (default: public)
+          </p>
         </div>
 
         <div>

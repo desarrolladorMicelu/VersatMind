@@ -62,6 +62,10 @@ class Tenant(Base):
     # Alegra (MCP): email, token y schema_description
     external_alegra: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
+    # Excel externo (OneDrive/SharePoint) (JSONB): access_token, refresh_token,
+    # token_expires_at, file_id, file_name, file_url, schema_description
+    external_excel: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+
     # Configuración de informes contables (JSONB): company_name, company_logo,
     # sections, additional_instructions, template_style
     report_config: Mapped[dict | None] = mapped_column(JSONB, nullable=True)

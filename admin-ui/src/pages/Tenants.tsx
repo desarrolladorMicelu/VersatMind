@@ -6,6 +6,7 @@ import type { Tenant, TenantPayload } from "../lib/api";
 import PageHeader from "../components/PageHeader";
 import ExternalDbConfig from "../components/ExternalDbConfig";
 import ExternalSheetsConfig from "../components/ExternalSheetsConfig";
+import ExternalExcelConfig from "../components/ExternalExcelConfig";
 import AlegraConfig from "../components/AlegraConfig";
 import ReportConfig from "../components/ReportConfig";
 
@@ -241,6 +242,13 @@ function TenantModal({
           <AlegraConfig
             value={form.external_alegra ?? null}
             onChange={(v) => setForm((f) => ({ ...f, external_alegra: v ?? undefined }))}
+            tenantId={form.id}
+          />
+
+          {/* Excel (OneDrive/SharePoint) */}
+          <ExternalExcelConfig
+            value={form.external_excel ?? null}
+            onChange={(v) => setForm((f) => ({ ...f, external_excel: v ?? undefined }))}
             tenantId={form.id}
           />
 
@@ -502,11 +510,12 @@ export default function Tenants() {
             port: t.external_db.port ?? 5432,
             database: t.external_db.database ?? "",
             user: t.external_db.user ?? "",
-            password: "", // nunca pre-rellenamos la contraseña
+password: "", // nunca pre-rellenamos la contraseña
+            schema: t.external_db.schema ?? "public",
             schema_description: t.external_db.schema_description,
           }
         : undefined,
-external_sheets: t.external_sheets_configured && t.external_sheets
+      external_sheets: t.external_sheets_configured && t.external_sheets
         ? {
             spreadsheet_url: t.external_sheets.spreadsheet_url ?? "",
             credentials: undefined,
@@ -518,6 +527,14 @@ external_sheets: t.external_sheets_configured && t.external_sheets
             email: t.external_alegra.email ?? "",
             token: "",
             schema_description: t.external_alegra.schema_description,
+          }
+        : undefined,
+      external_excel: t.external_excel_configured && t.external_excel
+        ? {
+            file_id: t.external_excel.file_id ?? "",
+            file_name: t.external_excel.file_name ?? "",
+            file_url: t.external_excel.file_url ?? "",
+            schema_description: t.external_excel.schema_description,
           }
         : undefined,
       report_config: t.report_config_configured && t.report_config
@@ -640,6 +657,9 @@ external_sheets: t.external_sheets_configured && t.external_sheets
                 )}
                 {t.external_alegra_configured && (
                   <p className="font-mono text-[10px] text-[#00e5a0] mt-1">✓ Alegra</p>
+                )}
+                {t.external_excel_configured && (
+                  <p className="font-mono text-[10px] text-[#00e5a0] mt-1">✓ Excel</p>
                 )}
                 {t.report_config_configured && (
                   <p className="font-mono text-[10px] text-[#00e5a0] mt-1">✓ Informes</p>

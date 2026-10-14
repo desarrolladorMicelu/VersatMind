@@ -25,14 +25,14 @@ logger = logging.getLogger(__name__)
 _TABLES_SQL = """
     SELECT table_name
     FROM information_schema.tables
-    WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+    WHERE table_schema = $1 AND table_type = 'BASE TABLE'
     ORDER BY table_name
 """
 
 _COLUMNS_SQL = """
     SELECT table_name, column_name, data_type, is_nullable
     FROM information_schema.columns
-    WHERE table_schema = 'public'
+    WHERE table_schema = $1
     ORDER BY table_name, ordinal_position
 """
 
@@ -43,8 +43,14 @@ _PKS_SQL = """
       ON tc.constraint_name = kcu.constraint_name
      AND tc.table_schema = kcu.table_schema
     WHERE tc.constraint_type = 'PRIMARY KEY'
-      AND tc.table_schema = 'public'
+      AND tc.table_schema = $1
 """
+
+
+def _schema_name(creds: dict) -> str:
+    """Retorna el nombre de schema de la config (default 'public')."""
+    name = str(creds.get("schema") or "public").strip()
+    return name or "public"
 
 
 async def introspect_schema(creds: dict) -> list[dict]:
@@ -53,13 +59,14 @@ async def introspect_schema(creds: dict) -> list[dict]:
     [{table: str, columns: [{name, type, nullable, is_pk}]}]
     Timeout total 30 s.
     """
+    schema = _schema_name(creds)
     try:
         conn = await _connect(creds)
         try:
-            table_rows = await conn.fetch(_TABLES_SQL, timeout=25)
+            table_rows = await conn.fetch(_TABLES_SQL, schema, timeout=25)
             tables = [r["table_name"] for r in table_rows]
 
-            column_rows = await conn.fetch(_COLUMNS_SQL, timeout=25)
+            column_rows = await conn.fetch(_COLUMNS_SQL, schema, timeout=25)
             columns_by_table: dict[str, list[dict[str, Any]]] = {}
             for r in column_rows:
                 columns_by_table.setdefault(r["table_name"], []).append({
@@ -69,7 +76,7 @@ async def introspect_schema(creds: dict) -> list[dict]:
                     "is_pk": False,
                 })
 
-            pk_rows = await conn.fetch(_PKS_SQL, timeout=25)
+            pk_rows = await conn.fetch(_PKS_SQL, schema, timeout=25)
             for r in pk_rows:
                 for col in columns_by_table.get(r["table_name"], []):
                     if col["name"] == r["column_name"]:

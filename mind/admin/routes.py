@@ -60,6 +60,7 @@ class TenantCreate(BaseModel):
     external_db: dict | None = None
     external_sheets: dict | None = None
     external_alegra: dict | None = None
+    external_excel: dict | None = None
     report_config: dict | None = None
 
 class TenantUpdate(BaseModel):
@@ -76,6 +77,7 @@ class TenantUpdate(BaseModel):
     external_db: dict | None = None
     external_sheets: dict | None = None
     external_alegra: dict | None = None
+    external_excel: dict | None = None
     report_config: dict | None = None
 
 class ExternalDbPayload(BaseModel):
@@ -85,10 +87,19 @@ class ExternalDbPayload(BaseModel):
     database: str = ""
     user: str = ""
     password: str = ""
+    schema: str = ""
 
 class ExternalSheetsPayload(BaseModel):
     spreadsheet_url: str = ""
     credentials: dict | None = None
+
+class ExternalExcelPayload(BaseModel):
+    access_token: str = ""
+    refresh_token: str = ""
+    file_id: str = ""
+    file_name: str = ""
+    file_url: str = ""
+    schema_description: str = ""
 
 class TenantAdminCreate(BaseModel):
     username: str
@@ -356,6 +367,7 @@ async def tenants_list(
                     "port": t.external_db.get("port") or 5432,
                     "database": t.external_db.get("database") or "",
                     "user": t.external_db.get("user") or "",
+                    "schema": t.external_db.get("schema") or "public",
                     "schema_description": t.external_db.get("schema_description"),
                 }
                 if t.external_db
@@ -379,6 +391,17 @@ async def tenants_list(
                     "schema_description": t.external_alegra.get("schema_description"),
                 }
                 if t.external_alegra
+                else None
+            ),
+            "external_excel_configured": t.external_excel is not None,
+            "external_excel": (
+                {
+                    "file_id": t.external_excel.get("file_id", ""),
+                    "file_name": t.external_excel.get("file_name", ""),
+                    "file_url": t.external_excel.get("file_url", ""),
+                    "schema_description": t.external_excel.get("schema_description"),
+                }
+                if t.external_excel
                 else None
             ),
             "report_config_configured": t.report_config is not None,
@@ -488,7 +511,7 @@ async def tenant_update(
         raise HTTPException(status_code=404, detail="Tenant no encontrado")
 
     old_token = tenant.bot_token
-    updates = body.model_dump(exclude_none=True, exclude={"external_db", "external_sheets", "external_alegra", "report_config"})
+    updates = body.model_dump(exclude_none=True, exclude={"external_db", "external_sheets", "external_alegra", "external_excel", "report_config"})
     for key, val in updates.items():
         setattr(tenant, key, val)
 
@@ -499,7 +522,7 @@ async def tenant_update(
         else:
             stored = tenant.external_db or {}
             merged = dict(stored)
-            for key in ("engine", "host", "port", "database", "user", "password", "schema_description"):
+            for key in ("engine", "host", "port", "database", "user", "password", "schema", "schema_description"):
                 val = body.external_db.get(key)
                 if val:
                     merged[key] = int(val) if key == "port" else val
@@ -556,6 +579,20 @@ async def tenant_update(
             if schema_desc:
                 merged["schema_description"] = schema_desc
             tenant.external_alegra = merged
+
+    # external_excel: merge sobre lo almacenado (tokens vienen del OAuth2 callback)
+    if body.external_excel is not None:
+        await session.refresh(tenant, attribute_names=["external_excel"])
+        stored = tenant.external_excel or {}
+        merged = dict(stored)
+        if body.external_excel.get("file_id"):
+            merged["file_id"] = body.external_excel["file_id"]
+            merged["file_name"] = body.external_excel.get("file_name", "")
+            merged["file_url"] = body.external_excel.get("file_url", "")
+        schema_desc = body.external_excel.get("schema_description")
+        if schema_desc:
+            merged["schema_description"] = schema_desc
+        tenant.external_excel = merged
 
     # report_config: merge sobre lo almacenado
     if body.report_config is not None:
@@ -696,6 +733,47 @@ def _resolve_external_sheets(body: ExternalSheetsPayload, stored: dict | None) -
     return conf if conf else {}
 
 
+def _resolve_external_excel(stored: dict | None) -> dict:
+    """Construye la conf de Excel desde lo almacenado en el tenant."""
+    if not stored:
+        return {}
+    conf = {
+        "access_token": stored.get("access_token", ""),
+        "refresh_token": stored.get("refresh_token", ""),
+        "token_expires_at": stored.get("token_expires_at", 0),
+        "file_id": stored.get("file_id", ""),
+        "file_name": stored.get("file_name", ""),
+        "file_url": stored.get("file_url", ""),
+        "tenant_domain": stored.get("tenant_domain", "common"),
+    }
+    return conf if conf.get("access_token") else {}
+
+
+async def _maybe_save_excel_tokens(
+    tenant, conf: dict, session: AsyncSession,
+) -> None:
+    """Persiste tokens refrescados si cambiaron."""
+    if not conf:
+        return
+    stored = dict(tenant.external_excel) if tenant.external_excel else {}
+    changed = False
+    ak = conf.get("access_token")
+    rk = conf.get("refresh_token")
+    expires = conf.get("token_expires_at")
+    if ak and ak != stored.get("access_token"):
+        stored["access_token"] = ak
+        changed = True
+    if rk and rk != stored.get("refresh_token"):
+        stored["refresh_token"] = rk
+        changed = True
+    if expires:
+        stored["token_expires_at"] = expires
+        changed = True
+    if changed:
+        tenant.external_excel = stored
+        await session.commit()
+
+
 @router.post("/tenants/{tenant_id}/test-external-db")
 async def tenant_test_external_db(
     tenant_id: int,
@@ -819,6 +897,237 @@ async def tenant_discover_sheets(
         }
     except asyncio.TimeoutError:
         return {"error": "Timeout del descubrimiento de hojas (90 s)."}
+    except Exception as exc:
+        return {"error": str(exc)}
+
+
+# ── EXCEL EXTERNO (OneDrive/SharePoint) ─────────────────────────────────────
+
+
+async def _excel_tenant(tenant_id: int, session, admin) -> Any:
+    """Helper para obtener el tenant y validar existencia."""
+    from mind.db.models import Tenant
+    tenant = (await session.execute(
+        select(Tenant).where(Tenant.id == tenant_id)
+    )).scalar_one_or_none()
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant no encontrado")
+    return tenant
+
+
+@router.get("/tenants/{tenant_id}/excel-auth-url")
+async def tenant_excel_auth_url(
+    tenant_id: int,
+    admin=Depends(require_superadmin),
+    session: AsyncSession = Depends(get_session),
+):
+    """Retorna la URL de autorización OAuth2 de Microsoft para conectar OneDrive."""
+    from mind.data.excel.excel_connector import get_auth_url
+    tenant = await _excel_tenant(tenant_id, session, admin)
+    domain = (tenant.external_excel or {}).get("tenant_domain", "common")
+    url = get_auth_url(tenant_id, domain=domain)
+    return {"url": url}
+
+
+@router.get("/excel-callback")
+async def tenant_excel_callback(
+    code: str = Query(""),
+    state: str = Query(""),
+    error: str | None = Query(None),
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Callback OAuth2 de Microsoft OneDrive.
+
+    Intercambia el code por tokens y los guarda en el tenant.
+    state = "tenant_{tenant_id}"
+    """
+    if error:
+        logger.warning("Excel OAuth2 error from Microsoft: %s", error)
+        raise HTTPException(
+            status_code=400,
+            detail=f"Microsoft retornó un error: {error}",
+        )
+    if not code:
+        raise HTTPException(status_code=400, detail="Falta el parámetro 'code'.")
+    if not state or not state.startswith("tenant_"):
+        raise HTTPException(status_code=400, detail="state inválido.")
+
+    import time as _time
+    from mind.data.excel.excel_connector import exchange_code
+    from mind.db.models import Tenant
+    from mind.tenants.resolver import reload_tenant
+
+    tenant_id_str = state.replace("tenant_", "")
+    try:
+        tenant_id = int(tenant_id_str)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="state inválido (tenant_id no numérico).")
+
+    tenant = (await session.execute(
+        select(Tenant).where(Tenant.id == tenant_id)
+    )).scalar_one_or_none()
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant no encontrado.")
+
+    data = await exchange_code(code)
+    stored = dict(tenant.external_excel) if tenant.external_excel else {}
+    stored["access_token"] = data["access_token"]
+    if "refresh_token" in data:
+        stored["refresh_token"] = data["refresh_token"]
+    stored["token_expires_at"] = int(_time.time()) + data.get("expires_in", 3600)
+    tenant.external_excel = stored
+    await session.flush()
+    await session.commit()
+    await reload_tenant(tenant.id, session)
+
+    # Redirigir al panel admin en la ventana principal
+    from fastapi.responses import HTMLResponse
+    html = (
+        "<!DOCTYPE html><html><head><meta charset='utf-8'>"
+        "<title>Conectado</title>"
+        "<style>"
+        "body{font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#0a0a0a;color:#00e5a0}"
+        ".msg{text-align:center}"
+        ".msg h2{margin:0 0 8px}"
+        ".msg p{color:#888;font-size:14px}"
+        "</style>"
+        "</head><body>"
+        "<div class='msg'>"
+        "<h2>OneDrive conectado</h2>"
+        "<p>Esta ventana se cerrar\u00e1 autom\u00e1ticamente...</p>"
+        "</div>"
+        "<script>"
+        "if(window.opener){"
+        "window.opener.postMessage({type:'excel_connected'},'*');"
+        "setTimeout(function(){window.close()},1500)"
+        "}"
+        "</script>"
+        "</body></html>"
+    )
+    return HTMLResponse(content=html, status_code=200)
+
+
+@router.post("/tenants/{tenant_id}/list-excel-files")
+async def tenant_list_excel_files(
+    tenant_id: int,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+):
+    """Lista los archivos .xlsx del OneDrive del tenant."""
+    from mind.data.excel.excel_connector import list_excel_files
+
+    tenant = await _excel_tenant(tenant_id, session, admin)
+    await session.refresh(tenant, attribute_names=["external_excel"])
+    conf = _resolve_external_excel(tenant.external_excel)
+    if not conf:
+        logger.warning(
+            "list-excel-files: tenant %d tiene external_excel=%s",
+            tenant_id, tenant.external_excel,
+        )
+        return {"error": "OneDrive no configurado. Conectá OneDrive primero."}
+
+    try:
+        files = await asyncio.wait_for(list_excel_files(conf), timeout=30)
+        await _maybe_save_excel_tokens(tenant, conf, session)
+        return {"files": files}
+    except asyncio.TimeoutError:
+        return {"error": "Timeout listando archivos de OneDrive (30 s)."}
+    except Exception as exc:
+        return {"error": str(exc)}
+
+
+@router.post("/tenants/{tenant_id}/resolve-excel")
+async def tenant_resolve_excel(
+    tenant_id: int,
+    body: ExternalExcelPayload,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+):
+    """Resuelve un archivo por URL o ID de OneDrive."""
+    from mind.data.excel.excel_connector import resolve_excel_item
+
+    tenant = await _excel_tenant(tenant_id, session, admin)
+    conf = _resolve_external_excel(tenant.external_excel)
+    if not conf:
+        return {"error": "OneDrive no configurado. Conectá OneDrive primero."}
+
+    url = body.file_url or ""
+    try:
+        item = await asyncio.wait_for(resolve_excel_item(conf, url), timeout=15)
+        await _maybe_save_excel_tokens(tenant, conf, session)
+        return {"ok": True, "file": item}
+    except asyncio.TimeoutError:
+        return {"ok": False, "error": "Timeout resolviendo el archivo (15 s)."}
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)}
+
+
+@router.post("/tenants/{tenant_id}/test-excel")
+async def tenant_test_excel(
+    tenant_id: int,
+    body: ExternalExcelPayload,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+):
+    """Prueba la conexión a OneDrive descargando el Excel seleccionado."""
+    from mind.data.excel.excel_connector import test_connection, _validate_conf
+
+    tenant = await _excel_tenant(tenant_id, session, admin)
+    conf = _resolve_external_excel(tenant.external_excel)
+    # merge con lo que venga del body (file_id para test)
+    if body.file_id:
+        conf["file_id"] = body.file_id
+        conf["file_name"] = body.file_name
+        conf["file_url"] = body.file_url
+
+    try:
+        _validate_conf(conf)
+        sheets = await asyncio.wait_for(test_connection(conf), timeout=15)
+        await _maybe_save_excel_tokens(tenant, conf, session)
+        return {"ok": True, "sheets": sheets}
+    except asyncio.TimeoutError:
+        return {"ok": False, "error": "Timeout conectando a OneDrive (15 s)."}
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)}
+
+
+@router.post("/tenants/{tenant_id}/discover-excel")
+async def tenant_discover_excel(
+    tenant_id: int,
+    body: ExternalExcelPayload,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+):
+    """Detecta las hojas y genera la descripción del esquema del Excel."""
+    from mind.data.excel.excel_connector import _validate_conf
+    from mind.data.excel.schema_discovery import (
+        introspect_excel,
+        generate_excel_description,
+    )
+
+    tenant = await _excel_tenant(tenant_id, session, admin)
+    conf = _resolve_external_excel(tenant.external_excel)
+    if body.file_id:
+        conf["file_id"] = body.file_id
+        conf["file_name"] = body.file_name
+        conf["file_url"] = body.file_url
+
+    try:
+        _validate_conf(conf)
+        raw = await asyncio.wait_for(introspect_excel(conf), timeout=30)
+        await _maybe_save_excel_tokens(tenant, conf, session)
+        if not raw:
+            return {"sheets": [], "schema_description": "", "empty": True}
+        description = await asyncio.wait_for(
+            generate_excel_description(raw), timeout=60
+        )
+        return {
+            "schema_description": description,
+            "sheets": raw,
+        }
+    except asyncio.TimeoutError:
+        return {"error": "Timeout del descubrimiento del Excel (90 s)."}
     except Exception as exc:
         return {"error": str(exc)}
 

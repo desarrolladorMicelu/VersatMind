@@ -42,6 +42,7 @@ TOOL_LABELS: dict[str, str] = {
     "eliminar_tarea": "Eliminando tarea",
     "ejecutar_consulta": "Consultando base de datos",
     "consultar_sheet": "Consultando Google Sheets",
+    "consultar_excel": "Consultando Excel",
     "consultar_alegra": "Consultando Alegra",
     "generar_informe_contable": "Generando informe contable",
 }
@@ -81,6 +82,15 @@ async def _build_system_prompt(
             "Tienes disponible una hoja de cálculo con este contenido:\n\n"
             f"{sheets_description}\n\n"
             "Para consultarla usa 'consultar_sheet' con el nombre exacto de la hoja."
+        )
+
+    excel_description = (getattr(tenant, "external_excel", None) or {}).get("schema_description")
+    if excel_description and (getattr(tenant, "external_excel", None) or {}).get("access_token"):
+        prompt += (
+            "\n\n## Archivo Excel del cliente (OneDrive/SharePoint)\n\n"
+            "Tienes disponible un archivo Excel con este contenido:\n\n"
+            f"{excel_description}\n\n"
+            "Para consultarlo usa 'consultar_excel' con el nombre exacto de la hoja."
         )
 
     alegra_description = (getattr(tenant, "external_alegra", None) or {}).get("schema_description")
@@ -138,6 +148,7 @@ def _filter_tools(
     tenant_ofima = bool(tenant.sqlserver_host)
     tenant_ext_db = bool(tenant.external_db)
     tenant_ext_sheets = bool(tenant.external_sheets)
+    tenant_ext_excel = bool(tenant.external_excel and tenant.external_excel.get("access_token"))
     tenant_alegra = bool(tenant.external_alegra and tenant.external_alegra.get("token"))
     ofima_tools = {
         "consultar_ventas", "consultar_ventas_detalle", "consultar_indicadores",
@@ -163,6 +174,8 @@ def _filter_tools(
         if name == "ejecutar_consulta" and not tenant_ext_db:
             continue
         if name == "consultar_sheet" and not tenant_ext_sheets:
+            continue
+        if name == "consultar_excel" and not tenant_ext_excel:
             continue
         if name == "consultar_alegra" and not tenant_alegra:
             continue

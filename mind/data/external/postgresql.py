@@ -168,11 +168,13 @@ def _validate_creds(creds: dict) -> dict:
         "database": database,
         "user": creds.get("user") or "",
         "password": creds.get("password") or "",
+        "schema": (creds.get("schema") or "public").strip() or "public",
     }
 
 
 async def _connect(creds: dict) -> asyncpg.Connection:
     c = _validate_creds(creds)
+    settings = {"search_path": c["schema"]}
     return await asyncpg.connect(
         host=c["host"],
         port=c["port"],
@@ -181,6 +183,7 @@ async def _connect(creds: dict) -> asyncpg.Connection:
         password=c["password"],
         timeout=15,
         command_timeout=25,
+        server_settings=settings,
     )
 
 

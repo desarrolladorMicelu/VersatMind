@@ -92,6 +92,7 @@ def _register_all_tools() -> None:
     )
     from mind.agent.tools.external_db_tool import ejecutar_consulta
     from mind.agent.tools.sheets_tool import consultar_sheet
+    from mind.agent.tools.excel_tool import consultar_excel
     from mind.agent.tools.alegra_tool import consultar_alegra
     from mind.agent.tools.report_tool import generar_informe_contable
     from mind.agent.tools.email_tools import (
@@ -501,6 +502,35 @@ def _register_all_tools() -> None:
         schema={
             "name": "consultar_sheet",
             "description": "Consulta datos de una hoja de Google Sheets del cliente (símil de SQL SELECT). "
+                           "Usa 'hoja' con el nombre exacto de la pestaña detectada. "
+                           "'filtros' filtra por columnas {'Columna': 'valor'} (coincidencia sin importar mayúsculas).",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "hoja": {
+                        "type": "string",
+                        "description": "Nombre exacto de la pestaña a consultar. Ej: 'Clientes', 'Ventas'",
+                    },
+                    "filtros": {
+                        "type": "object",
+                        "additionalProperties": {"type": "string"},
+                        "description": "Filtros columna → valor. Coincidencia case-insensitive. Ej: {'Ciudad': 'Bogotá'}",
+                    },
+                    "limite": {
+                        "type": "integer",
+                        "description": "Máximo de filas a retornar (default 1000, techo 5000)",
+                    },
+                },
+                "required": ["hoja"],
+            },
+        },
+    )
+    TOOL_REGISTRY["consultar_excel"] = ToolDefinition(
+        fn=consultar_excel,
+        permission=Permission.READ_EXTERNAL_DB,
+        schema={
+            "name": "consultar_excel",
+            "description": "Consulta datos de un archivo Excel en OneDrive/SharePoint del cliente. "
                            "Usa 'hoja' con el nombre exacto de la pestaña detectada. "
                            "'filtros' filtra por columnas {'Columna': 'valor'} (coincidencia sin importar mayúsculas).",
             "parameters": {
