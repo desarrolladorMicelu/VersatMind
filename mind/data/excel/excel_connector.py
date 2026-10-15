@@ -7,14 +7,15 @@ openpyxl lee el archivo descargado en memoria.
 from __future__ import annotations
 
 import asyncio
+import base64
 import io
 import logging
+import os
 import time as _time
 import uuid
+from pathlib import Path
 from typing import Any
 from urllib.parse import urlencode
-
-import base64
 
 import httpx
 from cryptography.hazmat.primitives import hashes
@@ -26,6 +27,9 @@ MAX_ROWS = 5000
 AUTHORIZE_URL = "https://login.microsoftonline.com/{domain}/oauth2/v2.0/authorize"
 TOKEN_URL = "https://login.microsoftonline.com/common/oauth2/v2.0/token"
 GRAPH_BASE = "https://graph.microsoft.com/v1.0"
+
+# Raíz del proyecto (donde está mind/ y certs/)
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 
 DEFAULT_DOMAIN = "common"
 SCOPES = [
@@ -52,28 +56,29 @@ def _client() -> httpx.AsyncClient:
     )
 
 
+def _resolve_path(path_or_key: str) -> str:
+    """Resuelve una ruta: si es relativa, contra PROJECT_ROOT; si es absoluta, directo."""
+    p = Path(path_or_key)
+    if p.is_absolute():
+        return str(p)
+    return str(PROJECT_ROOT / p)
+
+
 def _read_private_key(path_or_key: str) -> str:
-    """
-    Lee la clave privada RSA.
-    - Si es una ruta de archivo existente, la lee del disco.
-    - Caso contrario, asume que es el contenido PEM directamente.
-    """
-    import os as _os
-    if _os.path.isfile(path_or_key):
-        try:
-            with open(path_or_key, "r") as f:
-                return f.read()
-        except Exception as exc:
-            raise ExternalExcelError(
-                f"Error al leer archivo de clave {path_or_key!r}: {exc}"
-            ) from None
-    # No es archivo → tratarlo como el PEM directo
-    if "-----BEGIN" in path_or_key:
-        return path_or_key
-    raise ExternalExcelError(
-        "EXCEL_CLIENT_PRIVATE_KEY debe ser la ruta a un archivo .key existente "
-        "o el contenido PEM de la clave privada (incluyendo -----BEGIN RSA PRIVATE KEY-----)."
-    )
+    """Lee la clave privada RSA desde un archivo, resuelto contra PROJECT_ROOT."""
+    path = _resolve_path(path_or_key)
+    try:
+        with open(path, "r") as f:
+            return f.read()
+    except FileNotFoundError:
+        raise ExternalExcelError(
+            f"Archivo de clave privada no encontrado: {path!r}. "
+            "Verificá EXCEL_CLIENT_PRIVATE_KEY en el .env."
+        ) from None
+    except Exception as exc:
+        raise ExternalExcelError(
+            f"Error al leer clave privada {path!r}: {exc}"
+        ) from None
 
 
 def _make_client_assertion(client_id: str) -> tuple[str, str]:
@@ -90,12 +95,13 @@ def _make_client_assertion(client_id: str) -> tuple[str, str]:
 
     if key_path and cert_path:
         private_key = _read_private_key(key_path)
-        with open(cert_path, "rb") as f:
-            raw = f.read()
+        cert_resolved = _resolve_path(cert_path)
+        with open(cert_resolved, "rb") as f:
+            cert_raw = f.read()
         try:
-            cert = load_pem_x509_certificate(raw)
+            cert = load_pem_x509_certificate(cert_raw)
         except ValueError:
-            cert = load_der_x509_certificate(raw)
+            cert = load_der_x509_certificate(cert_raw)
         thumbprint = base64.urlsafe_b64encode(
             cert.fingerprint(hashes.SHA1())
         ).rstrip(b"=").decode()
