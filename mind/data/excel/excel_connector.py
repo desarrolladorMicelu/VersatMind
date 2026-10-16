@@ -551,13 +551,15 @@ async def read_sheet(
 
         wb = load_workbook(io.BytesIO(content), read_only=True, data_only=True)
 
-        if sheet_name not in wb.sheetnames:
+        sheet_lower = {s.lower(): s for s in wb.sheetnames}
+        match = sheet_lower.get(sheet_name.strip().lower())
+        if not match:
             raise ExternalExcelError(
                 f"Hoja '{sheet_name}' no encontrada. "
                 f"Hojas disponibles: {', '.join(wb.sheetnames)}"
             )
 
-        ws = wb[sheet_name]
+        ws = wb[match]
         rows_iter = ws.iter_rows(values_only=True)
         try:
             raw_headers = [str(c) if c is not None else "" for c in next(rows_iter)]
