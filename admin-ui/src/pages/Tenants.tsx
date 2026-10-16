@@ -126,6 +126,7 @@ function TenantModal({
                     className="input pr-10 font-mono text-xs"
                     placeholder="1234567890:ABCDefgh..."
                     type={showToken ? "text" : "password"}
+                    autoComplete="new-password"
                     value={form.bot_token}
                     onChange={(e) => set("bot_token", e.target.value)}
                   />
