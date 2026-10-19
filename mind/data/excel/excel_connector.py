@@ -421,12 +421,13 @@ async def list_excel_files(conf: dict) -> list[dict]:
 
 async def resolve_excel_item(conf: dict, url_or_id: str) -> dict:
     """
-    Resuelve un archivo por su ID o pegado una URL de OneDrive.
+    Resuelve un archivo por su ID o pegando una URL de OneDrive/SharePoint.
 
     Acepta:
     - "DFC0619F83263D69!s8bc6059202414f93978eb2399ca84e0e" (item ID puro)
     - "https://excel.cloud.microsoft/open/onedrive/?docId=DFC0619F83263D69!xxx&driveId=..."
-    - URL de OneDrive personal / SharePoint
+    - URL de OneDrive personal / SharePoint / OneDrive for Business
+    - URL de SharePoint con sourcedoc
 
     Retorna {id, name, size, webUrl, lastModified}
     """
@@ -438,20 +439,18 @@ async def resolve_excel_item(conf: dict, url_or_id: str) -> dict:
 
     raw = url_or_id.strip()
 
-    # Caso 1: es una URL con docId / id / itemId en query params
+    # Caso 1: es una URL — probar primero extraer query params
     sid = ""
     if raw.startswith(("http://", "https://")):
         parsed = urlparse(raw)
         qs = parse_qs(parsed.query)
-        for key in ("docId", "id", "itemId", "itemid"):
+        for key in ("docId", "id", "itemId", "itemid", "sourcedoc"):
             if qs.get(key):
-                sid = unquote(qs[key][0])
+                sid = unquote(qs[key][0]).strip("{}")
                 break
-        # URL estilo onedrive.live.com/edit.aspx?resid=... en 'resid'
         if not sid and qs.get("resid"):
             sid = unquote(qs["resid"][0])
         if not sid:
-            # intentar extraer ID del path: /personal/xxx/resid or .../edit?resid=
             m = re.search(r"resid=([0-9a-zA-Z!]+)", raw)
             if m:
                 sid = m.group(1)
@@ -459,26 +458,37 @@ async def resolve_excel_item(conf: dict, url_or_id: str) -> dict:
             if m:
                 sid = m.group(2)
     else:
-        # Caso 2: es un ID directo del drive item
         sid = raw
 
-    if not sid:
-        raise ExternalExcelError(
-            f"No se pudo extraer el ID del archivo de: {url_or_id[:120]!r}"
-        )
+    # Si se extrajo algo, intentar /me/drive/items/{id}
+    if sid:
+        cleaned = sid.replace("%21", "!").replace("%2F", "/").strip()
+        if "!" not in cleaned and cleaned.startswith("s") is False:
+            cleaned = f"DFC0619F83263D69!{cleaned}"
+        from urllib.parse import quote as _quote
+        encoded_path = "/".join(_quote(part, safe="") for part in cleaned.split("/"))
+        try:
+            item = await _graph_get(conf, f"/me/drive/items/{encoded_path}")
+            name = item.get("name") or ""
+            return {
+                "id": item.get("id", cleaned),
+                "name": name,
+                "size": item.get("size", 0),
+                "webUrl": item.get("webUrl", ""),
+                "lastModified": item.get("lastModifiedDateTime", ""),
+            }
+        except ExternalExcelError:
+            pass  # fallar al shares si no funciona
 
-    cleaned = sid.replace("%21", "!").replace("%2F", "/").strip()
-    if "!" not in cleaned and cleaned.startswith("s") is False:
-        # sin prefijo de drive — asumir el drive del usuario
-        cleaned = f"DFC0619F83263D69!{cleaned}"
-
-    from urllib.parse import quote as _quote
-    encoded_path = "/".join(_quote(part, safe="") for part in cleaned.split("/"))
+    # Fallback: resolver como enlace compartido vía Graph /shares/{enc}/driveItem
     try:
-        item = await _graph_get(conf, f"/me/drive/items/{encoded_path}")
+        import base64 as _b64
+        # Codificar la URL como Base64 en UTF-16LE (formato que espera Graph)
+        share_enc = _b64.urlsafe_b64encode(raw.encode("utf-16le")).rstrip(b"=").decode()
+        item = await _graph_get(conf, f"/shares/{share_enc}/driveItem")
         name = item.get("name") or ""
         return {
-            "id": item.get("id", cleaned),
+            "id": item.get("id", ""),
             "name": name,
             "size": item.get("size", 0),
             "webUrl": item.get("webUrl", ""),
@@ -486,7 +496,9 @@ async def resolve_excel_item(conf: dict, url_or_id: str) -> dict:
         }
     except ExternalExcelError as exc:
         raise ExternalExcelError(
-            f"Archivo no encontrado en OneDrive (ID {cleaned!r}): {exc}"
+            f"No se pudo resolver el archivo: {exc}. "
+            "Asegurate de que la URL de SharePoint/OneDrive sea válida y que "
+            "la app tenga permisos para acceder a ella."
         ) from exc
 
 
