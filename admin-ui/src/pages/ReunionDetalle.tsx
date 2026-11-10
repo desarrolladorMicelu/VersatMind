@@ -89,7 +89,7 @@ export default function ReunionDetalle() {
   const summary = meeting.summary ?? {};
 
   return (
-    <div>
+    <div className="lg:pt-0 pt-14">
       <PageHeader
         tag="REUNIÓN"
         title={meeting.title}

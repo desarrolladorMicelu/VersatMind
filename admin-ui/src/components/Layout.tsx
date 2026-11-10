@@ -132,12 +132,26 @@ export default function Layout() {
   const navigate = useNavigate();
   const isSuperAdmin = role === "superadmin";
   const NAV = isSuperAdmin ? NAV_SUPERADMIN : NAV_TENANT;
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#111]">
 
+      {/* Overlay móvil */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="flex flex-col w-56 bg-[#0d0d0d] border-r border-[#2a2a2a] flex-shrink-0">
+      <aside className={`
+        fixed lg:relative inset-y-0 left-0 z-50
+        flex flex-col w-72 lg:w-56 bg-[#0d0d0d] border-r border-[#2a2a2a] flex-shrink-0
+        transition-transform duration-300
+        ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+      `}>
 
         {/* Logo */}
         <div className="px-5 py-5 border-b border-[#2a2a2a]">
@@ -168,6 +182,7 @@ export default function Layout() {
               key={to}
               to={to}
               end={to === "/"}
+              onClick={() => setSidebarOpen(false)}
               className={({ isActive }) =>
                 `nav-link ${isActive ? "active text-[#00e5a0]" : ""}`
               }
@@ -202,7 +217,18 @@ export default function Layout() {
       </aside>
 
       {/* Main */}
-      <main className="flex-1 overflow-y-auto bg-[#111]">
+      <main className="flex-1 overflow-y-auto bg-[#111] min-w-0">
+        {/* Hamburger */}
+        <button
+          onClick={() => setSidebarOpen((v) => !v)}
+          className="lg:hidden fixed top-4 left-4 z-30 w-9 h-9 flex items-center justify-center border border-[#2a2a2a] bg-[#0d0d0d] hover:bg-[#1a1a1a]"
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="white" strokeWidth="1.5">
+            <line x1="2" y1="3" x2="12" y2="3" />
+            <line x1="2" y1="7" x2="12" y2="7" />
+            <line x1="2" y1="11" x2="12" y2="11" />
+          </svg>
+        </button>
         <Outlet />
       </main>
 

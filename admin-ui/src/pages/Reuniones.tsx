@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Mic, Square, Pause, Play, X, ArrowLeft, Circle } from "lucide-react";
+import { Plus, Mic, Square, Pause, Play, X, ArrowLeft, Circle, RefreshCw } from "lucide-react";
 import { meetingsApi } from "../lib/api";
 import type { Meeting, MeetingStatus } from "../lib/api";
 import { fmtDate } from "../lib/utils";
@@ -39,6 +39,9 @@ function fmtDuration(sec: number | null) {
 
 // ── Vista de grabación en vivo ────────────────────────────────────────────────
 
+const pagePad = "px-4 sm:px-8";
+const RECORDING_SESSION_KEY = "mind-active-recording";
+
 function RecordingView({
   meeting,
   tenantId,
@@ -54,6 +57,27 @@ function RecordingView({
     useRecorder({ tenantId, meetingId: meeting.id });
 
   const alreadyStarted = state !== "idle";
+
+  // Persistir el estado en sessionStorage para recuperación tras recarga
+  useEffect(() => {
+    sessionStorage.setItem(RECORDING_SESSION_KEY, JSON.stringify({
+      meetingId: meeting.id, tenantId, title: meeting.title,
+    }));
+    return () => {
+      sessionStorage.removeItem(RECORDING_SESSION_KEY);
+    };
+  }, [meeting.id, meeting.title, tenantId]);
+
+  // Advertir al usuario si intenta cerrar la pestaña mientras graba
+  useEffect(() => {
+    if (!alreadyStarted || finishing) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [alreadyStarted, finishing]);
 
   // Transcripción en vivo: mientras se graba, se va mostrando lo transcrito.
   const { data: live } = useQuery({
@@ -79,18 +103,17 @@ function RecordingView({
       await meetingsApi.finish(tenantId, meeting.id);
       navigate(`/reuniones/${meeting.id}`);
     } catch {
-      // Aun si falla el finish, se muestra el detalle (el barrido la retomará).
       navigate(`/reuniones/${meeting.id}`);
     }
   };
 
   return (
-    <div className="px-8 py-8 max-w-2xl">
+    <div className={`${pagePad} py-8 max-w-2xl`}>
       <button className="btn-ghost mb-6" onClick={onDone}>
         <ArrowLeft className="w-3.5 h-3.5" /> Volver
       </button>
 
-      <div className="border border-[#1a1a1a] bg-[#050505] p-8 space-y-6">
+      <div className="border border-[#1a1a1a] bg-[#050505] p-4 sm:p-8 space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <p className="section-tag">// GRABACIÓN EN CURSO</p>
@@ -164,6 +187,24 @@ export default function Reuniones() {
   const [language, setLanguage] = useState<"es" | "en">("es");
   const [recording, setRecording] = useState<Meeting | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [restoreRec, setRestoreRec] = useState<Meeting | null>(null);
+
+  // Recuperar grabación pendiente de sessionStorage (tras recarga)
+  useEffect(() => {
+    const raw = sessionStorage.getItem(RECORDING_SESSION_KEY);
+    if (!raw || !tenantId) return;
+    try {
+      const { meetingId } = JSON.parse(raw);
+      if (!meetingId) return;
+      meetingsApi.get(tenantId, meetingId).then((m) => {
+        if (m.status === "recording" || m.status === "processing") {
+          setRestoreRec(m);
+        }
+      }).catch(() => {});
+    } catch {
+      sessionStorage.removeItem(RECORDING_SESSION_KEY);
+    }
+  }, [tenantId]);
 
   const { data: meetings = [], isLoading } = useQuery({
     queryKey: ["meetings", tenantId],
@@ -215,9 +256,11 @@ export default function Reuniones() {
     );
   }
 
+  const mobilePad = "lg:pt-0 pt-14";
+
   if (recording) {
     return (
-      <div>
+      <div className={mobilePad}>
         <PageHeader tag="REUNIONES" title="Reuniones" description="Grabación de reuniones con transcripción y resumen automáticos" />
         <RecordingView meeting={recording} tenantId={tenantId} onDone={() => setRecording(null)} />
       </div>
@@ -225,7 +268,7 @@ export default function Reuniones() {
   }
 
   return (
-    <div>
+    <div className={mobilePad}>
       <PageHeader
         tag="REUNIONES"
         title="Reuniones"
@@ -290,9 +333,9 @@ export default function Reuniones() {
         </div>
       )}
 
-      <div className="px-8 py-8">
+      <div className={`${pagePad} py-8`}>
         <div className="border border-[#1a1a1a]">
-          <div className="grid grid-cols-12 bg-[#050505] border-b border-[#1a1a1a]">
+          <div className="hidden sm:grid grid-cols-12 bg-[#050505] border-b border-[#1a1a1a]">
             <div className="col-span-4 th">Título</div>
             <div className="col-span-2 th">Fecha</div>
             <div className="col-span-2 th">Duración</div>
@@ -307,35 +350,68 @@ export default function Reuniones() {
           ) : meetings.length === 0 ? (
             <p className="px-5 py-10 text-center font-mono text-xs text-white">SIN REUNIONES</p>
           ) : (
-            meetings.map((m) => {
-              const meta = STATUS_META[m.status];
-              return (
-                <div
-                  key={m.id}
-                  className="grid grid-cols-12 border-b border-[#111] hover:bg-[#050505] transition-colors items-center cursor-pointer"
-                  onClick={() => navigate(`/reuniones/${m.id}`)}
-                >
-                  <div className="col-span-4 td">
-                    <p className="text-sm text-white truncate">{m.title}</p>
+            <>
+              {/* Desktop: tabla */}
+              {meetings.map((m) => {
+                const meta = STATUS_META[m.status];
+                return (
+                  <div
+                    key={m.id}
+                    className="hidden sm:grid grid-cols-12 border-b border-[#111] hover:bg-[#050505] transition-colors items-center cursor-pointer"
+                    onClick={() => navigate(`/reuniones/${m.id}`)}
+                  >
+                    <div className="col-span-4 td">
+                      <p className="text-sm text-white truncate">{m.title}</p>
+                    </div>
+                    <div className="col-span-2 td font-mono text-[11px] text-white">{fmtDate(m.created_at)}</div>
+                    <div className="col-span-2 td font-mono text-[11px] text-white">{fmtDuration(m.duration_seconds)}</div>
+                    <div className="col-span-2 td">
+                      <span className={`badge ${meta.cls}`}>{meta.label}</span>
+                    </div>
+                    <div className="col-span-2 td">
+                      {m.status === "recording" && (
+                        <button
+                          className="text-[11px] font-mono uppercase tracking-widest text-white px-2 py-1 border border-[#2a2a2a] hover:border-red-500 hover:text-red-400 transition-colors"
+                          onClick={(e) => { e.stopPropagation(); finish.mutate(m.id); }}
+                        >
+                          Finalizar
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <div className="col-span-2 td font-mono text-[11px] text-white">{fmtDate(m.created_at)}</div>
-                  <div className="col-span-2 td font-mono text-[11px] text-white">{fmtDuration(m.duration_seconds)}</div>
-                  <div className="col-span-2 td">
-                    <span className={`badge ${meta.cls}`}>{meta.label}</span>
-                  </div>
-                  <div className="col-span-2 td">
-                    {m.status === "recording" && (
-                      <button
-                        className="text-[11px] font-mono uppercase tracking-widest text-white px-2 py-1 border border-[#2a2a2a] hover:border-red-500 hover:text-red-400 transition-colors"
-                        onClick={(e) => { e.stopPropagation(); finish.mutate(m.id); }}
-                      >
-                        Finalizar
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })
+                );
+              })}
+              {/* Mobile: lista de cards */}
+              <div className="sm:hidden space-y-2">
+                {meetings.map((m) => {
+                  const meta = STATUS_META[m.status];
+                  return (
+                    <div
+                      key={m.id}
+                      className="border border-[#1a1a1a] bg-[#050505] px-3 py-3 cursor-pointer"
+                      onClick={() => navigate(`/reuniones/${m.id}`)}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-xs font-medium text-white truncate flex-1">{m.title}</p>
+                        <span className={`badge ${meta.cls} shrink-0`}>{meta.label}</span>
+                      </div>
+                      <div className="flex items-center gap-3 mt-1.5">
+                        <span className="font-mono text-[10px] text-white">{fmtDate(m.created_at)}</span>
+                        <span className="font-mono text-[10px] text-white">{fmtDuration(m.duration_seconds)}</span>
+                      </div>
+                      {m.status === "recording" && (
+                        <button
+                          className="mt-2 text-[11px] font-mono uppercase tracking-widest text-white px-2 py-1 border border-[#2a2a2a] hover:border-red-500 hover:text-red-400 transition-colors"
+                          onClick={(e) => { e.stopPropagation(); finish.mutate(m.id); }}
+                        >
+                          Finalizar
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </>
           )}
         </div>
       </div>
