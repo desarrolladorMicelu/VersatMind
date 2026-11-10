@@ -475,3 +475,84 @@ export const consumoApi = {
   reanudar: (tenantId: number, chatId: number) =>
     api.post(`/consumo/usuarios/${chatId}/reanudar`, null, { params: { tenant_id: tenantId } }).then((r) => r.data),
 };
+
+// ── Reuniones (grabación + transcripción + resumen) ───────────────────────────
+
+export type MeetingStatus = "recording" | "processing" | "ready" | "error";
+
+export interface MeetingSummary {
+  resumen_general?: string;
+  puntos_clave?: string[];
+  decisiones?: string[];
+  tareas?: { tarea: string; responsable: string }[];
+}
+
+export interface Meeting {
+  id: number;
+  tenant_id: number;
+  created_by: string;
+  title: string;
+  language: string;
+  status: MeetingStatus;
+  audio_format: string;
+  duration_seconds: number | null;
+  started_at: string | null;
+  finished_at: string | null;
+  transcript: string | null;
+  summary: MeetingSummary | null;
+  error_message: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export type MeetingLanguage = "es" | "en";
+
+export const meetingsApi = {
+  list: (tenantId: number) =>
+    api.get<Meeting[]>("/meetings", { params: { tenant_id: tenantId } }).then((r) => r.data),
+  create: (tenantId: number, title: string, language: MeetingLanguage) =>
+    api
+      .post<Meeting>("/meetings", { title, language }, { params: { tenant_id: tenantId } })
+      .then((r) => r.data),
+  get: (tenantId: number, id: number) =>
+    api.get<Meeting>(`/meetings/${id}`, { params: { tenant_id: tenantId } }).then((r) => r.data),
+  uploadChunk: (
+    tenantId: number,
+    id: number,
+    seq: number,
+    durationMs: number,
+    blob: Blob,
+    silent?: boolean
+  ) => {
+    const form = new FormData();
+    form.append("audio", blob, `chunk-${seq}`);
+    form.append("seq", String(seq));
+    form.append("duration_ms", String(durationMs));
+    if (silent) form.append("silent", "1");
+    return api
+      .post<{ ok: boolean; seq: number }>(`/meetings/${id}/chunks`, form, {
+        params: { tenant_id: tenantId },
+        // Importante: sin esto, axios 1.x ve el Content-Type "application/json"
+        // de la instancia y serializa el FormData como JSON (formDataToJSON),
+        // rompiendo el multipart → 422. Con multipart/form-data el navegador
+        // agrega el boundary automáticamente.
+        headers: { "Content-Type": "multipart/form-data" },
+      })
+      .then((r) => r.data);
+  },
+  finish: (tenantId: number, id: number) =>
+    api
+      .post<{ ok: boolean; status: MeetingStatus }>(`/meetings/${id}/finish`, null, {
+        params: { tenant_id: tenantId },
+      })
+      .then((r) => r.data),
+  transcript: (tenantId: number, id: number) =>
+    api
+      .get<{ transcript: string; segments: { seq: number; text: string }[] }>(
+        `/meetings/${id}/transcript`,
+        { params: { tenant_id: tenantId } }
+      )
+      .then((r) => r.data),
+  audioUrl: (tenantId: number, id: number) =>
+    `/api/admin/meetings/${id}/audio?tenant_id=${tenantId}`,
+};

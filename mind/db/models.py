@@ -10,11 +10,12 @@ from sqlalchemy import (
     BigInteger,
     Boolean,
     DateTime,
+    Float,
     ForeignKey,
     Index,
-    Text,
-    Float,
     Integer,
+    LargeBinary,
+    Text,
     UniqueConstraint,
     func,
 )
@@ -684,4 +685,96 @@ class IntegrationConnection(Base):
         return (
             f"<IntegrationConnection id={self.id} tenant_id={self.tenant_id} "
             f"provider={self.provider!r} account={self.account_email!r}>"
+        )
+
+
+# ---------------------------------------------------------------------------
+# Reuniones (grabación + transcripción + resumen)
+# ---------------------------------------------------------------------------
+
+class Meeting(Base):
+    """
+    Reunión grabada desde el panel web. El audio se almacena por chunk en
+    `meeting_audio_chunks` y el pipeline las transcribe y resume:
+    recording → processing → ready | error.
+    """
+    __tablename__ = "meetings"
+    __table_args__ = (
+        Index("idx_meetings_tenant_created", "tenant_id", "created_at"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    tenant_id: Mapped[int] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
+    )
+    # username del admin que creó la reunión (solo atribución; el aislamiento es por tenant)
+    created_by: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    # Idioma de la reunión para el STT (ISO-639-1): "es" | "en"
+    language: Mapped[str] = mapped_column(Text, nullable=False, default="es")
+    # Proveedor STT: "deepgram" (default) | "openrouter"
+    stt_provider: Mapped[str] = mapped_column(Text, nullable=False, default="deepgram")
+    # Diarización: True → full audio al final (desktop), False → live per‑chunk (web)
+    diarize: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    # "recording" | "processing" | "ready" | "error"
+    status: Mapped[str] = mapped_column(Text, nullable=False, default="recording")
+    # Formato del audio grabado por el navegador: "webm" | "mp4"
+    audio_format: Mapped[str] = mapped_column(Text, nullable=False, default="webm")
+    duration_seconds: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    started_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    finished_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    transcript: Mapped[str | None] = mapped_column(Text, nullable=True)
+    summary: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False,
+        server_default=func.now(), onupdate=func.now(),
+    )
+
+    chunks: Mapped[list[MeetingAudioChunk]] = relationship(
+        "MeetingAudioChunk", back_populates="meeting", cascade="all, delete-orphan"
+    )
+
+    def __repr__(self) -> str:
+        return f"<Meeting id={self.id} tenant_id={self.tenant_id} status={self.status!r}>"
+
+
+class MeetingAudioChunk(Base):
+    """
+    Chunk de audio subido por el navegador durante una reunión.
+    `seq` es correlativo dentro de la reunión y único (idempotencia de retries).
+    """
+    __tablename__ = "meeting_audio_chunks"
+    __table_args__ = (
+        UniqueConstraint("meeting_id", "seq", name="uq_audio_chunks_meeting_seq"),
+        Index("idx_audio_chunks_meeting_seq", "meeting_id", "seq"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    meeting_id: Mapped[int] = mapped_column(
+        ForeignKey("meetings.id", ondelete="CASCADE"), nullable=False
+    )
+    seq: Mapped[int] = mapped_column(Integer, nullable=False)
+    data: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    duration_ms: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    transcribed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    # Texto transcrito de ESTE chunk (el transcript final se reconstruye desde aquí)
+    text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    meeting: Mapped[Meeting] = relationship("Meeting", back_populates="chunks")
+
+    def __repr__(self) -> str:
+        return (
+            f"<MeetingAudioChunk id={self.id} meeting_id={self.meeting_id} "
+            f"seq={self.seq} transcribed={self.transcribed}>"
         )

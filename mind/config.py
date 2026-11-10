@@ -15,6 +15,11 @@ class Settings(BaseSettings):
     OPENAI_BASE_URL: str = "https://openrouter.ai/api/v1"
     OPENAI_MODEL: str = "openai/gpt-4o-mini"
     OPENAI_TIMEOUT_SECONDS: int = 60
+    # Modelo STT para transcripción de reuniones (OpenRouter /audio/transcriptions)
+    OPENAI_STT_MODEL: str = "openai/whisper-1"
+
+    # --- Deepgram (STT principal para reuniones) ---
+    DEEPGRAM_API_KEY: str = ""
 
     # --- PostgreSQL (app interna) ---
     DATABASE_URL: str

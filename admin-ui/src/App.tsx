@@ -19,6 +19,8 @@ import Chat from "./pages/Chat";
 import Programados from "./pages/Programados";
 import Conocimiento from "./pages/Conocimiento";
 import Integraciones from "./pages/Integraciones";
+import Reuniones from "./pages/Reuniones";
+import ReunionDetalle from "./pages/ReunionDetalle";
 
 const qc = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30000 } },
@@ -54,6 +56,8 @@ export default function App() {
                 <Route path="programados" element={<Programados />} />
                 <Route path="conocimiento" element={<Conocimiento />} />
                 <Route path="integraciones" element={<Integraciones />} />
+                <Route path="reuniones" element={<Reuniones />} />
+                <Route path="reuniones/:id" element={<ReunionDetalle />} />
               </Route>
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

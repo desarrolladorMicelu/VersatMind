@@ -136,7 +136,21 @@ async def lifespan(app: FastAPI):
     except Exception as exc:
         logger.warning("No se pudieron registrar los prompts programados: %s", exc)
 
-    # 7c. Auto-reparación de webhooks de Telegram (revisa y re-registra si falta)
+    # 7c. Barrido de reuniones huérfanas (auto-finalizar recordings sin actividad)
+    try:
+        from apscheduler.triggers.cron import CronTrigger
+        from mind.meetings.service import sweep_stale_meetings
+        sched.add_job(
+            sweep_stale_meetings,
+            trigger=CronTrigger(minute="*/5"),
+            id="meetings-sweep",
+            replace_existing=True,
+            name="Barrido reuniones huérfanas",
+        )
+    except Exception as exc:
+        logger.warning("No se pudo registrar el barrido de reuniones: %s", exc)
+
+    # 7d. Auto-reparación de webhooks de Telegram (revisa y re-registra si falta)
     from mind.telegram.webhook_guard import webhook_guard_loop
     guard_task = asyncio.create_task(webhook_guard_loop())
 
@@ -191,6 +205,10 @@ app.include_router(chat_router)
 # Integraciones OAuth (Outlook / Google: correo y calendario)
 from mind.integrations.routes import router as integrations_router
 app.include_router(integrations_router)
+
+# Reuniones (grabación, transcripción y resumen)
+from mind.meetings.routes import router as meetings_router
+app.include_router(meetings_router)
 
 # Servir assets del SPA React
 from pathlib import Path as _Path
