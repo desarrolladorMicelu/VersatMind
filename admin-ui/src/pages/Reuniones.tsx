@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Mic, Square, Pause, Play, X, ArrowLeft, Circle, RefreshCw } from "lucide-react";
+import { Plus, Mic, Square, Pause, Play, X, ArrowLeft, Circle } from "lucide-react";
 import { meetingsApi } from "../lib/api";
 import type { Meeting, MeetingStatus } from "../lib/api";
 import { fmtDate } from "../lib/utils";
@@ -279,6 +279,39 @@ export default function Reuniones() {
           </button>
         }
       />
+
+      {/* Banner de recuperación: reunión en curso encontrada en sessionStorage */}
+      {restoreRec && restoreRec.status === "recording" && (
+        <div className={`${pagePad} py-3`}>
+          <div className="border border-red-500/40 bg-red-500/5 p-3 flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="section-tag">// HAY UNA GRABACIÓN EN CURSO</p>
+              <p className="text-sm text-white truncate mt-1">{restoreRec.title}</p>
+            </div>
+            <div className="flex gap-2 shrink-0">
+              <button
+                className="btn-primary"
+                onClick={() => {
+                  setRecording(restoreRec);
+                  setRestoreRec(null);
+                }}
+              >
+                <Mic className="w-3.5 h-3.5" /> Reanudar
+              </button>
+              <button
+                className="btn-ghost"
+                onClick={() => {
+                  finish.mutate(restoreRec.id);
+                  setRestoreRec(null);
+                  sessionStorage.removeItem(RECORDING_SESSION_KEY);
+                }}
+              >
+                Finalizar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showNew && (
         <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center px-4">
