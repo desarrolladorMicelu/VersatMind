@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TenantProvider } from "./contexts/TenantContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+import SuperAdminRoute from "./components/SuperAdminRoute";
 import Layout from "./components/Layout";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -21,6 +22,7 @@ import Conocimiento from "./pages/Conocimiento";
 import Integraciones from "./pages/Integraciones";
 import Reuniones from "./pages/Reuniones";
 import ReunionDetalle from "./pages/ReunionDetalle";
+import SuperAdmins from "./pages/SuperAdmins";
 
 const qc = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30000 } },
@@ -58,6 +60,14 @@ export default function App() {
                 <Route path="integraciones" element={<Integraciones />} />
                 <Route path="reuniones" element={<Reuniones />} />
                 <Route path="reuniones/:id" element={<ReunionDetalle />} />
+                <Route
+                  path="superadmins"
+                  element={
+                    <SuperAdminRoute>
+                      <SuperAdmins />
+                    </SuperAdminRoute>
+                  }
+                />
               </Route>
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

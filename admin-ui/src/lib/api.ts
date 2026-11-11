@@ -105,6 +105,28 @@ export const tenantsApi = {
   remove: (id: number) => api.delete(`/tenants/${id}`).then((r) => r.data),
 };
 
+// ── Super admins (acceso total al sistema) ────────────────────────────────────
+
+export interface SuperAdminAccount {
+  id: number | null;
+  username: string;
+  source: "env" | "panel";
+  is_active: boolean;
+  created_by: string;
+  created_at: string | null;
+  is_self: boolean;
+  immutable: boolean;
+}
+
+export const superAdminsApi = {
+  list: () => api.get<SuperAdminAccount[]>("/superadmins").then((r) => r.data),
+  create: (username: string, password: string) =>
+    api.post("/superadmins", { username, password }).then((r) => r.data),
+  update: (id: number, payload: { password?: string; is_active?: boolean }) =>
+    api.patch(`/superadmins/${id}`, payload).then((r) => r.data),
+  remove: (id: number) => api.delete(`/superadmins/${id}`).then((r) => r.data),
+};
+
 // ── Base de datos externa ─────────────────────────────────────────────────────
 
 export const externalDbApi = {

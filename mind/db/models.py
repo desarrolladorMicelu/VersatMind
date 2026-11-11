@@ -301,7 +301,32 @@ class AgentConfig(Base):
     tenant: Mapped[Tenant] = relationship("Tenant", back_populates="agent_configs")
 
     def __repr__(self) -> str:
-        return f"<AgentConfig id={self.id} tenant_id={self.tenant_id} model={self.model!r}>"
+        return f"<TenantAdmin id={self.id} tenant_id={self.tenant_id} username={self.username!r}>"
+
+
+class SuperAdmin(Base):
+    """
+    Cuentas de superadministrador creadas desde el panel.
+
+    El superadmin raíz vive en el .env (ADMIN_USER/ADMIN_PASSWORD) y no se
+    almacena aquí. Estas cuentas se crean desde /admin/superadmins y tienen
+    acceso total a todos los tenants, igual que el superadmin del .env.
+    """
+    __tablename__ = "superadmins"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    username: Mapped[str] = mapped_column(Text, unique=True, nullable=False)
+    # bcrypt hash de la contraseña
+    password_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    # Username del superadmin que creó la cuenta (solo atribución)
+    created_by: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    created_at: Mapped[datetime] = mapped_column(
+        nullable=False, server_default=func.now()
+    )
+
+    def __repr__(self) -> str:
+        return f"<SuperAdmin id={self.id} username={self.username!r} active={self.is_active}>"
 
 
 # ---------------------------------------------------------------------------
