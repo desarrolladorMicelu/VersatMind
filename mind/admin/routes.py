@@ -110,6 +110,31 @@ class TenantAdminUpdate(BaseModel):
     password: str | None = None
     is_active: bool | None = None
 
+class SuperAdminCreate(BaseModel):
+    username: str
+    password: str
+
+class SuperAdminUpdate(BaseModel):
+    password: str | None = None
+    is_active: bool | None = None
+
+SUPERADMIN_USERNAME_RE = r"^[A-Za-z0-9_.-]{3,64}$"
+SUPERADMIN_MIN_PASSWORD = 8
+
+
+def _validate_superadmin_credentials(username: str, password: str) -> None:
+    import re
+    if not re.match(SUPERADMIN_USERNAME_RE, username):
+        raise HTTPException(
+            status_code=422,
+            detail="Usuario inválido: usa 3-64 caracteres (letras, números, punto, guion o guion bajo)",
+        )
+    if len(password) < SUPERADMIN_MIN_PASSWORD:
+        raise HTTPException(
+            status_code=422,
+            detail=f"La contraseña debe tener al menos {SUPERADMIN_MIN_PASSWORD} caracteres",
+        )
+
 class UsageSettingsUpdate(BaseModel):
     threshold_usd: float = 8.0
     period: str = "month"          # "month" | "total"
@@ -178,10 +203,11 @@ async def login(
 ):
     """
     Login unificado:
-    1. Superadmin (.env) → acceso a todos los tenants
-    2. TenantAdmin (BD)  → acceso solo a su tenant
+    1. Superadmin (.env)  → acceso a todos los tenants (cuenta raíz)
+    2. Superadmin (BD)    → acceso a todos los tenants (creado desde el panel)
+    3. TenantAdmin (BD)   → acceso solo a su tenant
     """
-    # 1. Superadmin
+    # 1. Superadmin raíz (.env)
     if verify_superadmin(body.username, body.password):
         token = create_access_token(body.username, role="superadmin")
         response.set_cookie(
@@ -191,9 +217,25 @@ async def login(
         )
         return {"token": token, "username": body.username, "role": "superadmin", "tenant_id": None}
 
-    # 2. Tenant admin
-    from mind.db.models import TenantAdmin
+    from mind.db.models import SuperAdmin, TenantAdmin
 
+    # 2. Superadmin creado desde el panel. Si el username existe, no se
+    #    permite caer al login de tenant_admin (evita sombras de cuentas).
+    sa = (await session.execute(
+        select(SuperAdmin).where(SuperAdmin.username == body.username)
+    )).scalar_one_or_none()
+    if sa is not None:
+        if not sa.is_active or not verify_password(body.password, sa.password_hash):
+            raise HTTPException(status_code=401, detail="Credenciales inválidas")
+        token = create_access_token(body.username, role="superadmin")
+        response.set_cookie(
+            "admin_token", token,
+            httponly=True, samesite="lax",
+            max_age=86400, path="/",
+        )
+        return {"token": token, "username": body.username, "role": "superadmin", "tenant_id": None}
+
+    # 3. Tenant admin
     result = await session.execute(
         select(TenantAdmin).where(
             TenantAdmin.username == body.username,
@@ -226,6 +268,140 @@ async def me(admin=Depends(require_admin)):
         "role": admin.get("role", "superadmin"),
         "tenant_id": admin.get("tenant_id"),
     }
+
+
+# ── SUPER ADMINS (solo el superadmin raíz o de panel puede gestionarlos) ─────
+
+@router.get("/superadmins")
+async def superadmins_list(
+    admin=Depends(require_superadmin),
+    session: AsyncSession = Depends(get_session),
+):
+    from mind.config import settings
+    from mind.db.models import SuperAdmin
+
+    rows = (await session.execute(
+        select(SuperAdmin).order_by(SuperAdmin.created_at.asc(), SuperAdmin.id.asc())
+    )).scalars().all()
+    current = admin.get("sub")
+
+    accounts = [{
+        "id": None,
+        "username": settings.ADMIN_USER,
+        "source": "env",
+        "is_active": True,
+        "created_by": "sistema",
+        "created_at": None,
+        "is_self": current == settings.ADMIN_USER,
+        "immutable": True,
+    }]
+    accounts.extend([
+        {
+            "id": a.id,
+            "username": a.username,
+            "source": "panel",
+            "is_active": a.is_active,
+            "created_by": a.created_by or "—",
+            "created_at": a.created_at.isoformat() if a.created_at else None,
+            "is_self": current == a.username,
+            "immutable": False,
+        }
+        for a in rows
+    ])
+    return accounts
+
+
+@router.post("/superadmins")
+async def superadmin_create(
+    body: SuperAdminCreate,
+    admin=Depends(require_superadmin),
+    session: AsyncSession = Depends(get_session),
+):
+    from mind.config import settings
+    from mind.db.models import SuperAdmin, TenantAdmin
+
+    username = body.username.strip()
+    _validate_superadmin_credentials(username, body.password)
+
+    if username == settings.ADMIN_USER:
+        raise HTTPException(status_code=409, detail="Ese usuario pertenece al superadmin raíz del sistema")
+
+    existing = (await session.execute(
+        select(SuperAdmin).where(SuperAdmin.username == username)
+    )).scalar_one_or_none()
+    if existing is not None:
+        raise HTTPException(status_code=409, detail="Ya existe un superadmin con ese usuario")
+
+    # Evita que una cuenta de superadmin opaque a un tenant_admin en el login
+    tenant_admin_taken = (await session.execute(
+        select(TenantAdmin.id).where(TenantAdmin.username == username)
+    )).first()
+    if tenant_admin_taken is not None:
+        raise HTTPException(status_code=409, detail="Ese usuario ya está en uso por un admin de cliente")
+
+    sa = SuperAdmin(
+        username=username,
+        password_hash=hash_password(body.password),
+        is_active=True,
+        created_by=str(admin.get("sub") or ""),
+    )
+    session.add(sa)
+    await session.commit()
+    await session.refresh(sa)
+    return {"id": sa.id, "username": sa.username}
+
+
+@router.patch("/superadmins/{superadmin_id}")
+async def superadmin_update(
+    superadmin_id: int,
+    body: SuperAdminUpdate,
+    admin=Depends(require_superadmin),
+    session: AsyncSession = Depends(get_session),
+):
+    from mind.db.models import SuperAdmin
+
+    sa = (await session.execute(
+        select(SuperAdmin).where(SuperAdmin.id == superadmin_id)
+    )).scalar_one_or_none()
+    if sa is None:
+        raise HTTPException(status_code=404, detail="Superadmin no encontrado")
+
+    if body.password is not None:
+        if len(body.password) < SUPERADMIN_MIN_PASSWORD:
+            raise HTTPException(
+                status_code=422,
+                detail=f"La contraseña debe tener al menos {SUPERADMIN_MIN_PASSWORD} caracteres",
+            )
+        sa.password_hash = hash_password(body.password)
+
+    if body.is_active is not None:
+        if admin.get("sub") == sa.username:
+            raise HTTPException(status_code=400, detail="No puedes desactivar tu propia cuenta")
+        sa.is_active = body.is_active
+
+    await session.commit()
+    return {"ok": True}
+
+
+@router.delete("/superadmins/{superadmin_id}")
+async def superadmin_delete(
+    superadmin_id: int,
+    admin=Depends(require_superadmin),
+    session: AsyncSession = Depends(get_session),
+):
+    from mind.db.models import SuperAdmin
+
+    sa = (await session.execute(
+        select(SuperAdmin).where(SuperAdmin.id == superadmin_id)
+    )).scalar_one_or_none()
+    if sa is None:
+        raise HTTPException(status_code=404, detail="Superadmin no encontrado")
+    if admin.get("sub") == sa.username:
+        raise HTTPException(status_code=400, detail="No puedes eliminar tu propia cuenta")
+
+    await session.delete(sa)
+    await session.commit()
+    return {"ok": True}
 
 
 # ── TENANT ADMINS (solo superadmin puede gestionarlos) ───────────────────────
@@ -277,6 +453,16 @@ async def tenant_admin_create(
     )).scalar_one_or_none()
     if existing:
         raise HTTPException(status_code=409, detail="Ya existe un admin con ese username en este tenant")
+
+    # Evita colisiones con cuentas de superadmin (el login prioriza superadmin)
+    from mind.config import settings
+    from mind.db.models import SuperAdmin
+    if body.username == settings.ADMIN_USER:
+        raise HTTPException(status_code=409, detail="Ese usuario está reservado para el superadmin raíz")
+    if (await session.execute(
+        select(SuperAdmin.id).where(SuperAdmin.username == body.username)
+    )).first() is not None:
+        raise HTTPException(status_code=409, detail="Ese usuario ya está en uso por un superadmin")
 
     ta = TenantAdmin(
         tenant_id=tenant_id,

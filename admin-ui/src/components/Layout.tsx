@@ -5,6 +5,7 @@ import {
   LayoutDashboard, Bot, Users, KeyRound,
   Shield, Clock, MessageSquare, Activity, LogOut,
   Building2, ChevronDown, Coins, CalendarClock, BookOpen, MessagesSquare, Mail, Mic,
+  ShieldCheck,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import type { Tenant } from "../lib/api";
@@ -191,6 +192,24 @@ export default function Layout() {
               {label}
             </NavLink>
           ))}
+
+          {isSuperAdmin && (
+            <div className="pt-3 mt-3 border-t border-[#1a1a1a]">
+              <p className="px-3.5 pb-2 font-mono text-[9px] uppercase tracking-[0.2em] text-[#3a3a3a]">
+                Sistema
+              </p>
+              <NavLink
+                to="/superadmins"
+                onClick={() => setSidebarOpen(false)}
+                className={({ isActive }) =>
+                  `nav-link ${isActive ? "active text-[#00e5a0]" : ""}`
+                }
+              >
+                <ShieldCheck className="w-3.5 h-3.5 flex-shrink-0" />
+                Super Admins
+              </NavLink>
+            </div>
+          )}
         </nav>
 
         {/* User */}
