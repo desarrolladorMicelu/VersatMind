@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>MIND Recorder necesita el micrófono para grabar tu voz durante la reunión.</string>
+    <key>NSAppleEventsUsageDescription</key>
+    <string>Necesario para capturar el audio del sistema (BlackHole).</string>
+    <key>com.apple.security.device.audio-input</key>
+    <true/>
+    <key>NSSystemAdministrationUsageDescription</key>
+    <string>MIND Recorder captura el audio del sistema para transcribir la reunión.</string>
+</dict>
+</plist>

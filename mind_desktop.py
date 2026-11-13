@@ -1,16 +1,28 @@
 """
 MIND Recorder — Asistente de escritorio (Windows / macOS / Linux)
 ===============================================================
-Captura el audio del sistema (loopback WASAPI/Core Audio) + el micrófono en
-paralelo con `soundcard`, los mezcla a mono y sube chunks WAV a la API de
-MIND. Al finalizar, la reunión se transcribe con Deepgram + diarización.
+Captura el audio del sistema (loopback) + el micrófono en paralelo con
+`soundcard`, los mezcla a mono y sube chunks WAV a la API de MIND.
+Al finalizar, la reunión se transcribe con Deepgram + diarización.
 
-`soundcard` se usa porque soporta loopback nativo del parlante por defecto
-(insuperable en Windows; PortAudio/sounddevice no captura el sistema).
+Windows: loopback vía WASAPI (nativo). Basta con abrir el .exe.
+macOS:   requiere BlackHole para loopback:
+            brew install blackhole-2ch
+         En Zoom/Meet/Teams configura salida de audio → BlackHole.
+Linux:   loopback vía PulseAudio/PipeWire (módulo loopback).
 
 Instalación y build:
     pip install soundcard numpy requests pyinstaller
-    pyinstaller --onefile --windowed --name "MIND Recorder" --collect-all soundcard --collect-all numpy mind_desktop.py
+
+    Windows:
+    pyinstaller --onefile --windowed --name "MIND Recorder" ^
+      --collect-all soundcard --collect-all numpy mind_desktop.py
+
+    macOS:
+    pyinstaller --onefile --windowed --name "MIND Recorder" \
+      --collect-all soundcard --collect-all numpy \
+      --osx-entitlements-file entitlements.plist \
+      --target-arch universal2 mind_desktop.py
 """
 from __future__ import annotations
 
