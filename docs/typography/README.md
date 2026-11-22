@@ -52,13 +52,21 @@ También viven ahí los pesos, interlineados, tracking y la paleta base. Tailwin
 
 El chat pasó a ser una pantalla completa (`/admin/chat`) fuera del layout de administración:
 
-- Barra lateral de 272 px, colapsable a 72 px (solo iconos) y off-canvas en móvil.
-- Navegación: **Nuevo chat**, **Historial**, **Proyectos** (espacio reservado, marcado “Pronto”) y **Configuración**.
+- Barra lateral de 288 px, colapsable a 76 px (solo iconos) y off-canvas en móvil.
+- Navegación: **Nuevo chat**, **Historial**, **Proyectos** (espacio reservado, marcado “Pronto”), **Configuración** y **Panel de administración**.
+- Regreso siempre visible al panel: botón **← Panel** en el encabezado, ítem **Panel de administración** en la barra lateral y botón **Ir al panel** en Configuración.
 - Acciones secundarias (nuevo chat, eliminar conversación, configuración) movidas al menú contextual `···` del encabezado.
 - Estado vacío simple con 4 sugerencias de preguntas y un composer fijo.
 - Configuración con cuenta, cliente activo (selector para superadmin), acceso al panel y cierre de sesión.
 - Sin degradados, glows ni animaciones decorativas. Solo transiciones sutiles de hover y el cursor de streaming.
 - Paleta y espaciado desde tokens: `--color-*`, `--space-*`, `--radius-*` en `styles/tokens.css`.
+
+### Legibilidad y navegación del panel
+
+- Escala base subida: cuerpo de 16 px, metadatos de 13–14 px, títulos de página de 32 px, tablas de 15 px.
+- Sidebar del panel agrupada en **Principal**, **Operación**, **Administración** y **Sistema** para reducir la carga visual.
+- El acceso a Chat se marca con una flecha para indicar que abre la vista enfocada de conversación.
+- Tablas críticas mantienen scroll horizontal en móvil.
 
 Capturas adicionales:
 

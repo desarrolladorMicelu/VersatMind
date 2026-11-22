@@ -5,9 +5,9 @@ import { useNavigate } from "react-router-dom";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
-  Check, Folder, History, LayoutDashboard, LogOut, Menu, MessageSquare,
-  MoreHorizontal, PanelLeftClose, PanelLeftOpen, Plus, Send, Settings,
-  Square, Trash2, X,
+  ArrowLeft, Check, Folder, History, LayoutDashboard, LogOut, Menu,
+  MessageSquare, MoreHorizontal, PanelLeftClose, PanelLeftOpen, Plus,
+  Send, Settings, Square, Trash2, X,
 } from "lucide-react";
 import api from "../lib/api";
 import { useAuth } from "../contexts/AuthContext";
@@ -360,6 +360,11 @@ export default function Chat() {
               <Settings className="vc-nav-icon" size={16} />
               <span className="vc-nav-label">Configuración</span>
             </button>
+            <div className="vc-nav-sep" />
+            <button className="vc-nav-item" onClick={() => navigate("/")} title="Volver al panel">
+              <LayoutDashboard className="vc-nav-icon" size={16} />
+              <span className="vc-nav-label">Panel de administración</span>
+            </button>
           </nav>
 
           <div className="vc-side-section">
@@ -403,6 +408,11 @@ export default function Chat() {
         <header className="vc-header">
           <button className="vc-menu-btn" onClick={() => setSidebarOpen(true)} aria-label="Abrir menú">
             <Menu size={18} />
+          </button>
+
+          <button className="vc-back" onClick={() => navigate("/")} title="Volver al panel de administración">
+            <ArrowLeft size={16} />
+            <span>Panel</span>
           </button>
 
           <div className="vc-header-info">
@@ -588,7 +598,7 @@ export default function Chat() {
 
                 <div className="vc-modal-actions">
                   <button
-                    className="btn-secondary"
+                    className="btn-primary"
                     onClick={() => { setPanel(null); setSidebarOpen(false); navigate("/"); }}
                   >
                     <LayoutDashboard size={14} /> Ir al panel

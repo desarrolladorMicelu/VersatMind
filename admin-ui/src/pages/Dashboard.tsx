@@ -35,7 +35,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-2 gap-3 xl:grid-cols-5">
           {isLoading
             ? Array(5).fill(0).map((_, i) => (
-                <div key={i} className="h-[104px] animate-pulse rounded-xl border border-[#1f232a] bg-[#101216]" />
+                <div key={i} className="h-[120px] animate-pulse rounded-xl border border-[#1f232a] bg-[#101216]" />
               ))
             : [
                 { label: "Usuarios", value: data?.stats.total_users, accent: false },
@@ -63,12 +63,12 @@ export default function Dashboard() {
           <p className="section-tag mb-4">Actividad reciente</p>
           <div className="overflow-hidden rounded-xl border border-[#1f232a] bg-[#101216]">
             <div className="overflow-x-auto">
-              <div className="min-w-[760px]">
+              <div className="min-w-[880px]">
                 <div className="grid grid-cols-12 border-b border-[#1f232a] bg-[#0e1013]">
                   <div className="col-span-2 th">Evento</div>
-                  <div className="col-span-6 th">Mensaje</div>
+                  <div className="col-span-5 th">Mensaje</div>
                   <div className="col-span-2 th">Estado</div>
-                  <div className="col-span-2 th">Hora</div>
+                  <div className="col-span-3 th">Hora</div>
                 </div>
                 {isLoading
                   ? Array(5).fill(0).map((_, i) => <div key={i} className="h-10 border-b border-[#1a1e24] bg-[#0e1013] animate-pulse" />)
@@ -79,7 +79,7 @@ export default function Dashboard() {
                         <div className="col-span-2 td">
                           <span className={`badge ${EVENT_BADGE[log.event_type] ?? "badge-slate"}`}>{log.event_type}</span>
                         </div>
-                        <div className="col-span-6 td truncate text-[#e8ebf0]">
+                        <div className="col-span-5 td truncate text-[#e8ebf0]">
                           {log.request_content || log.tool_invoked || "—"}
                         </div>
                         <div className="col-span-2 td">
@@ -89,7 +89,7 @@ export default function Dashboard() {
                             </span>
                           )}
                         </div>
-                        <div className="col-span-2 td text-xs tabular-nums text-[#a8b0bd]">{fmtDate(log.timestamp_utc)}</div>
+                        <div className="col-span-3 td text-xs tabular-nums text-[#a8b0bd]">{fmtDate(log.timestamp_utc)}</div>
                       </div>
                     ))
                 }

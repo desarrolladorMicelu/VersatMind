@@ -5,44 +5,80 @@ import {
   LayoutDashboard, Bot, Users, KeyRound,
   Shield, Clock, MessageSquare, Activity, LogOut,
   Building2, ChevronDown, Coins, CalendarClock, BookOpen, MessagesSquare, Mail, Mic,
-  ShieldCheck,
+  ShieldCheck, ArrowUpRight,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import type { Tenant } from "../lib/api";
 
-const NAV_SUPERADMIN = [
-  { to: "/chat", icon: MessagesSquare, label: "Chat" },
-  { to: "/", icon: LayoutDashboard, label: "Dashboard" },
-  { to: "/reuniones", icon: Mic, label: "Reuniones" },
-  { to: "/tenants", icon: Building2, label: "Clientes" },
-  { to: "/consumo", icon: Coins, label: "Consumo" },
-  { to: "/programados", icon: CalendarClock, label: "Programados" },
-  { to: "/conocimiento", icon: BookOpen, label: "Conocimiento" },
-  { to: "/integraciones", icon: Mail, label: "Integraciones" },
-  { to: "/agente", icon: Bot, label: "Agente" },
-  { to: "/usuarios", icon: Users, label: "Usuarios" },
-  { to: "/accesos", icon: KeyRound, label: "Accesos" },
-  { to: "/roles", icon: Shield, label: "Roles" },
-  { to: "/tareas", icon: Clock, label: "Tareas" },
-  { to: "/historial", icon: MessageSquare, label: "Historial" },
-  { to: "/auditoria", icon: Activity, label: "Auditoría" },
+const NAV_GROUPS_SUPERADMIN = [
+  {
+    title: "Principal",
+    items: [
+      { to: "/chat", icon: MessagesSquare, label: "Chat" },
+      { to: "/", icon: LayoutDashboard, label: "Dashboard" },
+    ],
+  },
+  {
+    title: "Operación",
+    items: [
+      { to: "/reuniones", icon: Mic, label: "Reuniones" },
+      { to: "/programados", icon: CalendarClock, label: "Programados" },
+      { to: "/conocimiento", icon: BookOpen, label: "Conocimiento" },
+      { to: "/integraciones", icon: Mail, label: "Integraciones" },
+      { to: "/agente", icon: Bot, label: "Agente" },
+      { to: "/consumo", icon: Coins, label: "Consumo" },
+    ],
+  },
+  {
+    title: "Administración",
+    items: [
+      { to: "/tenants", icon: Building2, label: "Clientes" },
+      { to: "/usuarios", icon: Users, label: "Usuarios" },
+      { to: "/accesos", icon: KeyRound, label: "Accesos" },
+      { to: "/roles", icon: Shield, label: "Roles" },
+      { to: "/tareas", icon: Clock, label: "Tareas" },
+      { to: "/historial", icon: MessageSquare, label: "Historial" },
+      { to: "/auditoria", icon: Activity, label: "Auditoría" },
+    ],
+  },
+  {
+    title: "Sistema",
+    items: [
+      { to: "/superadmins", icon: ShieldCheck, label: "Super Admins" },
+    ],
+  },
 ];
 
-const NAV_TENANT = [
-  { to: "/chat", icon: MessagesSquare, label: "Chat" },
-  { to: "/", icon: LayoutDashboard, label: "Dashboard" },
-  { to: "/reuniones", icon: Mic, label: "Reuniones" },
-  { to: "/consumo", icon: Coins, label: "Consumo" },
-  { to: "/programados", icon: CalendarClock, label: "Programados" },
-  { to: "/conocimiento", icon: BookOpen, label: "Conocimiento" },
-  { to: "/integraciones", icon: Mail, label: "Integraciones" },
-  { to: "/agente", icon: Bot, label: "Agente" },
-  { to: "/usuarios", icon: Users, label: "Usuarios" },
-  { to: "/accesos", icon: KeyRound, label: "Accesos" },
-  { to: "/roles", icon: Shield, label: "Roles" },
-  { to: "/tareas", icon: Clock, label: "Tareas" },
-  { to: "/historial", icon: MessageSquare, label: "Historial" },
-  { to: "/auditoria", icon: Activity, label: "Auditoría" },
+const NAV_GROUPS_TENANT = [
+  {
+    title: "Principal",
+    items: [
+      { to: "/chat", icon: MessagesSquare, label: "Chat" },
+      { to: "/", icon: LayoutDashboard, label: "Dashboard" },
+    ],
+  },
+  {
+    title: "Operación",
+    items: [
+      { to: "/reuniones", icon: Mic, label: "Reuniones" },
+      { to: "/programados", icon: CalendarClock, label: "Programados" },
+      { to: "/conocimiento", icon: BookOpen, label: "Conocimiento" },
+      { to: "/integraciones", icon: Mail, label: "Integraciones" },
+      { to: "/agente", icon: Bot, label: "Agente" },
+      { to: "/consumo", icon: Coins, label: "Consumo" },
+    ],
+  },
+  {
+    title: "Administración",
+    items: [
+      { to: "/usuarios", icon: Users, label: "Usuarios" },
+      { to: "/accesos", icon: KeyRound, label: "Accesos" },
+      { to: "/roles", icon: Shield, label: "Roles" },
+      { to: "/tareas", icon: Clock, label: "Tareas" },
+      { to: "/historial", icon: MessageSquare, label: "Historial" },
+      { to: "/auditoria", icon: Activity, label: "Auditoría" },
+    ],
+  },
 ];
 
 // ── Selector de tenant ────────────────────────────────────────────────────────
@@ -132,7 +168,7 @@ export default function Layout() {
   const { username, logout, role } = useAuth();
   const navigate = useNavigate();
   const isSuperAdmin = role === "superadmin";
-  const NAV = isSuperAdmin ? NAV_SUPERADMIN : NAV_TENANT;
+  const NAV_GROUPS = isSuperAdmin ? NAV_GROUPS_SUPERADMIN : NAV_GROUPS_TENANT;
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
@@ -149,7 +185,7 @@ export default function Layout() {
       {/* Sidebar */}
       <aside className={`
         fixed lg:relative inset-y-0 left-0 z-50
-        flex flex-col w-72 lg:w-60 bg-[#101216] border-r border-[#262b33] shadow-[1px_0_0_rgba(255,255,255,0.02)] flex-shrink-0
+        flex flex-col w-72 lg:w-64 bg-[#101216] border-r border-[#262b33] shadow-[1px_0_0_rgba(255,255,255,0.02)] flex-shrink-0
         transition-transform duration-300
         ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
       `}>
@@ -181,39 +217,33 @@ export default function Layout() {
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-2.5 py-4 space-y-0.5 overflow-y-auto">
-          {NAV.map(({ to, icon: Icon, label }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={to === "/"}
-              onClick={() => setSidebarOpen(false)}
-              className={({ isActive }) =>
-                `nav-link ${isActive ? "active text-[#34d399]" : ""}`
-              }
-            >
-              <Icon className="w-3.5 h-3.5 flex-shrink-0" />
-              {label}
-            </NavLink>
-          ))}
-
-          {isSuperAdmin && (
-            <div className="pt-4 mt-4 border-t border-[#1f232a]">
-              <p className="px-3 pb-1.5 text-2xs font-semibold uppercase tracking-[0.12em] text-[#667085]">
-                Sistema
+        <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5">
+          {NAV_GROUPS.map((group) => (
+            <div key={group.title}>
+              <p className="px-2 pb-2 text-2xs font-semibold uppercase tracking-[0.1em] text-[#8b93a1]">
+                {group.title}
               </p>
-              <NavLink
-                to="/superadmins"
-                onClick={() => setSidebarOpen(false)}
-                className={({ isActive }) =>
-                  `nav-link ${isActive ? "active text-[#34d399]" : ""}`
-                }
-              >
-                <ShieldCheck className="w-3.5 h-3.5 flex-shrink-0" />
-                Super Admins
-              </NavLink>
+              <div className="space-y-0.5">
+                {group.items.map(({ to, icon: Icon, label }) => (
+                  <NavLink
+                    key={to}
+                    to={to}
+                    end={to === "/"}
+                    onClick={() => setSidebarOpen(false)}
+                    className={({ isActive }) =>
+                      `nav-link ${isActive ? "active text-[#34d399]" : ""}`
+                    }
+                  >
+                    <Icon className="h-4 w-4 flex-shrink-0" />
+                    {label}
+                    {to === "/chat" && (
+                      <ArrowUpRight className="ml-auto h-3.5 w-3.5 flex-shrink-0 opacity-40" />
+                    )}
+                  </NavLink>
+                ))}
+              </div>
             </div>
-          )}
+          ))}
         </nav>
 
         {/* User */}
