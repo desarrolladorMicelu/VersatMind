@@ -827,7 +827,10 @@
   .vc-mobile-close { display: inline-flex; }
 
   .vc-menu-btn { display: inline-flex; }
-  .vc-messages { padding: var(--space-6) var(--space-4); }
+  .vc-messages { padding: var(--space-6) var(--space-4); scrollbar-width: none; }
+  .vc-messages::-webkit-scrollbar { display: none; }
+  .vc-conv-list { scrollbar-width: none; }
+  .vc-conv-list::-webkit-scrollbar { display: none; }
   .vc-composer-wrap { padding: 0 var(--space-3) var(--space-3); }
   .vc-suggestions { grid-template-columns: 1fr; }
   .vc-empty { padding-top: var(--space-6); }

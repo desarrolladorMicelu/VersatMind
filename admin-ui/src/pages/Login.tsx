@@ -32,14 +32,14 @@ export default function Login() {
         className="pointer-events-none absolute inset-0"
         style={{
           backgroundImage:
-            "linear-gradient(to right, rgba(38,35,29,0.045) 1px, transparent 1px), linear-gradient(to bottom, rgba(38,35,29,0.045) 1px, transparent 1px)",
+            "linear-gradient(to right, rgba(32,33,36,0.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(32,33,36,0.06) 1px, transparent 1px)",
           backgroundSize: "56px 56px",
           maskImage: "radial-gradient(ellipse at 50% 40%, black 20%, transparent 75%)",
           WebkitMaskImage: "radial-gradient(ellipse at 50% 40%, black 20%, transparent 75%)",
         }}
       />
 
-      <div className="relative grid w-full max-w-4xl overflow-hidden rounded-2xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)] shadow-[0_28px_70px_-30px_rgba(38,35,29,0.28)] lg:grid-cols-2">
+      <div className="relative grid w-full max-w-4xl overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[0_28px_70px_-30px_rgba(32,33,36,0.3)] lg:grid-cols-2">
 
         {/* Panel de marca */}
         <div className="relative hidden flex-col justify-between gap-14 border-r border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] p-10 lg:flex">

@@ -35,7 +35,7 @@ También viven ahí los pesos, interlineados, tracking y la paleta base. Tailwin
 - Se eliminó `Space Grotesk` y `Space Mono`; solo queda un `@import` de Inter.
 - Se eliminaron todos los `font-mono` inline (254) y los tamaños arbitrarios de 9–11 px.
 - Se redujo el tracking extremo de labels y badges.
-- Fondo negro azulado con superficies por capas, bordes suaves, radios consistentes y acento esmeralda menos saturado.
+- Superficies por capas con grises neutros, bordes suaves, radios consistentes y un único acento.
 - Login rediseñado con panel de marca + formulario.
 - Sidebar, header de página, métricas y tablas con jerarquía y espaciado revisados.
 - Tablas críticas con scroll horizontal en móvil; header móvil con espacio para el menú.
@@ -48,34 +48,35 @@ También viven ahí los pesos, interlineados, tracking y la paleta base. Tailwin
 - `after-superadmins-desktop.png` / `after-superadmins-mobile.png`
 - `after-tenants-desktop.png`
 
-## Tema crema (fase actual)
+## Tema gris neutro (fase actual)
 
-Se reemplazó el fondo negro por una paleta crema cálida y neutra, manteniendo un único acento:
+Se reemplazó el negro y luego el crema por una paleta gris neutra de tono medio-claro, manteniendo un único acento:
 
 | Token | Valor | Uso |
 |---|---|---|
-| `--color-bg` | `#f7f3ea` | lienzo principal |
-| `--color-bg-elevated` | `#f1ebdf` | sidebar, headers, hero |
-| `--color-surface` | `#fffdf8` | tarjetas, modales, composer |
-| `--color-surface-2` | `#ece5d7` | hover, burbujas, énfasis |
-| `--color-border` | `#d8cfbe` | bordes principales |
-| `--color-border-subtle` | `#e5ddcf` | separadores |
-| `--color-text` | `#26231d` | texto principal |
-| `--color-text-muted` | `#5f594f` | texto secundario |
-| `--color-text-subtle` | `#6e6759` | metadatos |
-| `--color-accent` | `#0f766e` | único acento |
-| `--color-danger` | `#b42318` | errores y acciones destructivas |
+| `--color-bg` | `#e3e3e0` | lienzo principal |
+| `--color-bg-elevated` | `#d7d7d3` | sidebar, headers, hero |
+| `--color-surface` | `#f3f3f0` | tarjetas, modales, composer |
+| `--color-surface-2` | `#cecec9` | hover, burbujas, énfasis |
+| `--color-border` | `#c2c2bc` | bordes principales |
+| `--color-border-subtle` | `#d0d0ca` | separadores |
+| `--color-text` | `#202124` | texto principal |
+| `--color-text-muted` | `#4f5155` | texto secundario |
+| `--color-text-subtle` | `#5f6267` | metadatos |
+| `--color-accent` | `#0b6b63` | único acento |
+| `--color-danger` | `#a61b14` | errores y acciones destructivas |
 
-- Se eliminaron los glows y degradados verdes del login y de la zona de seguridad.
+- Sin negro absoluto ni blanco: grises neutros con profundidad por capas.
 - `color-scheme: light` para controles nativos y scrollbars coherentes.
-- Botones primarios con texto blanco sobre el acento; texto principal oscuro sobre crema.
-- Contraste revisado: cuerpo oscuro sobre crema, secundarios por encima de 4.5:1.
+- Botones primarios con texto blanco sobre el acento; texto principal oscuro sobre gris.
+- Contraste revisado: cuerpo oscuro sobre gris, secundarios por encima de 4.5:1.
 
 Capturas de este cambio:
 
-- `before-cream-login-desktop.png` / `after-login-desktop.png`
-- `before-cream-chat-desktop.png` / `after-chat-desktop.png`
-- `before-cream-dashboard-desktop.png` / `after-dashboard-desktop.png`
+- `before-gray-login-desktop.png` / `after-login-desktop.png`
+- `before-gray-chat-desktop.png` / `after-chat-desktop.png`
+- `before-gray-dashboard-desktop.png` / `after-dashboard-desktop.png`
+- Historial de temas anteriores: `before-cream-*.png` (negro → crema).
 
 ## Chat minimalista (segunda fase)
 

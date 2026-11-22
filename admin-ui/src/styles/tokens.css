@@ -63,29 +63,29 @@
   --radius-xl: 20px;
   --radius-pill: 999px;
 
-  /* ── Color base: crema + neutros cálidos + 1 acento ─────────────────── */
-  --color-bg: #f7f3ea;            /* lienzo principal */
-  --color-bg-elevated: #f1ebdf;   /* sidebar, cabeceras, hero */
-  --color-surface: #fffdf8;       /* tarjetas, inputs, composer */
-  --color-surface-2: #ece5d7;     /* hover, burbujas, énfasis suave */
-  --color-border: #d8cfbe;
-  --color-border-subtle: #e5ddcf;
-  --color-border-strong: #c7bcab;
-  --color-text: #26231d;
-  --color-text-muted: #5f594f;
-  --color-text-subtle: #6e6759;
-  --color-accent: #0f766e;        /* único acento */
-  --color-accent-strong: #115e59;
+  /* ── Color base: gris neutro + 1 acento ─────────────────────────────── */
+  --color-bg: #e3e3e0;            /* lienzo principal */
+  --color-bg-elevated: #d7d7d3;   /* sidebar, cabeceras, hero */
+  --color-surface: #f3f3f0;       /* tarjetas, inputs, composer */
+  --color-surface-2: #cecec9;     /* hover, burbujas, énfasis suave */
+  --color-border: #c2c2bc;
+  --color-border-subtle: #d0d0ca;
+  --color-border-strong: #b2b2ab;
+  --color-text: #202124;
+  --color-text-muted: #4f5155;
+  --color-text-subtle: #5f6267;
+  --color-accent: #0b6b63;        /* único acento */
+  --color-accent-strong: #084f4a;
   --color-accent-contrast: #ffffff;
-  --color-accent-soft: rgba(15, 118, 110, 0.1);
-  --color-accent-border: rgba(15, 118, 110, 0.24);
-  --color-danger: #b42318;
-  --color-danger-soft: #fbeae8;
-  --color-danger-border: #e7c4c0;
-  --color-warning: #8a5a00;
-  --color-warning-soft: #fff6e0;
-  --color-warning-border: #e8d5a8;
-  --color-hover: rgba(38, 35, 29, 0.05);
-  --color-overlay: rgba(38, 35, 29, 0.38);
-  --color-shadow: rgba(38, 35, 29, 0.14);
+  --color-accent-soft: rgba(11, 107, 99, 0.12);
+  --color-accent-border: rgba(11, 107, 99, 0.28);
+  --color-danger: #a61b14;
+  --color-danger-soft: #f7e6e4;
+  --color-danger-border: #dcb8b3;
+  --color-warning: #7a5000;
+  --color-warning-soft: #f7edda;
+  --color-warning-border: #dcc79f;
+  --color-hover: rgba(32, 33, 36, 0.06);
+  --color-overlay: rgba(32, 33, 36, 0.42);
+  --color-shadow: rgba(32, 33, 36, 0.16);
 }
