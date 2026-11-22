@@ -11,8 +11,8 @@ import { useState, useRef, useEffect } from "react";
 import type { Tenant } from "../lib/api";
 
 const NAV_SUPERADMIN = [
-  { to: "/", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/chat", icon: MessagesSquare, label: "Chat" },
+  { to: "/", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/reuniones", icon: Mic, label: "Reuniones" },
   { to: "/tenants", icon: Building2, label: "Clientes" },
   { to: "/consumo", icon: Coins, label: "Consumo" },
@@ -29,8 +29,8 @@ const NAV_SUPERADMIN = [
 ];
 
 const NAV_TENANT = [
-  { to: "/", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/chat", icon: MessagesSquare, label: "Chat" },
+  { to: "/", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/reuniones", icon: Mic, label: "Reuniones" },
   { to: "/consumo", icon: Coins, label: "Consumo" },
   { to: "/programados", icon: CalendarClock, label: "Programados" },

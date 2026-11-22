@@ -47,6 +47,22 @@
   --tracking-label: 0.06em;
   --tracking-tag: 0.12em;
 
+  /* Escala de espaciado (múltiplos de 4 px) */
+  --space-1: 0.25rem;   /* 4px */
+  --space-2: 0.5rem;    /* 8px */
+  --space-3: 0.75rem;   /* 12px */
+  --space-4: 1rem;      /* 16px */
+  --space-6: 1.5rem;    /* 24px */
+  --space-8: 2rem;      /* 32px */
+  --space-12: 3rem;     /* 48px */
+
+  /* Radios */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+
   /* ── Color base ─────────────────────────────────────────────────────── */
   --color-bg: #0b0c0e;
   --color-bg-elevated: #101216;

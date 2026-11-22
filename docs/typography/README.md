@@ -48,7 +48,29 @@ También viven ahí los pesos, interlineados, tracking y la paleta base. Tailwin
 - `after-superadmins-desktop.png` / `after-superadmins-mobile.png`
 - `after-tenants-desktop.png`
 
+## Chat minimalista (segunda fase)
+
+El chat pasó a ser una pantalla completa (`/admin/chat`) fuera del layout de administración:
+
+- Barra lateral de 272 px, colapsable a 72 px (solo iconos) y off-canvas en móvil.
+- Navegación: **Nuevo chat**, **Historial**, **Proyectos** (espacio reservado, marcado “Pronto”) y **Configuración**.
+- Acciones secundarias (nuevo chat, eliminar conversación, configuración) movidas al menú contextual `···` del encabezado.
+- Estado vacío simple con 4 sugerencias de preguntas y un composer fijo.
+- Configuración con cuenta, cliente activo (selector para superadmin), acceso al panel y cierre de sesión.
+- Sin degradados, glows ni animaciones decorativas. Solo transiciones sutiles de hover y el cursor de streaming.
+- Paleta y espaciado desde tokens: `--color-*`, `--space-*`, `--radius-*` en `styles/tokens.css`.
+
+Capturas adicionales:
+
+- `before-chat-desktop.png` / `after-chat-desktop.png`
+- `before-chat-mobile.png` / `after-chat-mobile.png`
+- `after-chat-collapsed.png`
+- `after-chat-config.png`
+- `after-chat-projects.png`
+- `after-chat-mobile-menu.png`
+
 ## Verificación
 
 - `npm run build` (incluye `tsc -b`) OK.
 - ESLint sin errores nuevos en los archivos tocados.
+- Capturas tomadas con Chrome headless y emulación móvil real (390 × 844).

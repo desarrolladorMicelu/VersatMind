@@ -1,10 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Plus, Trash2, Menu, Send, Square, Check, MessageSquare } from "lucide-react";
+import {
+  Check, Folder, History, LayoutDashboard, LogOut, Menu, MessageSquare,
+  MoreHorizontal, PanelLeftClose, PanelLeftOpen, Plus, Send, Settings,
+  Square, Trash2, X,
+} from "lucide-react";
 import api from "../lib/api";
+import { useAuth } from "../contexts/AuthContext";
 import { useTenant } from "../contexts/TenantContext";
 import "../chat.css";
 
@@ -36,6 +42,8 @@ type StreamEvent =
   | { type: "done"; text?: string }
   | { type: "error"; message?: string };
 
+type Panel = "config" | "projects" | null;
+
 const SUGGESTIONS = [
   { title: "Resumen de ventas", text: "Dame el resumen de ventas de este mes por canal." },
   { title: "Margen del mes", text: "¿Cómo estuvo el margen este mes comparado con el anterior?" },
@@ -51,7 +59,9 @@ function fmtWhen(iso: string | null): string {
 
 export default function Chat() {
   const qc = useQueryClient();
-  const { tenantId, activeTenant } = useTenant();
+  const navigate = useNavigate();
+  const { username, role, logout } = useAuth();
+  const { tenantId, activeTenant, tenants, setActiveTenant, isSuperAdmin } = useTenant();
 
   const [activeId, setActiveId] = useState<number | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -60,10 +70,14 @@ export default function Chat() {
   const [stage, setStage] = useState("");
   const [error, setError] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [panel, setPanel] = useState<Panel>(null);
 
   const abortRef = useRef<AbortController | null>(null);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
   const justCreatedRef = useRef(false);
 
   const { data: conversations = [] } = useQuery({
@@ -72,12 +86,9 @@ export default function Chat() {
     enabled: tenantId !== null,
   });
 
-  // Cargar mensajes al cambiar de conversación
   useEffect(() => {
     let cancelled = false;
     if (!tenantId || !activeId) return;
-    // Si la conversación se acaba de crear para enviar un mensaje, no recargar
-    // (borraría el mensaje en curso).
     if (justCreatedRef.current) { justCreatedRef.current = false; return; }
     api
       .get<ChatMessage[]>(`/chat/conversations/${activeId}/messages`, { params: { tenant_id: tenantId } })
@@ -86,22 +97,37 @@ export default function Chat() {
     return () => { cancelled = true; };
   }, [activeId, tenantId]);
 
-  // Abortar el stream si se sale de la página
   useEffect(() => () => { abortRef.current?.abort(); }, []);
 
-  // Auto-scroll
   useEffect(() => {
     const el = scrollerRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages, stage]);
 
-  // Auto-grow del textarea
   useEffect(() => {
     const el = inputRef.current;
     if (!el) return;
     el.style.height = "auto";
     el.style.height = Math.min(el.scrollHeight, 200) + "px";
   }, [input]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [menuOpen]);
+
+  useEffect(() => {
+    if (!panel) return;
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if (e.key === "Escape") setPanel(null);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [panel]);
 
   const updateLastAssistant = (fn: (m: ChatMessage) => ChatMessage) => {
     setMessages((prev) => {
@@ -150,6 +176,7 @@ export default function Chat() {
     setError("");
     setInput("");
     setSidebarOpen(false);
+    setMenuOpen(false);
 
     let convId = activeId;
     try {
@@ -227,6 +254,7 @@ export default function Chat() {
     setMessages([]);
     setError("");
     setSidebarOpen(false);
+    setMenuOpen(false);
     inputRef.current?.focus();
   };
 
@@ -237,97 +265,196 @@ export default function Chat() {
     qc.invalidateQueries({ queryKey: ["chat-convs", tenantId] });
   };
 
+  const openConversation = (id: number) => {
+    setActiveId(id);
+    setSidebarOpen(false);
+    setMenuOpen(false);
+  };
+
+  const chooseTenant = (id: number) => {
+    const tenant = tenants.find((t) => t.id === id);
+    if (!tenant) return;
+    setActiveTenant(tenant);
+    setActiveId(null);
+    setMessages([]);
+    setError("");
+  };
+
+  const openPanel = (next: Panel) => {
+    setPanel(next);
+    setSidebarOpen(false);
+    setMenuOpen(false);
+  };
+
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
   };
 
+  const activeConversation = conversations.find((c) => c.id === activeId);
+  const showEmpty = messages.length === 0;
+
   if (!tenantId) {
     return (
       <div className="vc-app" style={{ alignItems: "center", justifyContent: "center" }}>
-        <div style={{ textAlign: "center", color: "#9a978f" }}>
-          <MessageSquare size={28} style={{ color: "#34d399", marginBottom: 10 }} />
-          <p>Selecciona un cliente en el panel izquierdo para abrir el chat.</p>
+        <div className="vc-empty" style={{ textAlign: "center" }}>
+          <div className="vc-empty-mark" style={{ margin: "0 auto var(--space-4)" }}>M</div>
+          <h1 className="vc-empty-title">Selecciona un cliente</h1>
+          <p className="vc-empty-sub" style={{ margin: "var(--space-3) auto var(--space-6)" }}>
+            Elige un cliente en el panel para comenzar a conversar.
+          </p>
+          <button className="btn-secondary" onClick={() => navigate("/")}>
+            <LayoutDashboard size={14} /> Ir al panel
+          </button>
         </div>
       </div>
     );
   }
 
-  const showEmpty = messages.length === 0;
-
   return (
     <div className="vc-app">
       {sidebarOpen && <div className="vc-overlay show" onClick={() => setSidebarOpen(false)} />}
 
-      {/* Sidebar */}
-      <aside className={`vc-sidebar ${sidebarOpen ? "open" : ""}`}>
-        <div className="vc-side-head">
+      <aside className={`vc-sidebar ${collapsed ? "collapsed" : ""} ${sidebarOpen ? "open" : ""}`}>
+        <div className="vc-side-top">
           <div className="vc-brand">
-            <div className="vc-logo">⬡</div>
-            <div>
+            <div className="vc-logo">M</div>
+            <div className="vc-brand-text">
               <div className="vc-brand-name">Mind</div>
-              <div className="vc-brand-sub">by Versat.ai</div>
+              <div className="vc-brand-sub">by Versat</div>
             </div>
           </div>
-          <button className="vc-new" onClick={newConversation}>
-            <Plus size={16} /> Nueva conversación
+          <button
+            className="vc-collapse"
+            onClick={() => setCollapsed((v) => !v)}
+            title={collapsed ? "Expandir menú" : "Colapsar menú"}
+            aria-label={collapsed ? "Expandir menú" : "Colapsar menú"}
+          >
+            {collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+          </button>
+          <button
+            className="vc-mobile-close"
+            onClick={() => setSidebarOpen(false)}
+            aria-label="Cerrar menú"
+          >
+            <X size={18} />
           </button>
         </div>
 
-        <div className="vc-conv-list">
-          {conversations.length === 0 ? (
-            <p className="vc-side-empty">Aún no tienes conversaciones.</p>
-          ) : (
-            conversations.map((c) => (
-              <button
-                key={c.id}
-                className={`vc-conv ${activeId === c.id ? "active" : ""}`}
-                onClick={() => { setActiveId(c.id); setSidebarOpen(false); }}
-              >
-                <div className="vc-conv-title">{c.title || "Nueva conversación"}</div>
-                <div className="vc-conv-date">{fmtWhen(c.updated_at)}</div>
-                <span
-                  className="vc-conv-del"
-                  role="button"
-                  onClick={(e) => { e.stopPropagation(); removeConversation(c.id); }}
+        <div className="vc-side-body">
+          <button className="vc-new" onClick={newConversation} title="Nuevo chat">
+            <Plus size={16} />
+            <span>Nuevo chat</span>
+          </button>
+
+          <nav className="vc-nav" aria-label="Navegación del chat">
+            <button className="vc-nav-item" onClick={() => setCollapsed(false)} title="Historial">
+              <History className="vc-nav-icon" size={16} />
+              <span className="vc-nav-label">Historial</span>
+            </button>
+            <button className="vc-nav-item" onClick={() => openPanel("projects")} title="Proyectos">
+              <Folder className="vc-nav-icon" size={16} />
+              <span className="vc-nav-label">Proyectos</span>
+              <span className="vc-nav-badge">Pronto</span>
+            </button>
+            <button className="vc-nav-item" onClick={() => openPanel("config")} title="Configuración">
+              <Settings className="vc-nav-icon" size={16} />
+              <span className="vc-nav-label">Configuración</span>
+            </button>
+          </nav>
+
+          <div className="vc-side-section">
+            <span>Recientes</span>
+            <span>{conversations.length}</span>
+          </div>
+          <div className="vc-conv-list">
+            {conversations.length === 0 ? (
+              <p className="vc-side-empty">Tus conversaciones aparecerán aquí.</p>
+            ) : (
+              conversations.map((c) => (
+                <button
+                  key={c.id}
+                  className={`vc-conv ${activeId === c.id ? "active" : ""}`}
+                  onClick={() => openConversation(c.id)}
+                  title={c.title || "Nueva conversación"}
                 >
-                  <Trash2 size={14} />
-                </span>
-              </button>
-            ))
-          )}
+                  <MessageSquare className="vc-conv-icon" size={14} />
+                  <span className="vc-conv-text">
+                    <span className="vc-conv-title">{c.title || "Nueva conversación"}</span>
+                    <span className="vc-conv-date">{fmtWhen(c.updated_at)}</span>
+                  </span>
+                </button>
+              ))
+            )}
+          </div>
         </div>
 
         <div className="vc-side-foot">
-          <span className="vc-dot" /> {activeTenant?.name ?? "Cliente"}
+          <button className="vc-tenant" onClick={() => openPanel("config")} title="Cambiar cliente">
+            <span className="vc-tenant-dot" />
+            <span className="vc-tenant-text">
+              <span className="vc-tenant-label">Cliente</span>
+              <span className="vc-tenant-name">{activeTenant?.name ?? "Tu empresa"}</span>
+            </span>
+          </button>
         </div>
       </aside>
 
-      {/* Main */}
       <div className="vc-main">
         <header className="vc-header">
-          <button className="vc-menu-btn" onClick={() => setSidebarOpen((v) => !v)}>
+          <button className="vc-menu-btn" onClick={() => setSidebarOpen(true)} aria-label="Abrir menú">
             <Menu size={18} />
           </button>
-          <div>
-            <div className="vc-header-title">
-              {conversations.find((c) => c.id === activeId)?.title || "Nuevo chat"}
-            </div>
+
+          <div className="vc-header-info">
+            <div className="vc-header-title">{activeConversation?.title || "Nuevo chat"}</div>
             <div className="vc-header-sub">Asistente de {activeTenant?.name ?? "tu empresa"}</div>
           </div>
-          <div className="vc-header-spacer" />
-          <span className="vc-pill"><span className="vc-dot" /> En línea</span>
+
+          <div className="vc-header-actions" ref={menuRef}>
+            <button
+              className="vc-icon-btn"
+              onClick={() => setMenuOpen((v) => !v)}
+              aria-label="Más opciones"
+              aria-expanded={menuOpen}
+            >
+              <MoreHorizontal size={18} />
+            </button>
+            {menuOpen && (
+              <div className="vc-menu-pop">
+                <button className="vc-menu-item" onClick={newConversation}>
+                  <Plus size={14} /> Nuevo chat
+                </button>
+                {activeId !== null && (
+                  <button
+                    className="vc-menu-item danger"
+                    onClick={() => { setMenuOpen(false); removeConversation(activeId); }}
+                  >
+                    <Trash2 size={14} /> Eliminar conversación
+                  </button>
+                )}
+                <div className="vc-menu-sep" />
+                <button className="vc-menu-item" onClick={() => openPanel("config")}>
+                  <Settings size={14} /> Configuración
+                </button>
+              </div>
+            )}
+          </div>
         </header>
 
         <div className="vc-messages" ref={scrollerRef}>
           {showEmpty ? (
             <div className="vc-empty">
-              <h1>Hola, soy <span className="vc-grad">Mind</span></h1>
-              <p>Pregúntame por las ventas, márgenes, inventario o cualquier dato de tu negocio. Puedo consultar tus fuentes en tiempo real.</p>
+              <div className="vc-empty-mark">M</div>
+              <h1 className="vc-empty-title">¿En qué puedo ayudarte?</h1>
+              <p className="vc-empty-sub">
+                Pregunta por ventas, márgenes, inventario o cualquier dato de tu negocio.
+                Consulto tus fuentes en tiempo real.
+              </p>
               <div className="vc-suggestions">
                 {SUGGESTIONS.map((s) => (
-                  <button key={s.title} className="vc-suggestion" onClick={() => { setInput(s.text); inputRef.current?.focus(); }}>
-                    <strong>{s.title}</strong>
-                    <span>{s.text}</span>
+                  <button key={s.title} className="vc-suggestion" onClick={() => send(s.text)}>
+                    <span className="vc-suggestion-title">{s.title}</span>
+                    <span className="vc-suggestion-text">{s.text}</span>
                   </button>
                 ))}
               </div>
@@ -360,11 +487,7 @@ export default function Chat() {
                           {m.streaming && <span className="vc-cursor" />}
                         </div>
                       ) : (
-                        m.streaming && (
-                          <div className="vc-thinking">
-                            <span /><span /><span />
-                          </div>
-                        )
+                        m.streaming && <p className="vc-thinking-label">{stage || "Pensando…"}</p>
                       )}
                     </div>
                   </div>
@@ -375,30 +498,128 @@ export default function Chat() {
         </div>
 
         <div className="vc-composer-wrap">
-          {error && <div className="vc-error">{error}</div>}
-          <div className="vc-composer">
-            <textarea
-              ref={inputRef}
-              className="vc-input"
-              placeholder="Escribe tu pregunta…"
-              value={input}
-              rows={1}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={onKeyDown}
-            />
-            {streaming ? (
-              <button className="vc-stop" onClick={stop} title="Detener">
-                <Square size={15} />
-              </button>
-            ) : (
-              <button className="vc-send" onClick={() => send()} disabled={!input.trim()} title="Enviar">
-                <Send size={16} />
-              </button>
-            )}
+          <div className="vc-composer-inner">
+            {error && <div className="vc-error">{error}</div>}
+            <div className="vc-composer">
+              <textarea
+                ref={inputRef}
+                className="vc-input"
+                placeholder="Escribe un mensaje…"
+                value={input}
+                rows={1}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={onKeyDown}
+              />
+              {streaming ? (
+                <button className="vc-stop" onClick={stop} title="Detener" aria-label="Detener respuesta">
+                  <Square size={14} />
+                </button>
+              ) : (
+                <button
+                  className="vc-send"
+                  onClick={() => send()}
+                  disabled={!input.trim()}
+                  title="Enviar"
+                  aria-label="Enviar mensaje"
+                >
+                  <Send size={15} />
+                </button>
+              )}
+            </div>
+            <p className="vc-hint">Mind puede cometer errores. Verifica la información importante.</p>
           </div>
-          <div className="vc-hint">Mind puede cometer errores. Verifica la información importante. Enter para enviar, Shift+Enter para salto de línea.</div>
         </div>
       </div>
+
+      {panel && (
+        <div className="vc-modal-backdrop" onClick={() => setPanel(null)}>
+          <div className="vc-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+            <div className="vc-modal-head">
+              <div>
+                <h2 className="vc-modal-title">{panel === "config" ? "Configuración" : "Proyectos"}</h2>
+                <p className="vc-modal-sub">
+                  {panel === "config"
+                    ? "Cuenta, cliente activo y acceso al panel."
+                    : "Un espacio para organizar tus conversaciones."}
+                </p>
+              </div>
+              <button className="vc-icon-btn" onClick={() => setPanel(null)} aria-label="Cerrar">
+                <X size={18} />
+              </button>
+            </div>
+
+            {panel === "config" ? (
+              <>
+                <div className="vc-modal-body">
+                  <div>
+                    <div className="vc-settings-row">
+                      <span className="vc-settings-label">Cuenta</span>
+                      <span className="vc-settings-value">{username}</span>
+                    </div>
+                    <div className="vc-settings-row">
+                      <span className="vc-settings-label">Rol</span>
+                      <span className="vc-settings-value">
+                        {role === "superadmin" ? "Super admin" : "Administrador"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {isSuperAdmin && tenants.length > 0 ? (
+                    <div className="vc-field">
+                      <label className="label" htmlFor="chat-tenant">Cliente activo</label>
+                      <select
+                        id="chat-tenant"
+                        className="vc-select"
+                        value={activeTenant?.id ?? ""}
+                        onChange={(e) => chooseTenant(Number(e.target.value))}
+                      >
+                        {tenants.map((t) => (
+                          <option key={t.id} value={t.id}>{t.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : (
+                    <div className="vc-settings-row">
+                      <span className="vc-settings-label">Cliente</span>
+                      <span className="vc-settings-value">{activeTenant?.name ?? "Tu empresa"}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="vc-modal-actions">
+                  <button
+                    className="btn-secondary"
+                    onClick={() => { setPanel(null); setSidebarOpen(false); navigate("/"); }}
+                  >
+                    <LayoutDashboard size={14} /> Ir al panel
+                  </button>
+                  <button
+                    className="btn-ghost"
+                    onClick={async () => { await logout(); navigate("/login"); }}
+                  >
+                    <LogOut size={14} /> Cerrar sesión
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="vc-modal-body">
+                  <div className="vc-project-note">
+                    <Folder size={18} />
+                    <div>
+                      Muy pronto podrás agrupar conversaciones por cliente, iniciativa o equipo.
+                      El acceso ya está reservado en la barra lateral.
+                    </div>
+                  </div>
+                </div>
+                <div className="vc-modal-actions">
+                  <button className="btn-secondary" onClick={() => setPanel(null)}>Entendido</button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
