@@ -1,0 +1,64 @@
+/*
+ * Mind by Versat — Design tokens
+ * ---------------------------------------------------------------------------
+ * ÚNICA fuente de verdad para tipografía (familia, escala, pesos) y para la
+ * paleta base de la interfaz. Cualquier cambio tipográfico o de color debe
+ * hacerse aquí; los componentes consumen estos tokens vía CSS o Tailwind.
+ *
+ * Familias:
+ *   --font-sans → toda la interfaz (Inter + fallbacks del sistema)
+ *   --font-mono → SOLO código, bloques pre y datos técnicos tabulares
+ */
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
+:root {
+  /* ── Tipografía ─────────────────────────────────────────────────────── */
+  --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+
+  /* Escala de tipos (rem, base 16px) */
+  --text-2xs: 0.75rem;    /* 12px — metadatos densos */
+  --text-xs: 0.8125rem;   /* 13px — etiquetas y ayudas */
+  --text-sm: 0.9375rem;   /* 15px — cuerpo por defecto */
+  --text-base: 1rem;      /* 16px — cuerpo destacado */
+  --text-lg: 1.125rem;    /* 18px — H3 */
+  --text-xl: 1.375rem;    /* 22px — H2 */
+  --text-2xl: 1.75rem;    /* 28px — H1 de página */
+  --text-3xl: 2.25rem;    /* 36px — display */
+  --text-4xl: 2.75rem;    /* 44px — hero */
+
+  /* Interlineado */
+  --leading-tight: 1.15;
+  --leading-snug: 1.35;
+  --leading-normal: 1.55;
+
+  /* Pesos */
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* Tracking */
+  --tracking-tight: -0.015em;
+  --tracking-normal: 0;
+  --tracking-label: 0.06em;
+  --tracking-tag: 0.12em;
+
+  /* ── Color base ─────────────────────────────────────────────────────── */
+  --color-bg: #0b0c0e;
+  --color-bg-elevated: #101216;
+  --color-surface: #14171c;
+  --color-surface-2: #1a1e24;
+  --color-border: #262b33;
+  --color-border-subtle: #1d2128;
+  --color-text: #e8ebf0;
+  --color-text-muted: #a8b0bd;
+  --color-text-subtle: #7d8592;
+  --color-accent: #34d399;
+  --color-accent-strong: #10b981;
+  --color-accent-soft: rgba(52, 211, 153, 0.1);
+  --color-danger: #f87171;
+}

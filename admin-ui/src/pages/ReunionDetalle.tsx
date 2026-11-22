@@ -34,7 +34,7 @@ function Section({ title, items }: { title: string; items?: string[] }) {
       <ul className="space-y-1.5">
         {items.map((it, i) => (
           <li key={i} className="flex gap-2 text-sm text-white leading-relaxed">
-            <span className="text-[#00e5a0] mt-1.5">•</span>
+            <span className="text-[#34d399] mt-1.5">•</span>
             <span>{it}</span>
           </li>
         ))}
@@ -78,8 +78,8 @@ export default function ReunionDetalle() {
     return (
       <div>
         <PageHeader tag="REUNIÓN" title="Detalle" />
-        <div className="px-8 py-16">
-          <div className="h-12 border-b border-[#111] animate-pulse" />
+        <div className="px-5 py-16 sm:px-8">
+          <div className="h-12 border-b border-[#1a1e24] animate-pulse" />
         </div>
       </div>
     );
@@ -101,10 +101,10 @@ export default function ReunionDetalle() {
         }
       />
 
-      <div className="px-8 py-8 space-y-8 max-w-3xl">
+      <div className="px-5 py-6 sm:px-8 sm:py-8 space-y-8 max-w-3xl">
         <div className="flex items-center gap-3">
           <span className={`badge ${meta.cls}`}>{meta.label}</span>
-          <span className="font-mono text-[11px] text-white">
+          <span className="text-xs text-white">
             creada por {meeting.created_by || "—"}
           </span>
         </div>
@@ -116,8 +116,8 @@ export default function ReunionDetalle() {
         )}
 
         {meeting.status === "processing" && (
-          <div className="border border-[#2a2a2a] bg-[#050505] p-4">
-            <p className="section-tag">// Procesando</p>
+          <div className="border border-[#262b33] bg-[#0e1013] p-4">
+            <p className="section-tag">Procesando</p>
             <p className="text-sm text-white mt-2">
               Transcribiendo y generando el resumen. Esto puede tardar unos
               minutos.
@@ -129,9 +129,9 @@ export default function ReunionDetalle() {
           <>
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="border border-[#1a1a1a] bg-[#050505] p-5 space-y-4">
+                <div className="rounded-xl border border-[#1f232a] bg-[#0e1013] p-5 space-y-4">
                   <div className="flex items-center gap-2">
-                    <ListChecks className="w-4 h-4 text-[#00e5a0]" />
+                    <ListChecks className="w-4 h-4 text-[#34d399]" />
                     <h3 className="section-tag">Resumen estructurado</h3>
                   </div>
                   {summary.resumen_general && (
@@ -148,11 +148,11 @@ export default function ReunionDetalle() {
                       <ul className="space-y-2">
                         {(summary.tareas ?? []).map((t, i) => (
                           <li key={i} className="flex gap-2 text-sm text-white leading-relaxed">
-                            <SquareCheck className="w-4 h-4 text-[#00e5a0] flex-shrink-0 mt-0.5" />
+                            <SquareCheck className="w-4 h-4 text-[#34d399] flex-shrink-0 mt-0.5" />
                             <span>
                               {t.tarea}
                               {t.responsable ? (
-                                <span className="text-white"> — <span className="text-[#00e5a0]">{t.responsable}</span></span>
+                                <span className="text-white"> — <span className="text-[#34d399]">{t.responsable}</span></span>
                               ) : null}
                             </span>
                           </li>
@@ -168,9 +168,9 @@ export default function ReunionDetalle() {
                   )}
                 </div>
 
-                <div className="border border-[#1a1a1a] bg-[#050505] p-5 space-y-4">
+                <div className="rounded-xl border border-[#1f232a] bg-[#0e1013] p-5 space-y-4">
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#00e5a0]" />
+                    <CheckCircle2 className="w-4 h-4 text-[#34d399]" />
                     <h3 className="section-tag">Audio</h3>
                   </div>
                   <audio
@@ -183,7 +183,7 @@ export default function ReunionDetalle() {
               </div>
 
               {meeting.transcript && (
-                <div className="border border-[#1a1a1a] bg-[#050505] p-5">
+                <div className="rounded-xl border border-[#1f232a] bg-[#0e1013] p-5">
                   <h3 className="section-tag mb-3">Transcripción</h3>
                   <pre ref={transcriptRef} className="whitespace-pre-wrap text-sm text-white leading-relaxed max-h-96 overflow-y-auto">
                     {meeting.transcript}

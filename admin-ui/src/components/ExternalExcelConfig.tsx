@@ -160,10 +160,10 @@ function ExternalExcelConfig({
   };
 
   return (
-    <div className="border border-[#1a1a1a]">
-      <div className="px-4 py-2.5 border-b border-[#1a1a1a] bg-[#050505] flex items-center gap-2">
-        <FileSpreadsheet className="w-3 h-3 text-[#00e5a0]" />
-        <span className="section-tag">// EXCEL (OneDrive/SharePoint)</span>
+    <div className="rounded-xl border border-[#1f232a]">
+      <div className="px-4 py-2.5 border-b border-[#1f232a] bg-[#0e1013] flex items-center gap-2">
+        <FileSpreadsheet className="w-3 h-3 text-[#34d399]" />
+        <span className="section-tag">EXCEL (OneDrive/SharePoint)</span>
       </div>
 
       <div className="p-4 grid grid-cols-1 gap-4">
@@ -171,12 +171,12 @@ function ExternalExcelConfig({
         <div>
           <label className="label">Conexión a OneDrive</label>
           {connected ? (
-            <p className="flex items-center gap-2 font-mono text-[11px] text-[#00e5a0]">
+            <p className="flex items-center gap-2 text-xs text-[#34d399]">
               <Check className="w-3.5 h-3.5" />
               OneDrive conectado
             </p>
           ) : (
-            <p className="font-mono text-[10px] text-[#555] mt-1.5">
+            <p className="text-xs text-[#8b93a1] mt-1.5">
               Conectá OneDrive para poder leer el archivo Excel del cliente.
             </p>
           )}
@@ -209,7 +209,7 @@ function ExternalExcelConfig({
             <label className="label">Link del archivo Excel</label>
             <div className="flex items-center gap-2">
               <input
-                className="input font-mono text-xs"
+                className="input text-xs"
                 placeholder="Pegá el link del archivo Excel en OneDrive/SharePoint"
                 value={urlInput}
                 onChange={(e) => {
@@ -229,12 +229,12 @@ function ExternalExcelConfig({
                 AGREGAR
               </button>
             </div>
-            <p className="font-mono text-[10px] text-[#555] mt-1.5">
+            <p className="text-xs text-[#8b93a1] mt-1.5">
               Ej: https://excel.cloud.microsoft/open/onedrive/?docId=... o un link de
               onedrive.live.com / SharePoint
             </p>
             {urlStatus === "error" && urlError && (
-              <p className="font-mono text-[10px] text-red-400 mt-1.5 break-all">{urlError}</p>
+              <p className="text-xs text-red-400 mt-1.5 break-all">{urlError}</p>
             )}
           </div>
         )}
@@ -243,7 +243,7 @@ function ExternalExcelConfig({
         {local.file_id && (
           <div>
             <label className="label">Archivo seleccionado</label>
-            <p className="flex items-center gap-2 font-mono text-[11px] text-[#00e5a0]">
+            <p className="flex items-center gap-2 text-xs text-[#34d399]">
               <Check className="w-3.5 h-3.5" />
               {local.file_name || "Archivo Excel"}
             </p>
@@ -282,17 +282,17 @@ function ExternalExcelConfig({
               </button>
 
               {status === "tested" && (
-                <span className="flex items-center gap-1.5 font-mono text-[11px] text-[#00e5a0]">
+                <span className="flex items-center gap-1.5 text-xs text-[#34d399]">
                   <Check className="w-3.5 h-3.5" /> Conexión exitosa
                 </span>
               )}
               {status === "discovered" && (
-                <span className="flex items-center gap-1.5 font-mono text-[11px] text-[#00e5a0]">
+                <span className="flex items-center gap-1.5 text-xs text-[#34d399]">
                   <Check className="w-3.5 h-3.5" /> Hojas detectadas — se guardará con el cliente
                 </span>
               )}
               {status === "error" && errorMessage && (
-                <span className="flex items-center gap-1.5 font-mono text-[11px] text-red-400 break-all">
+                <span className="flex items-center gap-1.5 text-xs text-red-400 break-all">
                   <X className="w-3.5 h-3.5 flex-shrink-0" /> {errorMessage}
                 </span>
               )}
@@ -302,7 +302,7 @@ function ExternalExcelConfig({
               <div>
                 <label className="label">Descripción detectada — editable (se guarda con el cliente)</label>
                 <textarea
-                  className="font-mono text-xs text-white p-3 border border-[#1a1a1a] bg-[#050505] min-h-[160px] resize-y w-full"
+                  className="text-xs text-white p-3 border border-[#1f232a] bg-[#0e1013] min-h-[160px] resize-y w-full"
                   value={schemaPreview}
                   onChange={(e) => {
                     setSchemaPreview(e.target.value);
@@ -311,7 +311,7 @@ function ExternalExcelConfig({
                     onChange(next);
                   }}
                 />
-                <p className="font-mono text-[10px] text-white mt-1.5">
+                <p className="text-xs text-white mt-1.5">
                   Podés corregir lo que la IA detectó antes de guardar el cliente.
                 </p>
               </div>
@@ -320,7 +320,7 @@ function ExternalExcelConfig({
         ) : null}
 
         {!isEdit && (
-          <p className="font-mono text-[10px] text-white leading-relaxed">
+          <p className="text-xs text-white leading-relaxed">
             Después de crear el cliente, editalo para conectar OneDrive y pegar
             el link del archivo Excel que se leerá.
           </p>

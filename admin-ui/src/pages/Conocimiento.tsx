@@ -50,8 +50,8 @@ export default function Conocimiento() {
     return (
       <div>
         <PageHeader tag="CONTEXTO" title="Base de conocimiento" description="Selecciona un cliente" />
-        <div className="px-8 py-16 text-center">
-          <p className="font-mono text-xs text-white uppercase tracking-widest">Selecciona un cliente en el panel izquierdo</p>
+        <div className="px-5 py-16 sm:px-8 text-center">
+          <p className="text-xs text-white uppercase tracking-[0.06em]">Selecciona un cliente en el panel izquierdo</p>
         </div>
       </div>
     );
@@ -69,11 +69,11 @@ export default function Conocimiento() {
           </button>
         }
       />
-      <div className="px-8 py-8 space-y-6">
+      <div className="px-5 py-6 sm:px-8 sm:py-8 space-y-6">
 
         {form && (
-          <div className="border border-[#00e5a0]/30 bg-[#050505] p-6 space-y-5">
-            <p className="section-tag">{form.id ? "// Editar información" : "// Cargar información"}</p>
+          <div className="border border-[#34d399]/30 bg-[#0e1013] p-6 space-y-5">
+            <p className="section-tag">{form.id ? "Editar información" : "Cargar información"}</p>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               <div className="md:col-span-2">
@@ -114,8 +114,8 @@ export default function Conocimiento() {
           </div>
         )}
 
-        <div className="border border-[#1a1a1a]">
-          <div className="grid grid-cols-12 bg-[#050505] border-b border-[#1a1a1a]">
+        <div className="rounded-xl border border-[#1f232a]">
+          <div className="grid grid-cols-12 bg-[#0e1013] border-b border-[#1f232a]">
             <div className="col-span-5 th">Título</div>
             <div className="col-span-2 th">Origen</div>
             <div className="col-span-2 th">Etiquetas</div>
@@ -124,31 +124,31 @@ export default function Conocimiento() {
           </div>
 
           {isLoading ? (
-            Array(3).fill(0).map((_, i) => <div key={i} className="h-12 border-b border-[#111] animate-pulse" />)
+            Array(3).fill(0).map((_, i) => <div key={i} className="h-12 border-b border-[#1a1e24] animate-pulse" />)
           ) : entries.length === 0 ? (
-            <p className="px-5 py-10 text-center font-mono text-xs text-white">SIN INFORMACIÓN CARGADA</p>
+            <p className="px-5 py-10 text-center text-xs text-white">SIN INFORMACIÓN CARGADA</p>
           ) : (
             entries.map((e) => (
-              <div key={e.id} className="grid grid-cols-12 border-b border-[#111] hover:bg-[#050505] transition-colors items-center">
+              <div key={e.id} className="grid grid-cols-12 border-b border-[#1a1e24] hover:bg-[#0e1013] transition-colors items-center">
                 <div className="col-span-5 td">
                   <p className="text-sm text-white">{e.title}</p>
-                  <p className="font-mono text-[10px] text-white truncate">{e.content.slice(0, 90)}</p>
+                  <p className="text-xs text-white truncate">{e.content.slice(0, 90)}</p>
                 </div>
-                <div className="col-span-2 td font-mono text-[11px] text-white">{e.source || "—"}</div>
-                <div className="col-span-2 td font-mono text-[11px] text-white truncate">{e.tags || "—"}</div>
+                <div className="col-span-2 td text-xs text-white">{e.source || "—"}</div>
+                <div className="col-span-2 td text-xs text-white truncate">{e.tags || "—"}</div>
                 <div className="col-span-1 td">
                   <span className={`badge ${e.is_active ? "badge-green" : "badge-slate"}`}>{e.is_active ? "ON" : "OFF"}</span>
                 </div>
                 <div className="col-span-2 td">
                   <div className="flex items-center justify-between">
-                    <span className="font-mono text-[11px] text-white">{fmtDate(e.updated_at)}</span>
+                    <span className="text-xs text-white">{fmtDate(e.updated_at)}</span>
                     <div className="flex items-center gap-1.5">
                       <button title="Editar" onClick={() => startEdit(e)}
-                        className="p-1.5 text-white hover:text-[#00e5a0] transition-colors">
+                        className="p-1.5 text-white hover:text-[#34d399] transition-colors">
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
                       <button title={e.is_active ? "Desactivar" : "Activar"} onClick={() => toggle.mutate(e.id)}
-                        className={`p-1.5 transition-colors ${e.is_active ? "text-white hover:text-yellow-500" : "text-white hover:text-[#00e5a0]"}`}>
+                        className={`p-1.5 transition-colors ${e.is_active ? "text-white hover:text-yellow-500" : "text-white hover:text-[#34d399]"}`}>
                         <Power className="w-3.5 h-3.5" />
                       </button>
                       <button title="Eliminar" onClick={() => window.confirm("¿Eliminar esta información?") && remove.mutate(e.id)}

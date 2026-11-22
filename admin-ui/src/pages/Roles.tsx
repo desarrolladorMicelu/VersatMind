@@ -56,8 +56,8 @@ export default function Roles() {
     return (
       <div>
         <PageHeader tag="PERMISOS" title="Roles" description="Selecciona un cliente" />
-        <div className="px-8 py-16 text-center">
-          <p className="font-mono text-xs text-white uppercase tracking-widest">Selecciona un cliente en el panel izquierdo</p>
+        <div className="px-5 py-16 sm:px-8 text-center">
+          <p className="text-xs text-white uppercase tracking-[0.06em]">Selecciona un cliente en el panel izquierdo</p>
         </div>
       </div>
     );
@@ -73,11 +73,11 @@ export default function Roles() {
           </button>
         }
       />
-      <div className="px-8 py-8 space-y-4">
+      <div className="px-5 py-6 sm:px-8 sm:py-8 space-y-4">
 
         {creating && (
-          <div className="border border-[#00e5a0]/20 bg-[#050505] p-5">
-            <p className="section-tag mb-4">// NUEVO ROL</p>
+          <div className="border border-[#34d399]/20 bg-[#0e1013] p-5">
+            <p className="section-tag mb-4">NUEVO ROL</p>
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="label">Nombre del rol</label>
@@ -98,23 +98,23 @@ export default function Roles() {
         )}
 
         {isLoading
-          ? <div className="border border-[#1a1a1a] h-40 animate-pulse" />
+          ? <div className="rounded-xl border border-[#1f232a] h-40 animate-pulse" />
           : roles.map((role: any) => (
-            <div key={role.id} className="border border-[#1a1a1a]">
-              <div className="px-5 py-3 bg-[#050505] border-b border-[#1a1a1a] flex items-center justify-between">
+            <div key={role.id} className="rounded-xl border border-[#1f232a]">
+              <div className="px-5 py-3 bg-[#0e1013] border-b border-[#1f232a] flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <span className="font-bold text-white">{role.name}</span>
-                  {role.description && <span className="font-mono text-[11px] text-white">{role.description}</span>}
+                  {role.description && <span className="text-xs text-white">{role.description}</span>}
                 </div>
-                <span className="font-mono text-[10px] text-white">ID {role.id}</span>
+                <span className="text-xs text-white">ID {role.id}</span>
               </div>
               <div className="p-5 flex flex-wrap gap-2">
                 {ALL_PERMISSIONS.map((perm) => {
                   const active = (role.permissions ?? []).includes(perm);
                   return (
                     <button key={perm} onClick={() => toggle(role, perm)}
-                      className={`font-mono text-[10px] uppercase tracking-widest px-3 py-1.5 border transition-all ${
-                        active ? "border-[#00e5a0] text-[#00e5a0] bg-[#00e5a0]/5" : "border-[#2a2a2a] text-white hover:border-[#444]"
+                      className={`text-xs uppercase tracking-[0.06em] px-3 py-1.5 border transition-all ${
+                        active ? "border-[#34d399] text-[#34d399] bg-[#34d399]/5" : "border-[#262b33] text-white hover:border-[#7d8592]"
                       }`}>
                       {active ? "✓ " : ""}{PERM_LABELS[perm] ?? perm}
                     </button>
@@ -125,7 +125,7 @@ export default function Roles() {
           ))
         }
         {!isLoading && roles.length === 0 && (
-          <p className="text-center font-mono text-xs text-white py-10">SIN ROLES — CREA UNO</p>
+          <p className="text-center text-xs text-white py-10">SIN ROLES — CREA UNO</p>
         )}
       </div>
     </div>

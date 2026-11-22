@@ -49,12 +49,12 @@ function TenantModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="w-full max-w-2xl bg-[#0d0d0d] border border-[#2a2a2a] flex flex-col max-h-[90vh]">
+      <div className="w-full max-w-2xl bg-[#101216] border border-[#262b33] flex flex-col max-h-[90vh]">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#1a1a1a] flex-shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#1f232a] flex-shrink-0">
           <div>
-            <p className="section-tag mb-1">// {isEdit ? "EDITAR" : "NUEVO"} CLIENTE</p>
+            <p className="section-tag mb-1">{isEdit ? "EDITAR" : "NUEVO"} CLIENTE</p>
             <h2 className="text-lg font-bold text-white tracking-tight">
               {isEdit ? form.name || "Sin nombre" : "Crear tenant"}
             </h2>
@@ -68,9 +68,9 @@ function TenantModal({
         <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
 
           {/* Info básica */}
-          <div className="border border-[#1a1a1a]">
-            <div className="px-4 py-2.5 border-b border-[#1a1a1a] bg-[#050505]">
-              <span className="section-tag">// INFORMACIÓN BÁSICA</span>
+          <div className="rounded-xl border border-[#1f232a]">
+            <div className="px-4 py-2.5 border-b border-[#1f232a] bg-[#0e1013]">
+              <span className="section-tag">INFORMACIÓN BÁSICA</span>
             </div>
             <div className="p-4 grid grid-cols-2 gap-4">
               <div className="col-span-2">
@@ -88,32 +88,32 @@ function TenantModal({
               <div>
                 <label className="label">Slug <span className="text-white">(identificador único)</span></label>
                 <input
-                  className="input font-mono"
+                  className="input "
                   placeholder="empresa-xyz"
                   value={form.slug}
                   onChange={(e) => handleSlug(e.target.value)}
                 />
-                <p className="font-mono text-[10px] text-[#555] mt-1.5">Solo letras, números y guiones</p>
+                <p className="text-xs text-[#8b93a1] mt-1.5">Solo letras, números y guiones</p>
               </div>
               <div>
-                <label className="label">Admin Chat ID <span className="text-[#555]">(Telegram)</span></label>
+                <label className="label">Admin Chat ID <span className="text-[#8b93a1]">(Telegram)</span></label>
                 <input
-                  className="input font-mono"
+                  className="input "
                   placeholder="123456789"
                   type="number"
                   value={form.admin_chat_id || ""}
                   onChange={(e) => set("admin_chat_id", parseInt(e.target.value) || 0)}
                 />
-                <p className="font-mono text-[10px] text-[#555] mt-1.5">Chat ID del administrador del tenant</p>
+                <p className="text-xs text-[#8b93a1] mt-1.5">Chat ID del administrador del tenant</p>
               </div>
             </div>
           </div>
 
           {/* Telegram */}
-          <div className="border border-[#1a1a1a]">
-            <div className="px-4 py-2.5 border-b border-[#1a1a1a] bg-[#050505] flex items-center gap-2">
-              <Bot className="w-3 h-3 text-[#00e5a0]" />
-              <span className="section-tag">// TELEGRAM</span>
+          <div className="rounded-xl border border-[#1f232a]">
+            <div className="px-4 py-2.5 border-b border-[#1f232a] bg-[#0e1013] flex items-center gap-2">
+              <Bot className="w-3 h-3 text-[#34d399]" />
+              <span className="section-tag">TELEGRAM</span>
             </div>
             <div className="p-4 space-y-4">
               <div>
@@ -123,7 +123,7 @@ function TenantModal({
                 </label>
                 <div className="relative">
                   <input
-                    className="input pr-10 font-mono text-xs"
+                    className="input pr-10 text-xs"
                     placeholder="1234567890:ABCDefgh..."
                     type={showToken ? "text" : "password"}
                     autoComplete="new-password"
@@ -138,37 +138,37 @@ function TenantModal({
                     {showToken ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   </button>
                 </div>
-                <p className="font-mono text-[10px] text-[#555] mt-1.5">
+                <p className="text-xs text-[#8b93a1] mt-1.5">
                   Obtenlo de @BotFather → /newbot
                 </p>
               </div>
               <div>
                 <label className="label">Webhook URL <span className="text-white">(URL pública del servidor)</span></label>
                 <input
-                  className="input font-mono text-xs"
+                  className="input text-xs"
                   placeholder="https://tu-servidor.railway.app"
                   value={form.webhook_url}
                   onChange={(e) => set("webhook_url", e.target.value)}
                 />
-                <p className="font-mono text-[10px] text-[#555] mt-1.5">
+                <p className="text-xs text-[#8b93a1] mt-1.5">
                   El webhook se registra automáticamente en{" "}
-                  <span className="text-[#444]">{form.webhook_url || "https://…"}/webhook/&#60;token&#62;</span>
+                  <span className="text-[#7d8592]">{form.webhook_url || "https://…"}/webhook/&#60;token&#62;</span>
                 </p>
               </div>
             </div>
           </div>
 
           {/* SQL Server */}
-          <div className="border border-[#1a1a1a]">
-            <div className="px-4 py-2.5 border-b border-[#1a1a1a] bg-[#050505] flex items-center gap-2">
-              <Database className="w-3 h-3 text-[#00e5a0]" />
-              <span className="section-tag">// SQL SERVER OFIMA</span>
+          <div className="rounded-xl border border-[#1f232a]">
+            <div className="px-4 py-2.5 border-b border-[#1f232a] bg-[#0e1013] flex items-center gap-2">
+              <Database className="w-3 h-3 text-[#34d399]" />
+              <span className="section-tag">SQL SERVER OFIMA</span>
             </div>
             <div className="p-4 grid grid-cols-2 gap-4">
               <div>
                 <label className="label">Host / IP</label>
                 <input
-                  className="input font-mono text-xs"
+                  className="input text-xs"
                   placeholder="172.200.231.95"
                   value={form.sqlserver_host}
                   onChange={(e) => set("sqlserver_host", e.target.value)}
@@ -177,7 +177,7 @@ function TenantModal({
               <div>
                 <label className="label">Base de datos</label>
                 <input
-                  className="input font-mono text-xs"
+                  className="input text-xs"
                   placeholder="MICELU"
                   value={form.sqlserver_db}
                   onChange={(e) => set("sqlserver_db", e.target.value)}
@@ -186,7 +186,7 @@ function TenantModal({
               <div>
                 <label className="label">Usuario</label>
                 <input
-                  className="input font-mono text-xs"
+                  className="input text-xs"
                   placeholder="db_read"
                   value={form.sqlserver_user}
                   onChange={(e) => set("sqlserver_user", e.target.value)}
@@ -199,7 +199,7 @@ function TenantModal({
                 </label>
                 <div className="relative">
                   <input
-                    className="input pr-10 font-mono text-xs"
+                    className="input pr-10 text-xs"
                     placeholder="••••••••"
                     type={showPass ? "text" : "password"}
                     value={form.sqlserver_password}
@@ -217,7 +217,7 @@ function TenantModal({
               <div className="col-span-2">
                 <label className="label">Driver ODBC</label>
                 <input
-                  className="input font-mono text-xs"
+                  className="input text-xs"
                   value={form.sqlserver_driver}
                   onChange={(e) => set("sqlserver_driver", e.target.value)}
                 />
@@ -263,7 +263,7 @@ function TenantModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-[#1a1a1a] flex-shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-t border-[#1f232a] flex-shrink-0">
           <button onClick={onClose} className="btn-ghost">CANCELAR</button>
           <button
             className="btn-primary"
@@ -315,16 +315,16 @@ function TenantAdmins({ tenantId, tenantName }: { tenantId: number; tenantName: 
   });
 
   return (
-    <div className="border-t border-[#1a1a1a] bg-[#080808]">
+    <div className="border-t border-[#1f232a] bg-[#0d0f12]">
       <div className="px-6 py-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <KeyRound className="w-3.5 h-3.5 text-[#00e5a0]" />
-            <span className="section-tag">// ACCESOS AL PANEL — {tenantName}</span>
+            <KeyRound className="w-3.5 h-3.5 text-[#34d399]" />
+            <span className="section-tag">ACCESOS AL PANEL — {tenantName}</span>
           </div>
           <button
             onClick={() => setCreating((v) => !v)}
-            className="btn-primary flex items-center gap-1.5 text-[10px] py-1 px-3"
+            className="btn-primary flex items-center gap-1.5 text-xs py-1 px-3"
           >
             <Plus className="w-3 h-3" /> NUEVA CUENTA
           </button>
@@ -332,7 +332,7 @@ function TenantAdmins({ tenantId, tenantName }: { tenantId: number; tenantName: 
 
         {/* Formulario nueva cuenta */}
         {creating && (
-          <div className="mb-4 border border-[#00e5a0]/20 bg-[#050505] p-4 flex flex-wrap gap-3 items-end">
+          <div className="mb-4 border border-[#34d399]/20 bg-[#0e1013] p-4 flex flex-wrap gap-3 items-end">
             <div>
               <label className="label">Usuario</label>
               <input
@@ -346,7 +346,7 @@ function TenantAdmins({ tenantId, tenantName }: { tenantId: number; tenantName: 
               <label className="label">Contraseña</label>
               <div className="relative">
                 <input
-                  className="input w-44 pr-9 font-mono"
+                  className="input w-44 pr-9 "
                   placeholder="••••••••"
                   type={showPass ? "text" : "password"}
                   value={newPassword}
@@ -355,7 +355,7 @@ function TenantAdmins({ tenantId, tenantName }: { tenantId: number; tenantName: 
                 <button
                   type="button"
                   onClick={() => setShowPass((v) => !v)}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#888] hover:text-white"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#a8b0bd] hover:text-white"
                 >
                   {showPass ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
                 </button>
@@ -363,18 +363,18 @@ function TenantAdmins({ tenantId, tenantName }: { tenantId: number; tenantName: 
             </div>
             <div className="flex gap-2">
               <button
-                className="btn-primary py-1 px-3 text-[10px]"
+                className="btn-primary py-1 px-3 text-xs"
                 disabled={!newUsername || !newPassword || create.isPending}
                 onClick={() => create.mutate()}
               >
                 {create.isPending ? "CREANDO..." : "CREAR →"}
               </button>
-              <button className="btn-ghost py-1 px-3 text-[10px]" onClick={() => setCreating(false)}>
+              <button className="btn-ghost py-1 px-3 text-xs" onClick={() => setCreating(false)}>
                 CANCELAR
               </button>
             </div>
             {create.isError && (
-              <p className="w-full font-mono text-[10px] text-red-400">
+              <p className="w-full text-xs text-red-400">
                 {(create.error as any)?.response?.data?.detail ?? "Error al crear la cuenta"}
               </p>
             )}
@@ -383,25 +383,25 @@ function TenantAdmins({ tenantId, tenantName }: { tenantId: number; tenantName: 
 
         {/* Lista de admins */}
         {isLoading ? (
-          <div className="h-10 animate-pulse border border-[#111]" />
+          <div className="h-10 animate-pulse border border-[#1a1e24]" />
         ) : admins.length === 0 ? (
-          <p className="font-mono text-[10px] text-[#888] py-3">Sin cuentas creadas — este cliente no puede entrar al panel.</p>
+          <p className="text-xs text-[#a8b0bd] py-3">Sin cuentas creadas — este cliente no puede entrar al panel.</p>
         ) : (
-          <div className="border border-[#1a1a1a]">
-            <div className="grid grid-cols-12 bg-[#050505] border-b border-[#111]">
+          <div className="rounded-xl border border-[#1f232a]">
+            <div className="grid grid-cols-12 bg-[#0e1013] border-b border-[#1a1e24]">
               <div className="col-span-4 th">Usuario</div>
               <div className="col-span-3 th">Estado</div>
               <div className="col-span-3 th">Creado</div>
               <div className="col-span-2 th" />
             </div>
             {admins.map((a: any) => (
-              <div key={a.id} className="grid grid-cols-12 border-b border-[#111] hover:bg-[#050505] transition-colors">
+              <div key={a.id} className="grid grid-cols-12 border-b border-[#1a1e24] hover:bg-[#0e1013] transition-colors">
                 <div className="col-span-4 td">
                   <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 border border-[#2a2a2a] flex items-center justify-center flex-shrink-0">
-                      <span className="font-mono text-[9px] text-[#00e5a0]">{a.username[0]?.toUpperCase()}</span>
+                    <div className="w-6 h-6 border border-[#262b33] flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs text-[#34d399]">{a.username[0]?.toUpperCase()}</span>
                     </div>
-                    <span className="font-mono text-xs text-white">{a.username}</span>
+                    <span className="text-xs text-white">{a.username}</span>
                   </div>
                 </div>
                 <div className="col-span-3 td">
@@ -409,21 +409,21 @@ function TenantAdmins({ tenantId, tenantName }: { tenantId: number; tenantName: 
                     {a.is_active ? "ACTIVO" : "INACTIVO"}
                   </span>
                 </div>
-                <div className="col-span-3 td font-mono text-[11px] text-[#444]">
+                <div className="col-span-3 td text-xs text-[#7d8592]">
                   {a.created_at ? new Date(a.created_at).toLocaleDateString("es-CO") : "—"}
                 </div>
                 <div className="col-span-2 td">
                   <div className="flex items-center gap-1 justify-end">
                     <button
                       onClick={() => toggleAdmin.mutate({ adminId: a.id, is_active: !a.is_active })}
-                      className={`p-1.5 transition-colors ${a.is_active ? "text-[#999] hover:text-yellow-500" : "text-[#999] hover:text-[#00e5a0]"}`}
+                      className={`p-1.5 transition-colors ${a.is_active ? "text-[#b3bac5] hover:text-yellow-500" : "text-[#b3bac5] hover:text-[#34d399]"}`}
                       title={a.is_active ? "Desactivar" : "Activar"}
                     >
                       <Power className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => window.confirm(`¿Eliminar la cuenta "${a.username}"?`) && removeAdmin.mutate(a.id)}
-                      className="p-1.5 text-[#999] hover:text-red-500 transition-colors"
+                      className="p-1.5 text-[#b3bac5] hover:text-red-500 transition-colors"
                       title="Eliminar"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -580,19 +580,19 @@ password: "", // nunca pre-rellenamos la contraseña
         }
       />
 
-      <div className="px-8 py-8">
+      <div className="px-5 py-6 sm:px-8 sm:py-8">
 
         {/* Error de mutación */}
         {(create.isError || update.isError || remove.isError) && (
-          <div className="mb-4 px-4 py-3 border border-red-900 bg-red-950/30 font-mono text-xs text-red-400">
+          <div className="mb-4 px-4 py-3 border border-red-900 bg-red-950/30 text-xs text-red-400">
             {saveError || "Error al guardar. Verifica los datos e intenta de nuevo."}
           </div>
         )}
 
-        <div className="border border-[#1a1a1a]">
+        <div className="rounded-xl border border-[#1f232a]">
 
           {/* Cabecera tabla */}
-          <div className="grid grid-cols-[repeat(11,minmax(0,1fr))] bg-[#050505] border-b border-[#1a1a1a]">
+          <div className="grid grid-cols-[repeat(11,minmax(0,1fr))] bg-[#0e1013] border-b border-[#1f232a]">
             <div className="col-span-3 th">Cliente</div>
             <div className="col-span-2 th">Bot</div>
             <div className="col-span-2 th">SQL Server</div>
@@ -604,31 +604,31 @@ password: "", // nunca pre-rellenamos la contraseña
           {/* Skeleton */}
           {isLoading &&
             Array(3).fill(0).map((_, i) => (
-              <div key={i} className="h-14 border-b border-[#111] animate-pulse" />
+              <div key={i} className="h-14 border-b border-[#1a1e24] animate-pulse" />
             ))}
 
           {/* Filas */}
           {!isLoading && tenants.map((t) => (
             <div key={t.id}>
-              <div className="grid grid-cols-[repeat(11,minmax(0,1fr))] border-b border-[#111] hover:bg-[#050505] transition-colors">
+              <div className="grid grid-cols-[repeat(11,minmax(0,1fr))] border-b border-[#1a1e24] hover:bg-[#0e1013] transition-colors">
               {/* Cliente */}
               <div className="col-span-3 td">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 border border-[#2a2a2a] flex items-center justify-center flex-shrink-0">
-                    <span className="font-mono text-[11px] text-[#00e5a0]">
+                  <div className="w-8 h-8 border border-[#262b33] flex items-center justify-center flex-shrink-0">
+                    <span className="text-xs text-[#34d399]">
                       {t.name[0]?.toUpperCase()}
                     </span>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-white leading-tight">{t.name}</p>
-                    <p className="font-mono text-[10px] text-white">{t.slug}</p>
+                    <p className="text-xs text-white">{t.slug}</p>
                   </div>
                 </div>
               </div>
 
               {/* Bot token hint */}
               <div className="col-span-2 td">
-                <span className="font-mono text-[11px] text-white bg-[#0a0a0a] px-2 py-0.5 border border-[#1a1a1a]">
+                <span className="text-xs text-white bg-[#0e1013] px-2 py-0.5 border border-[#1f232a]">
                   ...{t.bot_token_hint}
                 </span>
               </div>
@@ -637,11 +637,11 @@ password: "", // nunca pre-rellenamos la contraseña
               <div className="col-span-2 td">
                 {t.sqlserver_host ? (
                   <div>
-                    <p className="font-mono text-[11px] text-white truncate" title={t.sqlserver_host}>{t.sqlserver_host}</p>
-                    <p className="font-mono text-[10px] text-white truncate" title={t.sqlserver_db}>{t.sqlserver_db}</p>
+                    <p className="text-xs text-white truncate" title={t.sqlserver_host}>{t.sqlserver_host}</p>
+                    <p className="text-xs text-white truncate" title={t.sqlserver_db}>{t.sqlserver_db}</p>
                   </div>
                 ) : (
-                  <span className="font-mono text-[11px] text-white">— sin configurar</span>
+                  <span className="text-xs text-white">— sin configurar</span>
                 )}
               </div>
 
@@ -649,22 +649,22 @@ password: "", // nunca pre-rellenamos la contraseña
               <div className="col-span-2 td">
                 {t.external_db_configured ? (
                   <div>
-                    <p className="font-mono text-[11px] text-white">
+                    <p className="text-xs text-white">
                       {t.external_db_engine ?? "postgresql"}
                     </p>
-                    <p className="font-mono text-[10px] text-[#00e5a0]">✓ DB configurada</p>
+                    <p className="text-xs text-[#34d399]">✓ DB configurada</p>
                   </div>
                 ) : (
-                  <span className="font-mono text-[11px] text-white">— no configurada</span>
+                  <span className="text-xs text-white">— no configurada</span>
                 )}
                 {t.external_alegra_configured && (
-                  <p className="font-mono text-[10px] text-[#00e5a0] mt-1">✓ Alegra</p>
+                  <p className="text-xs text-[#34d399] mt-1">✓ Alegra</p>
                 )}
                 {t.external_excel_configured && (
-                  <p className="font-mono text-[10px] text-[#00e5a0] mt-1">✓ Excel</p>
+                  <p className="text-xs text-[#34d399] mt-1">✓ Excel</p>
                 )}
                 {t.report_config_configured && (
-                  <p className="font-mono text-[10px] text-[#00e5a0] mt-1">✓ Informes</p>
+                  <p className="text-xs text-[#34d399] mt-1">✓ Informes</p>
                 )}
               </div>
 
@@ -680,14 +680,14 @@ password: "", // nunca pre-rellenamos la contraseña
                 <div className="flex items-center gap-1 justify-end">
                   <button
                     onClick={() => setExpandedId(expandedId === t.id ? null : t.id)}
-                    className={`p-1.5 transition-colors ${expandedId === t.id ? "text-[#00e5a0]" : "text-white hover:text-[#00e5a0]"}`}
+                    className={`p-1.5 transition-colors ${expandedId === t.id ? "text-[#34d399]" : "text-white hover:text-[#34d399]"}`}
                     title="Gestionar accesos al panel"
                   >
                     <Users className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => openEdit(t)}
-                    className="p-1.5 text-white hover:text-[#00e5a0] transition-colors"
+                    className="p-1.5 text-white hover:text-[#34d399] transition-colors"
                     title="Editar"
                   >
                     <Pencil className="w-3.5 h-3.5" />
@@ -697,7 +697,7 @@ password: "", // nunca pre-rellenamos la contraseña
                     className={`p-1.5 transition-colors ${
                       t.is_active
                         ? "text-white hover:text-yellow-500"
-                        : "text-white hover:text-[#00e5a0]"
+                        : "text-white hover:text-[#34d399]"
                     }`}
                     title={t.is_active ? "Desactivar" : "Activar"}
                   >
@@ -725,8 +725,8 @@ password: "", // nunca pre-rellenamos la contraseña
 
           {!isLoading && tenants.length === 0 && (
             <div className="px-5 py-16 text-center">
-              <p className="font-mono text-xs text-white">SIN CLIENTES REGISTRADOS</p>
-              <p className="font-mono text-[10px] text-white mt-2">
+              <p className="text-xs text-white">SIN CLIENTES REGISTRADOS</p>
+              <p className="text-xs text-white mt-2">
                 Crea el primero con el botón "NUEVO CLIENTE"
               </p>
             </div>

@@ -245,7 +245,7 @@ export default function Chat() {
     return (
       <div className="vc-app" style={{ alignItems: "center", justifyContent: "center" }}>
         <div style={{ textAlign: "center", color: "#9a978f" }}>
-          <MessageSquare size={28} style={{ color: "#00c2a8", marginBottom: 10 }} />
+          <MessageSquare size={28} style={{ color: "#34d399", marginBottom: 10 }} />
           <p>Selecciona un cliente en el panel izquierdo para abrir el chat.</p>
         </div>
       </div>

@@ -36,9 +36,9 @@ export default function Auditoria() {
         tag="LOGS" title="Auditoría" description="Registro completo de actividad"
         action={<button className="btn-secondary" onClick={() => refetch()}>↺ ACTUALIZAR</button>}
       />
-      <div className="px-8 py-8 space-y-5">
+      <div className="px-5 py-6 sm:px-8 sm:py-8 space-y-5">
 
-        <div className="border border-[#1a1a1a] bg-[#050505] px-5 py-4 flex flex-wrap gap-5 items-end">
+        <div className="rounded-xl border border-[#1f232a] bg-[#0e1013] px-5 py-4 flex flex-wrap gap-5 items-end">
           <div>
             <label className="label">Tipo de evento</label>
             <select className="input w-44" value={eventType} onChange={(e) => setEventType(e.target.value)}>
@@ -57,11 +57,11 @@ export default function Auditoria() {
               {[50, 100, 200, 500].map((n) => <option key={n} value={n}>{n}</option>)}
             </select>
           </div>
-          <div className="font-mono text-[10px] text-white pb-2">{logs.length} registros</div>
+          <div className="text-xs text-white pb-2">{logs.length} registros</div>
         </div>
 
-        <div className="border border-[#1a1a1a]">
-          <div className="grid grid-cols-12 bg-[#050505] border-b border-[#1a1a1a]">
+        <div className="rounded-xl border border-[#1f232a]">
+          <div className="grid grid-cols-12 bg-[#0e1013] border-b border-[#1f232a]">
             <div className="col-span-2 th">Evento</div>
             <div className="col-span-1 th">Chat</div>
             <div className="col-span-5 th">Mensaje / Herramienta</div>
@@ -70,29 +70,29 @@ export default function Auditoria() {
           </div>
 
           {isLoading
-            ? Array(5).fill(0).map((_, i) => <div key={i} className="h-10 border-b border-[#111] animate-pulse" />)
+            ? Array(5).fill(0).map((_, i) => <div key={i} className="h-10 border-b border-[#1a1e24] animate-pulse" />)
             : logs.length === 0
-            ? <p className="px-5 py-10 text-center font-mono text-xs text-white">SIN REGISTROS</p>
+            ? <p className="px-5 py-10 text-center text-xs text-white">SIN REGISTROS</p>
             : logs.map((log: any) => (
-              <div key={log.id} className="grid grid-cols-12 border-b border-[#111] hover:bg-[#050505] transition-colors">
+              <div key={log.id} className="grid grid-cols-12 border-b border-[#1a1e24] hover:bg-[#0e1013] transition-colors">
                 <div className="col-span-2 td">
                   <span className={`badge ${EVENT_BADGE[log.event_type] ?? "badge-slate"}`}>{log.event_type}</span>
                 </div>
-                <div className="col-span-1 td font-mono text-[11px] text-white">{log.chat_id ?? "—"}</div>
+                <div className="col-span-1 td text-xs text-white">{log.chat_id ?? "—"}</div>
                 <div className="col-span-5 td">
                   <p className="text-xs text-white truncate">{log.request_content || log.tool_invoked || "—"}</p>
                   {log.error_description && (
-                    <p className="font-mono text-[10px] text-red-500 truncate mt-0.5">{log.error_description}</p>
+                    <p className="text-xs text-red-500 truncate mt-0.5">{log.error_description}</p>
                   )}
                 </div>
                 <div className="col-span-2 td">
                   {log.status && (
-                    <span className={`font-mono text-[10px] uppercase tracking-widest ${log.status === "success" ? "text-[#00e5a0]" : "text-red-500"}`}>
+                    <span className={`text-xs uppercase tracking-[0.06em] ${log.status === "success" ? "text-[#34d399]" : "text-red-500"}`}>
                       {log.status}
                     </span>
                   )}
                 </div>
-                <div className="col-span-2 td font-mono text-[11px] text-white">{fmtDate(log.timestamp_utc)}</div>
+                <div className="col-span-2 td text-xs text-white">{fmtDate(log.timestamp_utc)}</div>
               </div>
             ))
           }

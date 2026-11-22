@@ -17,9 +17,9 @@ const fmtNum = (v: number | null | undefined) =>
 
 function Kpi({ label, value, accent, danger }: { label: string; value: string; accent?: boolean; danger?: boolean }) {
   return (
-    <div className="bg-black p-6">
-      <p className="font-mono text-[10px] uppercase tracking-widest text-white mb-3">{label}</p>
-      <p className={`text-3xl font-bold ${danger ? "text-red-500" : accent ? "text-[#00e5a0]" : "text-white"}`}>{value}</p>
+    <div className="bg-[#0b0c0e] p-6">
+      <p className="text-xs uppercase tracking-[0.06em] text-white mb-3">{label}</p>
+      <p className={`text-3xl font-bold ${danger ? "text-red-500" : accent ? "text-[#34d399]" : "text-white"}`}>{value}</p>
     </div>
   );
 }
@@ -43,18 +43,18 @@ function GlobalConsumo({ onSelect }: { onSelect: (row: UsageGlobalRow) => void }
         title="Consumo"
         description="Tokens y costo estimado por cliente — selecciona uno para el detalle"
       />
-      <div className="px-8 py-8 space-y-8">
+      <div className="px-5 py-6 sm:px-8 sm:py-8 space-y-8">
         {isError && (
           <div className="border border-red-900/50 bg-red-950/20 px-5 py-4">
-            <p className="font-mono text-[11px] text-red-400 uppercase tracking-widest">
+            <p className="text-xs text-red-400 uppercase tracking-[0.06em]">
               No se pudo cargar el consumo. Verifica que el backend esté actualizado y que la
               migración de consumo (0009) esté aplicada.
             </p>
           </div>
         )}
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-px bg-[#1a1a1a]">
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-px bg-[#14171c]">
           {isLoading ? (
-            Array(4).fill(0).map((_, i) => <div key={i} className="bg-black p-6 h-24 animate-pulse" />)
+            Array(4).fill(0).map((_, i) => <div key={i} className="bg-[#0b0c0e] p-6 h-24 animate-pulse" />)
           ) : (
             <>
               <Kpi label="Costo total" value={isError ? "—" : fmtUsd(totals?.total_cost_usd)} accent />
@@ -66,9 +66,9 @@ function GlobalConsumo({ onSelect }: { onSelect: (row: UsageGlobalRow) => void }
         </div>
 
         <div>
-          <p className="section-tag mb-4">// Consumo por cliente</p>
-          <div className="border border-[#1a1a1a]">
-            <div className="grid grid-cols-12 bg-[#050505] border-b border-[#1a1a1a]">
+          <p className="section-tag mb-4">Consumo por cliente</p>
+          <div className="rounded-xl border border-[#1f232a]">
+            <div className="grid grid-cols-12 bg-[#0e1013] border-b border-[#1f232a]">
               <div className="col-span-4 th">Cliente</div>
               <div className="col-span-2 th">Tokens</div>
               <div className="col-span-2 th">Costo USD</div>
@@ -76,28 +76,28 @@ function GlobalConsumo({ onSelect }: { onSelect: (row: UsageGlobalRow) => void }
               <div className="col-span-2 th">Sobre umbral</div>
             </div>
             {isLoading ? (
-              Array(4).fill(0).map((_, i) => <div key={i} className="h-12 border-b border-[#111] animate-pulse" />)
+              Array(4).fill(0).map((_, i) => <div key={i} className="h-12 border-b border-[#1a1e24] animate-pulse" />)
             ) : rows.length === 0 ? (
-              <p className="px-5 py-10 text-center font-mono text-xs text-white">SIN CONSUMO REGISTRADO</p>
+              <p className="px-5 py-10 text-center text-xs text-white">SIN CONSUMO REGISTRADO</p>
             ) : (
               rows.map((r) => (
                 <button
                   key={r.tenant_id}
                   onClick={() => onSelect(r)}
-                  className="w-full text-left grid grid-cols-12 border-b border-[#111] hover:bg-[#050505] transition-colors items-center"
+                  className="w-full text-left grid grid-cols-12 border-b border-[#1a1e24] hover:bg-[#0e1013] transition-colors items-center"
                 >
                   <div className="col-span-4 td">
                     <div className="flex items-center gap-2">
-                      <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${r.is_active ? "bg-[#00e5a0]" : "bg-[#333]"}`} />
+                      <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${r.is_active ? "bg-[#34d399]" : "bg-[#343b45]"}`} />
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-white truncate">{r.name}</p>
-                        <p className="font-mono text-[10px] text-white">{r.slug}</p>
+                        <p className="text-xs text-white">{r.slug}</p>
                       </div>
                     </div>
                   </div>
-                  <div className="col-span-2 td font-mono text-xs text-white">{fmtNum(r.total_tokens)}</div>
-                  <div className="col-span-2 td font-mono text-xs text-[#00e5a0]">{fmtUsd(r.total_cost_usd)}</div>
-                  <div className="col-span-2 td font-mono text-xs text-white">
+                  <div className="col-span-2 td text-xs text-white">{fmtNum(r.total_tokens)}</div>
+                  <div className="col-span-2 td text-xs text-[#34d399]">{fmtUsd(r.total_cost_usd)}</div>
+                  <div className="col-span-2 td text-xs text-white">
                     {fmtNum(r.users_count)}
                     {r.paused_count > 0 && <span className="text-red-500 ml-2">({r.paused_count} paus.)</span>}
                   </div>
@@ -131,8 +131,8 @@ function SettingsForm({ tenantId, config }: { tenantId: number; config: UsageSet
   });
 
   return (
-    <div className="border border-[#1a1a1a] p-6">
-      <p className="section-tag mb-5">// Configuración de alertas</p>
+    <div className="rounded-xl border border-[#1f232a] p-6">
+      <p className="section-tag mb-5">Configuración de alertas</p>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         <div>
           <label className="label text-white">Umbral por usuario (USD)</label>
@@ -166,24 +166,24 @@ function SettingsForm({ tenantId, config }: { tenantId: number; config: UsageSet
         <label className="flex items-center gap-2 cursor-pointer">
           <input type="checkbox" checked={form.auto_pause}
             onChange={(e) => setForm({ ...form, auto_pause: e.target.checked })} />
-          <span className="font-mono text-[11px] uppercase tracking-widest text-white">Pausar automáticamente</span>
+          <span className="text-xs uppercase tracking-[0.06em] text-white">Pausar automáticamente</span>
         </label>
         <label className="flex items-center gap-2 cursor-pointer">
           <input type="checkbox" checked={form.notify_telegram}
             onChange={(e) => setForm({ ...form, notify_telegram: e.target.checked })} />
-          <span className="font-mono text-[11px] uppercase tracking-widest text-white">Notificar por Telegram</span>
+          <span className="text-xs uppercase tracking-[0.06em] text-white">Notificar por Telegram</span>
         </label>
         <label className="flex items-center gap-2 cursor-pointer">
           <input type="checkbox" checked={form.notify_email}
             onChange={(e) => setForm({ ...form, notify_email: e.target.checked })} />
-          <span className="font-mono text-[11px] uppercase tracking-widest text-white">Notificar por email</span>
+          <span className="text-xs uppercase tracking-[0.06em] text-white">Notificar por email</span>
         </label>
         <button className="btn-primary ml-auto" disabled={save.isPending} onClick={() => save.mutate()}>
           Guardar
         </button>
       </div>
-      {save.isSuccess && <p className="font-mono text-[10px] text-[#00e5a0] mt-3">Configuración guardada.</p>}
-      {save.isError && <p className="font-mono text-[10px] text-red-500 mt-3">No se pudo guardar.</p>}
+      {save.isSuccess && <p className="text-xs text-[#34d399] mt-3">Configuración guardada.</p>}
+      {save.isError && <p className="text-xs text-red-500 mt-3">No se pudo guardar.</p>}
     </div>
   );
 }
@@ -259,20 +259,20 @@ function TenantConsumo({ tenantId }: { tenantId: number }) {
   return (
     <div>
       <PageHeader tag="ADMIN" title="Consumo" description="Tokens y costo estimado por usuario" />
-      <div className="px-8 py-8 space-y-8">
+      <div className="px-5 py-6 sm:px-8 sm:py-8 space-y-8">
 
         {usersError && (
           <div className="border border-red-900/50 bg-red-950/20 px-5 py-4">
-            <p className="font-mono text-[11px] text-red-400 uppercase tracking-widest">
+            <p className="text-xs text-red-400 uppercase tracking-[0.06em]">
               No se pudo cargar el consumo. Verifica que el backend esté actualizado y que la
               migración de consumo (0009) esté aplicada en esta base de datos.
             </p>
           </div>
         )}
 
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-px bg-[#1a1a1a]">
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-px bg-[#14171c]">
           {loadingUsers ? (
-            Array(4).fill(0).map((_, i) => <div key={i} className="bg-black p-6 h-24 animate-pulse" />)
+            Array(4).fill(0).map((_, i) => <div key={i} className="bg-[#0b0c0e] p-6 h-24 animate-pulse" />)
           ) : (
             <>
               <Kpi label="Costo total" value={usersError ? "—" : fmtUsd(totals?.total_cost_usd)} accent />
@@ -303,8 +303,8 @@ function TenantConsumo({ tenantId }: { tenantId: number }) {
               <button
                 key={t}
                 onClick={() => setTab(t)}
-                className={`font-mono text-[10px] uppercase tracking-widest px-3 py-2 border transition-colors ${
-                  tab === t ? "border-[#00e5a0] text-[#00e5a0]" : "border-[#2a2a2a] text-white hover:border-[#3a3a3a]"
+                className={`text-xs uppercase tracking-[0.06em] px-3 py-2 border transition-colors ${
+                  tab === t ? "border-[#34d399] text-[#34d399]" : "border-[#262b33] text-white hover:border-[#343b45]"
                 }`}
               >
                 {t}
@@ -317,8 +317,8 @@ function TenantConsumo({ tenantId }: { tenantId: number }) {
         </div>
 
         {tab === "usuarios" && (
-          <div className="border border-[#1a1a1a]">
-            <div className="grid grid-cols-12 bg-[#050505] border-b border-[#1a1a1a]">
+          <div className="rounded-xl border border-[#1f232a]">
+            <div className="grid grid-cols-12 bg-[#0e1013] border-b border-[#1f232a]">
               <div className="col-span-3 th">Usuario</div>
               <div className="col-span-2 th">Tokens</div>
               <div className="col-span-2 th">Costo USD</div>
@@ -326,27 +326,27 @@ function TenantConsumo({ tenantId }: { tenantId: number }) {
               <div className="col-span-2 th">Acciones</div>
             </div>
             {loadingUsers ? (
-              Array(4).fill(0).map((_, i) => <div key={i} className="h-14 border-b border-[#111] animate-pulse" />)
+              Array(4).fill(0).map((_, i) => <div key={i} className="h-14 border-b border-[#1a1e24] animate-pulse" />)
             ) : userRows.length === 0 ? (
-              <p className="px-5 py-10 text-center font-mono text-xs text-white">SIN CONSUMO EN EL PERÍODO</p>
+              <p className="px-5 py-10 text-center text-xs text-white">SIN CONSUMO EN EL PERÍODO</p>
             ) : (
               userRows.map((u) => {
                 const pct = threshold > 0 ? Math.min(100, (u.cost_usd / threshold) * 100) : 0;
                 return (
-                  <div key={u.chat_id} className="grid grid-cols-12 border-b border-[#111] hover:bg-[#050505] transition-colors items-center">
+                  <div key={u.chat_id} className="grid grid-cols-12 border-b border-[#1a1e24] hover:bg-[#0e1013] transition-colors items-center">
                     <div className="col-span-3 td">
                       <p className="text-sm font-medium text-white">{u.username || "—"}</p>
-                      <p className="font-mono text-[10px] text-white">chat {u.chat_id} · {u.role_name}</p>
+                      <p className="text-xs text-white">chat {u.chat_id} · {u.role_name}</p>
                     </div>
-                    <div className="col-span-2 td font-mono text-xs text-white">{fmtNum(u.total_tokens)}</div>
-                    <div className={`col-span-2 td font-mono text-xs ${u.over_threshold ? "text-red-500" : "text-[#00e5a0]"}`}>
+                    <div className="col-span-2 td text-xs text-white">{fmtNum(u.total_tokens)}</div>
+                    <div className={`col-span-2 td text-xs ${u.over_threshold ? "text-red-500" : "text-[#34d399]"}`}>
                       {fmtUsd(u.cost_usd)}
                     </div>
                     <div className="col-span-3 td">
-                      <div className="h-1.5 bg-[#1a1a1a] w-full">
-                        <div className="h-full" style={{ width: `${pct}%`, backgroundColor: u.over_threshold ? "#f87171" : "#00e5a0" }} />
+                      <div className="h-1.5 bg-[#14171c] w-full">
+                        <div className="h-full" style={{ width: `${pct}%`, backgroundColor: u.over_threshold ? "#f87171" : "#34d399" }} />
                       </div>
-                      <p className="font-mono text-[9px] text-white mt-1">
+                      <p className="text-xs text-white mt-1">
                         {pct.toFixed(0)}% {u.has_alert && <span className="text-red-500 ml-2">ALERTA</span>}
                       </p>
                     </div>
@@ -355,14 +355,14 @@ function TenantConsumo({ tenantId }: { tenantId: number }) {
                         {u.is_paused ? (
                           <button
                             onClick={() => reanudar.mutate(u.chat_id)}
-                            className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-widest text-[#00e5a0] border border-[#00e5a0]/30 px-2 py-1 hover:bg-[#00e5a0]/10 transition-colors"
+                            className="flex items-center gap-1 text-xs uppercase tracking-[0.06em] text-[#34d399] border border-[#34d399]/30 px-2 py-1 hover:bg-[#34d399]/10 transition-colors"
                           >
                             <Play className="w-3 h-3" /> Reanudar
                           </button>
                         ) : (
                           <button
                             onClick={() => window.confirm("¿Pausar el acceso de este usuario?") && pausar.mutate(u.chat_id)}
-                            className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-widest text-yellow-500 border border-yellow-500/30 px-2 py-1 hover:bg-yellow-500/10 transition-colors"
+                            className="flex items-center gap-1 text-xs uppercase tracking-[0.06em] text-yellow-500 border border-yellow-500/30 px-2 py-1 hover:bg-yellow-500/10 transition-colors"
                           >
                             <Pause className="w-3 h-3" /> Pausar
                           </button>
@@ -378,17 +378,17 @@ function TenantConsumo({ tenantId }: { tenantId: number }) {
         )}
 
         {tab === "historial" && (
-          <div className="border border-[#1a1a1a]">
-            <div className="flex items-center justify-between px-5 py-3 bg-[#050505] border-b border-[#1a1a1a]">
-              <span className="section-tag">// {fmtNum(historial?.total)} registros</span>
-              <select className="bg-black border border-[#2a2a2a] text-xs text-white px-2 py-1 font-mono focus:outline-none"
+          <div className="rounded-xl border border-[#1f232a]">
+            <div className="flex items-center justify-between px-5 py-3 bg-[#0e1013] border-b border-[#1f232a]">
+              <span className="section-tag">{fmtNum(historial?.total)} registros</span>
+              <select className="bg-[#0b0c0e] border border-[#262b33] text-xs text-white px-2 py-1 focus:outline-none"
                 value={source} onChange={(e) => setSource(e.target.value)}>
                 <option value="">Todos los orígenes</option>
                 <option value="chat">Chat</option>
                 <option value="scheduler">Tareas programadas</option>
               </select>
             </div>
-            <div className="grid grid-cols-12 bg-[#050505] border-b border-[#1a1a1a]">
+            <div className="grid grid-cols-12 bg-[#0e1013] border-b border-[#1f232a]">
               <div className="col-span-3 th">Fecha</div>
               <div className="col-span-2 th">Usuario</div>
               <div className="col-span-2 th">Modelo</div>
@@ -397,17 +397,17 @@ function TenantConsumo({ tenantId }: { tenantId: number }) {
               <div className="col-span-1 th">Origen</div>
             </div>
             {loadingHist ? (
-              Array(5).fill(0).map((_, i) => <div key={i} className="h-10 border-b border-[#111] animate-pulse" />)
+              Array(5).fill(0).map((_, i) => <div key={i} className="h-10 border-b border-[#1a1e24] animate-pulse" />)
             ) : (historial?.rows.length ?? 0) === 0 ? (
-              <p className="px-5 py-10 text-center font-mono text-xs text-white">SIN REGISTROS</p>
+              <p className="px-5 py-10 text-center text-xs text-white">SIN REGISTROS</p>
             ) : (
               historial!.rows.map((h) => (
-                <div key={h.id} className="grid grid-cols-12 border-b border-[#111] hover:bg-[#050505] transition-colors items-center">
-                  <div className="col-span-3 td font-mono text-[11px] text-white">{fmtDate(h.created_at)}</div>
-                  <div className="col-span-2 td font-mono text-[11px] text-white">{h.username || h.chat_id || "—"}</div>
-                  <div className="col-span-2 td font-mono text-[10px] text-white truncate">{h.model || "—"}</div>
-                  <div className="col-span-2 td font-mono text-xs text-white">{fmtNum(h.total_tokens)}</div>
-                  <div className="col-span-2 td font-mono text-xs text-[#00e5a0]">{fmtUsd(h.cost_usd)}</div>
+                <div key={h.id} className="grid grid-cols-12 border-b border-[#1a1e24] hover:bg-[#0e1013] transition-colors items-center">
+                  <div className="col-span-3 td text-xs text-white">{fmtDate(h.created_at)}</div>
+                  <div className="col-span-2 td text-xs text-white">{h.username || h.chat_id || "—"}</div>
+                  <div className="col-span-2 td text-xs text-white truncate">{h.model || "—"}</div>
+                  <div className="col-span-2 td text-xs text-white">{fmtNum(h.total_tokens)}</div>
+                  <div className="col-span-2 td text-xs text-[#34d399]">{fmtUsd(h.cost_usd)}</div>
                   <div className="col-span-1 td">
                     <span className={`badge ${h.source === "scheduler" ? "badge-amber" : "badge-slate"}`}>{h.source}</span>
                   </div>
@@ -418,8 +418,8 @@ function TenantConsumo({ tenantId }: { tenantId: number }) {
         )}
 
         {tab === "alertas" && (
-          <div className="border border-[#1a1a1a]">
-            <div className="grid grid-cols-12 bg-[#050505] border-b border-[#1a1a1a]">
+          <div className="rounded-xl border border-[#1f232a]">
+            <div className="grid grid-cols-12 bg-[#0e1013] border-b border-[#1f232a]">
               <div className="col-span-3 th">Usuario</div>
               <div className="col-span-2 th">Consumo</div>
               <div className="col-span-2 th">Umbral</div>
@@ -428,30 +428,30 @@ function TenantConsumo({ tenantId }: { tenantId: number }) {
               <div className="col-span-1 th" />
             </div>
             {loadingAlerts ? (
-              Array(3).fill(0).map((_, i) => <div key={i} className="h-12 border-b border-[#111] animate-pulse" />)
+              Array(3).fill(0).map((_, i) => <div key={i} className="h-12 border-b border-[#1a1e24] animate-pulse" />)
             ) : alertas.length === 0 ? (
-              <p className="px-5 py-10 text-center font-mono text-xs text-white">SIN ALERTAS</p>
+              <p className="px-5 py-10 text-center text-xs text-white">SIN ALERTAS</p>
             ) : (
               alertas.map((a) => (
-                <div key={a.id} className="grid grid-cols-12 border-b border-[#111] hover:bg-[#050505] transition-colors items-center">
+                <div key={a.id} className="grid grid-cols-12 border-b border-[#1a1e24] hover:bg-[#0e1013] transition-colors items-center">
                   <div className="col-span-3 td">
                     <p className="text-sm text-white">{a.username || "—"}</p>
-                    <p className="font-mono text-[10px] text-white">{fmtDate(a.created_at)}</p>
+                    <p className="text-xs text-white">{fmtDate(a.created_at)}</p>
                   </div>
-                  <div className="col-span-2 td font-mono text-xs text-red-500">{fmtUsd(a.total_cost_usd)}</div>
-                  <div className="col-span-2 td font-mono text-xs text-white">{fmtUsd(a.threshold_usd)}</div>
-                  <div className="col-span-2 td font-mono text-[11px] text-white">{a.period_key}</div>
+                  <div className="col-span-2 td text-xs text-red-500">{fmtUsd(a.total_cost_usd)}</div>
+                  <div className="col-span-2 td text-xs text-white">{fmtUsd(a.threshold_usd)}</div>
+                  <div className="col-span-2 td text-xs text-white">{a.period_key}</div>
                   <div className="col-span-2 td">
                     <span className={`badge ${a.status === "active" ? "badge-red" : "badge-slate"}`}>{a.status}</span>
                     {a.notified
-                      ? <Bell className="w-3 h-3 text-[#00e5a0] inline ml-2" />
+                      ? <Bell className="w-3 h-3 text-[#34d399] inline ml-2" />
                       : <BellOff className="w-3 h-3 text-white inline ml-2" />}
                   </div>
                   <div className="col-span-1 td">
                     {a.status === "active" && (
                       <button
                         onClick={() => reconocer.mutate(a.id)}
-                        className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-widest text-[#00e5a0] hover:underline"
+                        className="flex items-center gap-1 text-xs uppercase tracking-[0.06em] text-[#34d399] hover:underline"
                       >
                         <Check className="w-3 h-3" /> OK
                       </button>
@@ -478,8 +478,8 @@ export default function Consumo() {
       return (
         <div>
           <PageHeader tag="ADMIN" title="Consumo" description="Sin cliente asignado" />
-          <div className="px-8 py-16 text-center">
-            <p className="font-mono text-xs text-white uppercase tracking-widest">Selecciona un cliente en el panel izquierdo</p>
+          <div className="px-5 py-16 sm:px-8 text-center">
+            <p className="text-xs text-white uppercase tracking-[0.06em]">Selecciona un cliente en el panel izquierdo</p>
           </div>
         </div>
       );

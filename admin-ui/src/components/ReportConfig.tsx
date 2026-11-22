@@ -68,10 +68,10 @@ function ReportConfig({
   };
 
   return (
-    <div className="border border-[#1a1a1a]">
-      <div className="px-4 py-2.5 border-b border-[#1a1a1a] bg-[#050505] flex items-center gap-2">
-        <FileText className="w-3 h-3 text-[#00e5a0]" />
-        <span className="section-tag">// INFORMES CONTABLES</span>
+    <div className="rounded-xl border border-[#1f232a]">
+      <div className="px-4 py-2.5 border-b border-[#1f232a] bg-[#0e1013] flex items-center gap-2">
+        <FileText className="w-3 h-3 text-[#34d399]" />
+        <span className="section-tag">INFORMES CONTABLES</span>
         {tenantId && (
           <button
             onClick={preview}
@@ -88,7 +88,7 @@ function ReportConfig({
         <div>
           <label className="label">Nombre de la empresa</label>
           <input
-            className="input font-mono text-xs"
+            className="input text-xs"
             placeholder="Razón social"
             value={local.company_name}
             onChange={(e) => setField("company_name", e.target.value)}
@@ -114,13 +114,13 @@ function ReportConfig({
               SUBIR LOGO
             </label>
             {local.company_logo && (
-              <span className="font-mono text-[10px] text-[#00e5a0]">✓ Logo cargado</span>
+              <span className="text-xs text-[#34d399]">✓ Logo cargado</span>
             )}
           </div>
           {logoPreview && (
             <img src={logoPreview} className="max-h-16 mt-2" />
           )}
-          <p className="font-mono text-[10px] text-[#333] mt-1.5">
+          <p className="text-xs text-[#343b45] mt-1.5">
             PNG o JPG. Se mostrará en el encabezado del PDF.
           </p>
         </div>
@@ -132,13 +132,13 @@ function ReportConfig({
             {ALL_SECTIONS.map((sec) => (
               <label
                 key={sec.id}
-                className="flex items-center gap-2 font-mono text-[11px] cursor-pointer"
+                className="flex items-center gap-2 text-xs cursor-pointer"
               >
                 <input
                   type="checkbox"
                   checked={local.sections.includes(sec.id)}
                   onChange={() => toggleSection(sec.id)}
-                  className="w-3 h-3 accent-[#00e5a0]"
+                  className="w-3 h-3 accent-[#34d399]"
                 />
                 {sec.label}
               </label>
@@ -150,12 +150,12 @@ function ReportConfig({
         <div>
           <label className="label">Instrucciones adicionales para el informe</label>
           <textarea
-            className="input font-mono text-xs min-h-[60px] resize-y"
+            className="input text-xs min-h-[60px] resize-y"
             placeholder="Ej: Incluir comparativa con el mes anterior, destacar variaciones mayores al 10%..."
             value={local.additional_instructions ?? ""}
             onChange={(e) => setField("additional_instructions", e.target.value)}
           />
-          <p className="font-mono text-[10px] text-[#333] mt-1.5">
+          <p className="text-xs text-[#343b45] mt-1.5">
             Instrucciones en lenguaje natural para el agente sobre cómo generar el informe.
           </p>
         </div>

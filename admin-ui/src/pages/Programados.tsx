@@ -179,8 +179,8 @@ export default function Programados() {
     return (
       <div>
         <PageHeader tag="AUTOMATIZACIÓN" title="Programados" description="Selecciona un cliente" />
-        <div className="px-8 py-16 text-center">
-          <p className="font-mono text-xs text-white uppercase tracking-widest">Selecciona un cliente en el panel izquierdo</p>
+        <div className="px-5 py-16 sm:px-8 text-center">
+          <p className="text-xs text-white uppercase tracking-[0.06em]">Selecciona un cliente en el panel izquierdo</p>
         </div>
       </div>
     );
@@ -203,11 +203,11 @@ export default function Programados() {
           </button>
         }
       />
-      <div className="px-8 py-8 space-y-6">
+      <div className="px-5 py-6 sm:px-8 sm:py-8 space-y-6">
 
         {form && (
-          <div className="border border-[#00e5a0]/30 bg-[#050505] p-6 space-y-5">
-            <p className="section-tag">{form.id ? "// Editar prompt" : "// Nuevo prompt"}</p>
+          <div className="border border-[#34d399]/30 bg-[#0e1013] p-6 space-y-5">
+            <p className="section-tag">{form.id ? "Editar prompt" : "Nuevo prompt"}</p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
@@ -258,7 +258,7 @@ export default function Programados() {
                 )}
 
                 {destinos.length === 0 && (
-                  <p className="font-mono text-[10px] text-white mt-2 leading-relaxed">
+                  <p className="text-xs text-white mt-2 leading-relaxed">
                     Aún no hay usuarios aprobados ni grupos. Aprueba usuarios en la sección
                     Accesos, o agrega el bot a un grupo y escribe un mensaje allí para que
                     aparezca en esta lista.
@@ -277,7 +277,7 @@ export default function Programados() {
               <textarea className="input" rows={5} value={form.prompt}
                 placeholder="Ej: Resume las ventas de ayer, calcula el margen y compara con los márgenes aprobados que cargaste en la base de conocimiento."
                 onChange={(e) => setForm({ ...form, prompt: e.target.value })} />
-              <p className="font-mono text-[10px] text-white mt-2 leading-relaxed">
+              <p className="text-xs text-white mt-2 leading-relaxed">
                 Escríbelo como se lo pedirías a una persona. Mind ya sabe qué día es hoy, así que
                 entiende "ayer", "esta semana" o "este mes" por sí solo — no necesitas nada especial.
               </p>
@@ -318,7 +318,7 @@ export default function Programados() {
                   <input className="input" value={form.cron}
                     placeholder="0 8 * * 1-5"
                     onChange={(e) => setForm({ ...form, cron: e.target.value })} />
-                  <p className="font-mono text-[10px] text-white mt-1">Ej: <span className="text-[#00e5a0]">0 8 * * *</span> (todos los días 8:00), <span className="text-[#00e5a0]">30 7 * * mon</span> (lunes 7:30)</p>
+                  <p className="text-xs text-white mt-1">Ej: <span className="text-[#34d399]">0 8 * * *</span> (todos los días 8:00), <span className="text-[#34d399]">30 7 * * mon</span> (lunes 7:30)</p>
                 </div>
               )}
             </div>
@@ -326,7 +326,7 @@ export default function Programados() {
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" checked={form.is_active}
                 onChange={(e) => setForm({ ...form, is_active: e.target.checked })} />
-              <span className="font-mono text-[11px] uppercase tracking-widest text-white">Activo</span>
+              <span className="text-xs uppercase tracking-[0.06em] text-white">Activo</span>
             </label>
 
             <div className="flex items-center gap-3">
@@ -338,19 +338,19 @@ export default function Programados() {
               <button className="btn-ghost" onClick={() => { setForm(null); setPreview(""); setError(""); setManualDestino(false); }}>Cancelar</button>
             </div>
 
-            {error && <p className="font-mono text-[10px] text-red-500">{error}</p>}
+            {error && <p className="text-xs text-red-500">{error}</p>}
 
             {preview && (
-              <div className="border border-[#1a1a1a] bg-black p-4">
-                <p className="section-tag mb-2">// Así se verá el mensaje (fechas resueltas)</p>
-                <pre className="font-mono text-xs text-white whitespace-pre-wrap">{preview}</pre>
+              <div className="rounded-xl border border-[#1f232a] bg-[#0b0c0e] p-4">
+                <p className="section-tag mb-2">Así se verá el mensaje (fechas resueltas)</p>
+                <pre className="text-xs text-white whitespace-pre-wrap">{preview}</pre>
               </div>
             )}
           </div>
         )}
 
-        <div className="border border-[#1a1a1a]">
-          <div className="grid grid-cols-12 bg-[#050505] border-b border-[#1a1a1a]">
+        <div className="rounded-xl border border-[#1f232a]">
+          <div className="grid grid-cols-12 bg-[#0e1013] border-b border-[#1f232a]">
             <div className="col-span-3 th">Nombre</div>
             <div className="col-span-2 th">Destino</div>
             <div className="col-span-2 th">Frecuencia</div>
@@ -360,28 +360,28 @@ export default function Programados() {
           </div>
 
           {isLoading ? (
-            Array(3).fill(0).map((_, i) => <div key={i} className="h-12 border-b border-[#111] animate-pulse" />)
+            Array(3).fill(0).map((_, i) => <div key={i} className="h-12 border-b border-[#1a1e24] animate-pulse" />)
           ) : prompts.length === 0 ? (
-            <p className="px-5 py-10 text-center font-mono text-xs text-white">SIN PROMPTS PROGRAMADOS</p>
+            <p className="px-5 py-10 text-center text-xs text-white">SIN PROMPTS PROGRAMADOS</p>
           ) : (
             prompts.map((p) => (
-              <div key={p.id} className="grid grid-cols-12 border-b border-[#111] hover:bg-[#050505] transition-colors items-center">
+              <div key={p.id} className="grid grid-cols-12 border-b border-[#1a1e24] hover:bg-[#0e1013] transition-colors items-center">
                 <div className="col-span-3 td">
                   <p className="text-sm text-white">{p.name}</p>
-                  <p className="font-mono text-[10px] text-white truncate">{p.description || p.cron_expression}</p>
+                  <p className="text-xs text-white truncate">{p.description || p.cron_expression}</p>
                 </div>
                 <div className="col-span-2 td">
                   <p className="text-xs text-white">{p.send_to_all ? "Todos los usuarios aprobados" : (p.chat_label || "—")}</p>
-                  <p className="font-mono text-[10px] text-white">{p.send_to_all ? "todos" : p.chat_id}</p>
+                  <p className="text-xs text-white">{p.send_to_all ? "todos" : p.chat_id}</p>
                 </div>
                 <div className="col-span-2 td">
                   <p className="text-xs text-white"><FrequencyLabel p={p} /></p>
-                  <code className="font-mono text-[10px] text-[#00e5a0]">{p.cron_expression}</code>
+                  <code className="text-xs text-[#34d399]">{p.cron_expression}</code>
                 </div>
-                <div className="col-span-2 td font-mono text-[11px] text-white">
+                <div className="col-span-2 td text-xs text-white">
                   {p.next_run_at ? fmtDate(p.next_run_at) : "—"}
                   {p.last_status && (
-                    <span className={`block text-[10px] ${p.last_status === "success" ? "text-[#00e5a0]" : "text-red-500"}`}>
+                    <span className={`block text-xs ${p.last_status === "success" ? "text-[#34d399]" : "text-red-500"}`}>
                       última: {p.last_status}
                     </span>
                   )}
@@ -392,15 +392,15 @@ export default function Programados() {
                 <div className="col-span-2 td">
                   <div className="flex items-center gap-1.5 justify-end">
                     <button title="Ejecutar ahora" onClick={() => runNow.mutate(p.id)}
-                      className="p-1.5 text-white hover:text-[#00e5a0] transition-colors">
+                      className="p-1.5 text-white hover:text-[#34d399] transition-colors">
                       <Play className="w-3.5 h-3.5" />
                     </button>
                     <button title="Editar" onClick={() => openEdit(p)}
-                      className="p-1.5 text-white hover:text-[#00e5a0] transition-colors">
+                      className="p-1.5 text-white hover:text-[#34d399] transition-colors">
                       <Pencil className="w-3.5 h-3.5" />
                     </button>
                     <button title={p.is_active ? "Desactivar" : "Activar"} onClick={() => toggle.mutate(p.id)}
-                      className={`p-1.5 transition-colors ${p.is_active ? "text-white hover:text-yellow-500" : "text-white hover:text-[#00e5a0]"}`}>
+                      className={`p-1.5 transition-colors ${p.is_active ? "text-white hover:text-yellow-500" : "text-white hover:text-[#34d399]"}`}>
                       <Power className="w-3.5 h-3.5" />
                     </button>
                     <button title="Eliminar" onClick={() => window.confirm("¿Eliminar este prompt?") && remove.mutate(p.id)}
