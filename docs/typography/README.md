@@ -54,12 +54,12 @@ Se reemplazó el negro y luego el crema por una paleta gris neutra de tono medio
 
 | Token | Valor | Uso |
 |---|---|---|
-| `--color-bg` | `#e3e3e0` | lienzo principal |
-| `--color-bg-elevated` | `#d7d7d3` | sidebar, headers, hero |
-| `--color-surface` | `#f3f3f0` | tarjetas, modales, composer |
-| `--color-surface-2` | `#cecec9` | hover, burbujas, énfasis |
-| `--color-border` | `#c2c2bc` | bordes principales |
-| `--color-border-subtle` | `#d0d0ca` | separadores |
+| `--color-bg` | `#ececea` | lienzo principal |
+| `--color-bg-elevated` | `#e2e2e0` | sidebar, headers, hero |
+| `--color-surface` | `#fafaf8` | tarjetas, modales, composer |
+| `--color-surface-2` | `#dcdcda` | hover, burbujas, énfasis |
+| `--color-border` | `#cfcfcc` | bordes principales |
+| `--color-border-subtle` | `#dcdcd9` | separadores |
 | `--color-text` | `#202124` | texto principal |
 | `--color-text-muted` | `#4f5155` | texto secundario |
 | `--color-text-subtle` | `#5f6267` | metadatos |

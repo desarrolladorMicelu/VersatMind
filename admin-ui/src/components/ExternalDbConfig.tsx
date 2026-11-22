@@ -130,7 +130,7 @@ function ExternalDbConfig({
   };
 
   return (
-    <div className="rounded-xl border border-[var(--color-border-subtle)]">
+    <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
       <div className="px-4 py-2.5 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] flex items-center gap-2">
         <Database className="w-3 h-3 text-[var(--color-accent-strong)]" />
         <span className="section-tag">BASE DE DATOS EXTERNA</span>
@@ -218,7 +218,7 @@ function ExternalDbConfig({
           </div>
 
           {availableTables.length > 0 && (
-            <div className="mt-2 max-h-40 overflow-y-auto border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] p-2 grid grid-cols-2 gap-1">
+            <div className="mt-2 max-h-40 overflow-y-auto border border-[var(--color-border-subtle)] bg-[var(--color-surface)] p-2 grid grid-cols-2 gap-1">
               {availableTables.map((t) => {
                 const checked = (local.tables ?? []).includes(t);
                 return (
@@ -323,7 +323,7 @@ function ExternalDbConfig({
               <div className="col-span-2">
                 <label className="label">Esquema detectado — editable (se guarda con el cliente)</label>
                 <textarea
-                  className="text-xs text-[var(--color-text)] p-3 border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] min-h-[160px] resize-y w-full"
+                  className="text-xs text-[var(--color-text)] p-3 border border-[var(--color-border-subtle)] bg-[var(--color-surface)] min-h-[160px] resize-y w-full"
                   value={schemaPreview}
                   onChange={(e) => {
                     setSchemaPreview(e.target.value);

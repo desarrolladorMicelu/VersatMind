@@ -50,7 +50,7 @@ export default function Historial() {
 
         <div className="w-48 flex-shrink-0">
           <p className="section-tag mb-3">USUARIOS</p>
-          <div className="rounded-xl border border-[var(--color-border-subtle)]">
+          <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
             {isLoading ? (
               Array(3).fill(0).map((_, i) => <div key={i} className="h-10 border-b border-[var(--color-border-subtle)] animate-pulse" />)
             ) : users.length === 0 ? (
@@ -73,7 +73,7 @@ export default function Historial() {
               <p className="text-xs text-[var(--color-text)] uppercase tracking-[0.06em]">Selecciona un usuario</p>
             </div>
           ) : (
-            <div className="rounded-xl border border-[var(--color-border-subtle)]">
+            <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
               <div className="px-5 py-3 bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)] flex items-center justify-between">
                 <span className="section-tag">{messages.length} mensajes</span>
                 <button onClick={() => window.confirm("¿Limpiar historial?") && limpiar.mutate(selectedChatId)}

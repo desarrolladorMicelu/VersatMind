@@ -35,7 +35,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-2 gap-3 xl:grid-cols-5">
           {isLoading
             ? Array(5).fill(0).map((_, i) => (
-                <div key={i} className="h-[120px] animate-pulse rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]" />
+                <div key={i} className="h-[120px] animate-pulse rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)]" />
               ))
             : [
                 { label: "Usuarios", value: data?.stats.total_users, accent: false },
@@ -46,7 +46,7 @@ export default function Dashboard() {
               ].map(({ label, value, accent }) => (
                 <div
                   key={label}
-                  className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] p-5 transition-colors hover:border-[var(--color-border)]"
+                  className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)] p-5 transition-colors hover:border-[var(--color-border)]"
                 >
                   <p className="text-2xs font-semibold uppercase tracking-[0.07em] text-[var(--color-text-subtle)]">
                     {label}
@@ -61,7 +61,7 @@ export default function Dashboard() {
 
         <div>
           <p className="section-tag mb-4">Actividad reciente</p>
-          <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]">
+          <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
             <div className="overflow-x-auto">
               <div className="min-w-[880px]">
                 <div className="grid grid-cols-12 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]">

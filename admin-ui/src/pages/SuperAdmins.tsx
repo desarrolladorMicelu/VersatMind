@@ -41,7 +41,7 @@ function SuperAdminModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] shadow-2xl">
+      <div className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-2xl">
 
         <div className="flex items-start justify-between px-6 py-5 border-b border-[var(--color-border-subtle)] flex-shrink-0">
           <div className="flex items-center gap-3">
@@ -386,15 +386,15 @@ export default function SuperAdmins() {
             </div>
 
             <div className="flex gap-2 flex-shrink-0">
-              <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] px-4 py-3 min-w-[92px]">
+              <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)] px-4 py-3 min-w-[92px]">
                 <p className="text-xs uppercase tracking-[0.06em] text-[var(--color-text-subtle)]">Cuentas</p>
                 <p className="text-xl font-bold text-[var(--color-text)] mt-1">{accounts.length}</p>
               </div>
-              <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] px-4 py-3 min-w-[92px]">
+              <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)] px-4 py-3 min-w-[92px]">
                 <p className="text-xs uppercase tracking-[0.06em] text-[var(--color-text-subtle)]">Activas</p>
                 <p className="text-xl font-bold text-[var(--color-accent-strong)] mt-1">{activeCount}</p>
               </div>
-              <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] px-4 py-3 min-w-[92px]">
+              <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)] px-4 py-3 min-w-[92px]">
                 <p className="text-xs uppercase tracking-[0.06em] text-[var(--color-text-subtle)]">De panel</p>
                 <p className="text-xl font-bold text-[var(--color-text)] mt-1">{panelAccounts.length}</p>
               </div>
@@ -409,7 +409,7 @@ export default function SuperAdmins() {
         )}
 
         {/* Tabla */}
-        <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]">
+        <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
           <div className="overflow-x-auto">
             <div className="min-w-[820px]">
               <div className="grid grid-cols-12 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]">

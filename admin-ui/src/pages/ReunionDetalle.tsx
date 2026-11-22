@@ -116,7 +116,7 @@ export default function ReunionDetalle() {
         )}
 
         {meeting.status === "processing" && (
-          <div className="border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4">
+          <div className="border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
             <p className="section-tag">Procesando</p>
             <p className="text-sm text-[var(--color-text)] mt-2">
               Transcribiendo y generando el resumen. Esto puede tardar unos
@@ -129,7 +129,7 @@ export default function ReunionDetalle() {
           <>
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] p-5 space-y-4">
+                <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)] p-5 space-y-4">
                   <div className="flex items-center gap-2">
                     <ListChecks className="w-4 h-4 text-[var(--color-accent-strong)]" />
                     <h3 className="section-tag">Resumen estructurado</h3>
@@ -168,7 +168,7 @@ export default function ReunionDetalle() {
                   )}
                 </div>
 
-                <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] p-5 space-y-4">
+                <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)] p-5 space-y-4">
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[var(--color-accent-strong)]" />
                     <h3 className="section-tag">Audio</h3>
@@ -183,7 +183,7 @@ export default function ReunionDetalle() {
               </div>
 
               {meeting.transcript && (
-                <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] p-5">
+                <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)] p-5">
                   <h3 className="section-tag mb-3">Transcripción</h3>
                   <pre ref={transcriptRef} className="whitespace-pre-wrap text-sm text-[var(--color-text)] leading-relaxed max-h-96 overflow-y-auto">
                     {meeting.transcript}

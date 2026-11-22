@@ -38,7 +38,7 @@ export default function Auditoria() {
       />
       <div className="px-5 py-6 sm:px-8 sm:py-8 space-y-5">
 
-        <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] px-5 py-4 flex flex-wrap gap-5 items-end">
+        <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)] px-5 py-4 flex flex-wrap gap-5 items-end">
           <div>
             <label className="label">Tipo de evento</label>
             <select className="input w-44" value={eventType} onChange={(e) => setEventType(e.target.value)}>
@@ -60,7 +60,7 @@ export default function Auditoria() {
           <div className="text-xs text-[var(--color-text)] pb-2">{logs.length} registros</div>
         </div>
 
-        <div className="rounded-xl border border-[var(--color-border-subtle)]">
+        <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
           <div className="grid grid-cols-12 bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
             <div className="col-span-2 th">Evento</div>
             <div className="col-span-1 th">Chat</div>

@@ -160,7 +160,7 @@ function ExternalExcelConfig({
   };
 
   return (
-    <div className="rounded-xl border border-[var(--color-border-subtle)]">
+    <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
       <div className="px-4 py-2.5 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] flex items-center gap-2">
         <FileSpreadsheet className="w-3 h-3 text-[var(--color-accent-strong)]" />
         <span className="section-tag">EXCEL (OneDrive/SharePoint)</span>
@@ -302,7 +302,7 @@ function ExternalExcelConfig({
               <div>
                 <label className="label">Descripción detectada — editable (se guarda con el cliente)</label>
                 <textarea
-                  className="text-xs text-[var(--color-text)] p-3 border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] min-h-[160px] resize-y w-full"
+                  className="text-xs text-[var(--color-text)] p-3 border border-[var(--color-border-subtle)] bg-[var(--color-surface)] min-h-[160px] resize-y w-full"
                   value={schemaPreview}
                   onChange={(e) => {
                     setSchemaPreview(e.target.value);

@@ -43,7 +43,7 @@ export default function Tareas() {
     <div>
       <PageHeader tag="SCHEDULER" title="Tareas" description={`${active} activas`} />
       <div className="px-5 py-6 sm:px-8 sm:py-8">
-        <div className="rounded-xl border border-[var(--color-border-subtle)]">
+        <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
           <div className="grid grid-cols-12 bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
             <div className="col-span-4 th">Descripción</div>
             <div className="col-span-2 th">Chat ID</div>

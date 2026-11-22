@@ -76,7 +76,7 @@ export default function Roles() {
       <div className="px-5 py-6 sm:px-8 sm:py-8 space-y-4">
 
         {creating && (
-          <div className="border border-[var(--color-accent-border)] bg-[var(--color-bg-elevated)] p-5">
+          <div className="border border-[var(--color-accent-border)] bg-[var(--color-surface)] p-5">
             <p className="section-tag mb-4">NUEVO ROL</p>
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
@@ -100,7 +100,7 @@ export default function Roles() {
         {isLoading
           ? <div className="rounded-xl border border-[var(--color-border-subtle)] h-40 animate-pulse" />
           : roles.map((role: any) => (
-            <div key={role.id} className="rounded-xl border border-[var(--color-border-subtle)]">
+            <div key={role.id} className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
               <div className="px-5 py-3 bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)] flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <span className="font-bold text-[var(--color-text)]">{role.name}</span>

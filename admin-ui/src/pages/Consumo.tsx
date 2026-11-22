@@ -67,7 +67,7 @@ function GlobalConsumo({ onSelect }: { onSelect: (row: UsageGlobalRow) => void }
 
         <div>
           <p className="section-tag mb-4">Consumo por cliente</p>
-          <div className="rounded-xl border border-[var(--color-border-subtle)]">
+          <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
             <div className="grid grid-cols-12 bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
               <div className="col-span-4 th">Cliente</div>
               <div className="col-span-2 th">Tokens</div>
@@ -317,7 +317,7 @@ function TenantConsumo({ tenantId }: { tenantId: number }) {
         </div>
 
         {tab === "usuarios" && (
-          <div className="rounded-xl border border-[var(--color-border-subtle)]">
+          <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
             <div className="grid grid-cols-12 bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
               <div className="col-span-3 th">Usuario</div>
               <div className="col-span-2 th">Tokens</div>
@@ -378,7 +378,7 @@ function TenantConsumo({ tenantId }: { tenantId: number }) {
         )}
 
         {tab === "historial" && (
-          <div className="rounded-xl border border-[var(--color-border-subtle)]">
+          <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
             <div className="flex items-center justify-between px-5 py-3 bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
               <span className="section-tag">{fmtNum(historial?.total)} registros</span>
               <select className="bg-[var(--color-bg)] border border-[var(--color-border)] text-xs text-[var(--color-text)] px-2 py-1 focus:outline-none"
@@ -418,7 +418,7 @@ function TenantConsumo({ tenantId }: { tenantId: number }) {
         )}
 
         {tab === "alertas" && (
-          <div className="rounded-xl border border-[var(--color-border-subtle)]">
+          <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
             <div className="grid grid-cols-12 bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
               <div className="col-span-3 th">Usuario</div>
               <div className="col-span-2 th">Consumo</div>

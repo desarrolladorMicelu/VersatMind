@@ -113,7 +113,7 @@ function RecordingView({
         <ArrowLeft className="w-3.5 h-3.5" /> Volver
       </button>
 
-      <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] p-4 sm:p-8 space-y-6">
+      <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)] p-4 sm:p-8 space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <p className="section-tag">GRABACIÓN EN CURSO</p>
@@ -315,7 +315,7 @@ export default function Reuniones() {
 
       {showNew && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center px-4">
-          <div className="w-full max-w-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-6 space-y-5">
+          <div className="w-full max-w-md border border-[var(--color-border)] bg-[var(--color-surface)] p-6 space-y-5">
             <div className="flex items-center justify-between">
               <p className="section-tag">Nueva reunión</p>
               <button className="text-[var(--color-text)] hover:text-[var(--color-accent-strong)]" onClick={() => { setShowNew(false); setCreateError(null); }}>
@@ -367,7 +367,7 @@ export default function Reuniones() {
       )}
 
       <div className={`${pagePad} py-8`}>
-        <div className="rounded-xl border border-[var(--color-border-subtle)]">
+        <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
           <div className="hidden sm:grid grid-cols-12 bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
             <div className="col-span-4 th">Título</div>
             <div className="col-span-2 th">Fecha</div>
@@ -421,7 +421,7 @@ export default function Reuniones() {
                   return (
                     <div
                       key={m.id}
-                      className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] px-3 py-3 cursor-pointer"
+                      className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)] px-3 py-3 cursor-pointer"
                       onClick={() => navigate(`/reuniones/${m.id}`)}
                     >
                       <div className="flex items-start justify-between gap-2">

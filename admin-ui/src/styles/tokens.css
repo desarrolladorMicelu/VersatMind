@@ -65,13 +65,13 @@
   --radius-pill: 999px;
 
   /* ── Color base: gris neutro + 1 acento ─────────────────────────────── */
-  --color-bg: #e3e3e0;            /* lienzo principal */
-  --color-bg-elevated: #d7d7d3;   /* sidebar, cabeceras, hero */
-  --color-surface: #f3f3f0;       /* tarjetas, inputs, composer */
-  --color-surface-2: #cecec9;     /* hover, burbujas, énfasis suave */
-  --color-border: #c2c2bc;
-  --color-border-subtle: #d0d0ca;
-  --color-border-strong: #b2b2ab;
+  --color-bg: #ececea;            /* lienzo principal */
+  --color-bg-elevated: #e2e2e0;   /* sidebar, cabeceras, hero */
+  --color-surface: #fafaf8;       /* tarjetas, inputs, composer */
+  --color-surface-2: #dcdcda;     /* hover, burbujas, énfasis suave */
+  --color-border: #cfcfcc;
+  --color-border-subtle: #dcdcd9;
+  --color-border-strong: #bebeb9;
   --color-text: #202124;
   --color-text-muted: #4f5155;
   --color-text-subtle: #5f6267;

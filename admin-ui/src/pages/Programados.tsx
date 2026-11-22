@@ -206,7 +206,7 @@ export default function Programados() {
       <div className="px-5 py-6 sm:px-8 sm:py-8 space-y-6">
 
         {form && (
-          <div className="border border-[var(--color-accent-border)] bg-[var(--color-bg-elevated)] p-6 space-y-5">
+          <div className="border border-[var(--color-accent-border)] bg-[var(--color-surface)] p-6 space-y-5">
             <p className="section-tag">{form.id ? "Editar prompt" : "Nuevo prompt"}</p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -349,7 +349,7 @@ export default function Programados() {
           </div>
         )}
 
-        <div className="rounded-xl border border-[var(--color-border-subtle)]">
+        <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
           <div className="grid grid-cols-12 bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
             <div className="col-span-3 th">Nombre</div>
             <div className="col-span-2 th">Destino</div>

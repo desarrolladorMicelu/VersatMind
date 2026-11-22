@@ -49,7 +49,7 @@ function TenantModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="w-full max-w-2xl bg-[var(--color-bg-elevated)] border border-[var(--color-border)] flex flex-col max-h-[90vh]">
+        <div className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-2xl">
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border-subtle)] flex-shrink-0">
@@ -68,7 +68,7 @@ function TenantModal({
         <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
 
           {/* Info básica */}
-          <div className="rounded-xl border border-[var(--color-border-subtle)]">
+          <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
             <div className="px-4 py-2.5 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]">
               <span className="section-tag">INFORMACIÓN BÁSICA</span>
             </div>
@@ -110,7 +110,7 @@ function TenantModal({
           </div>
 
           {/* Telegram */}
-          <div className="rounded-xl border border-[var(--color-border-subtle)]">
+          <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
             <div className="px-4 py-2.5 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] flex items-center gap-2">
               <Bot className="w-3 h-3 text-[var(--color-accent-strong)]" />
               <span className="section-tag">TELEGRAM</span>
@@ -159,7 +159,7 @@ function TenantModal({
           </div>
 
           {/* SQL Server */}
-          <div className="rounded-xl border border-[var(--color-border-subtle)]">
+          <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
             <div className="px-4 py-2.5 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] flex items-center gap-2">
               <Database className="w-3 h-3 text-[var(--color-accent-strong)]" />
               <span className="section-tag">SQL SERVER OFIMA</span>
@@ -332,7 +332,7 @@ function TenantAdmins({ tenantId, tenantName }: { tenantId: number; tenantName: 
 
         {/* Formulario nueva cuenta */}
         {creating && (
-          <div className="mb-4 border border-[var(--color-accent-border)] bg-[var(--color-bg-elevated)] p-4 flex flex-wrap gap-3 items-end">
+          <div className="mb-4 border border-[var(--color-accent-border)] bg-[var(--color-surface)] p-4 flex flex-wrap gap-3 items-end">
             <div>
               <label className="label">Usuario</label>
               <input
@@ -387,7 +387,7 @@ function TenantAdmins({ tenantId, tenantName }: { tenantId: number; tenantName: 
         ) : admins.length === 0 ? (
           <p className="text-xs text-[var(--color-text-muted)] py-3">Sin cuentas creadas — este cliente no puede entrar al panel.</p>
         ) : (
-          <div className="rounded-xl border border-[var(--color-border-subtle)]">
+          <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
             <div className="grid grid-cols-12 bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
               <div className="col-span-4 th">Usuario</div>
               <div className="col-span-3 th">Estado</div>
@@ -589,7 +589,7 @@ password: "", // nunca pre-rellenamos la contraseña
           </div>
         )}
 
-        <div className="rounded-xl border border-[var(--color-border-subtle)]">
+        <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
 
           {/* Cabecera tabla */}
           <div className="grid grid-cols-[repeat(11,minmax(0,1fr))] bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">

@@ -126,7 +126,7 @@ export default function Agente() {
       />
       <div className="px-5 py-6 sm:px-8 sm:py-8 space-y-6 max-w-4xl">
 
-        <div className="rounded-xl border border-[var(--color-border-subtle)]">
+        <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
           <div className="px-5 py-3 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] flex items-center justify-between">
             <span className="section-tag">SYSTEM PROMPT</span>
             <span className="text-xs text-[var(--color-text)]">{form.system_prompt.length} chars</span>
@@ -144,7 +144,7 @@ export default function Agente() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-[var(--color-border-subtle)]">
+        <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
           <div className="px-5 py-3 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]">
             <span className="section-tag">MODELO Y PARÁMETROS</span>
           </div>
