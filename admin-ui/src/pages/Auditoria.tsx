@@ -11,16 +11,20 @@ const EVENT_TYPES = [
   { value: "interaction", label: eventLabel("interaction") },
   { value: "unauthorized", label: eventLabel("unauthorized") },
   { value: "tool_failure", label: eventLabel("tool_failure") },
+  { value: "permission_denied", label: eventLabel("permission_denied") },
+  { value: "role_change", label: eventLabel("role_change") },
   { value: "scheduler", label: eventLabel("scheduler") },
 ];
 const STATUS_OPTIONS = [
   { value: "", label: "Todos" },
   { value: "success", label: statusLabel("success") },
   { value: "error", label: statusLabel("error") },
+  { value: "denied", label: statusLabel("denied") },
 ];
 const EVENT_BADGE: Record<string, string> = {
   interaction: "badge-indigo", tool_failure: "badge-red",
-  unauthorized: "badge-amber", scheduler: "badge-slate",
+  unauthorized: "badge-amber", permission_denied: "badge-red",
+  role_change: "badge-amber", scheduler: "badge-slate",
 };
 
 export default function Auditoria() {

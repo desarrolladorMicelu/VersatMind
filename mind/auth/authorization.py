@@ -25,6 +25,7 @@ class Permission(str, Enum):
     READ_EXTERNAL_DB = "READ_EXTERNAL_DB"
     READ_MAIL = "READ_MAIL"
     READ_CALENDAR = "READ_CALENDAR"
+    READ_CUSTOMER_PII = "READ_CUSTOMER_PII"
 
 
 @dataclass

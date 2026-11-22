@@ -5,11 +5,13 @@ el control de acceso es por permisos de rol (ya existente).
 """
 from __future__ import annotations
 
+import copy
 import json
 from dataclasses import dataclass
 from typing import Any, Callable, Awaitable
 
 from mind.auth.authorization import Permission
+from mind.auth.data_policy import SourcePolicy, tool_source_allowed, validate_tool_call
 
 
 class PermissionDeniedError(Exception):
@@ -38,16 +40,64 @@ def get_tool_schemas() -> list[dict]:
     return [{"type": "function", "function": d.schema} for d in TOOL_REGISTRY.values()]
 
 
+def get_allowed_tool_schemas(
+    user_permissions: frozenset[str],
+    policy: SourcePolicy | None = None,
+) -> list[dict]:
+    """
+    Devuelve solo las tools que el usuario puede ejecutar y cuya fuente
+    está permitida. Se usa para no exponer herramientas denegadas al LLM.
+    """
+    policy = policy or SourcePolicy()
+    allowed: list[dict] = []
+    for name, defn in TOOL_REGISTRY.items():
+        if defn.permission.value not in user_permissions:
+            continue
+
+        schema = defn.schema
+        if name == "generar_informe":
+            types = ["ventas", "finanzas", "indicadores"]
+            allowed_types = [
+                t for t in types
+                if tool_source_allowed(name, user_permissions, policy, {"tipo": t})
+                and (
+                    (t == "ventas" and "READ_SALES" in user_permissions)
+                    or (t == "finanzas" and "READ_FINANCE" in user_permissions)
+                    or (t == "indicadores" and "READ_KPI" in user_permissions)
+                )
+            ]
+            if not allowed_types:
+                continue
+            schema = copy.deepcopy(defn.schema)
+            schema["parameters"]["properties"]["tipo"]["enum"] = allowed_types
+            schema["description"] = (
+                "Genera informe PDF o Excel con datos OFIMA. "
+                f"Tipos permitidos: {', '.join(allowed_types)}."
+            )
+        elif name == "consultar_indicadores" and "READ_FINANCE" not in user_permissions:
+            schema = copy.deepcopy(defn.schema)
+            schema["description"] = "KPIs de ventas y transacciones del año actual."
+
+        if not tool_source_allowed(name, user_permissions, policy):
+            continue
+        allowed.append({"type": "function", "function": schema})
+    return allowed
+
+
 async def dispatch(
     tool_name: str,
     params: dict,
     user_permissions: frozenset[str],
+    policy: SourcePolicy | None = None,
 ) -> str:
     defn = TOOL_REGISTRY.get(tool_name)
     if defn is None:
         raise ToolNotFoundError(f"Herramienta desconocida: {tool_name!r}")
     if defn.permission.value not in user_permissions:
         raise PermissionDeniedError(f"Sin permiso para ejecutar {tool_name!r}")
+    from mind.auth.context import set_current_permissions
+    set_current_permissions(user_permissions)
+    validate_tool_call(tool_name, params, user_permissions, policy or SourcePolicy())
     try:
         result = await defn.fn(**params)
         return json.dumps(result, ensure_ascii=False, default=str)
@@ -362,7 +412,7 @@ def _register_all_tools() -> None:
     )
     TOOL_REGISTRY["cliente_completo"] = ToolDefinition(
         fn=cliente_completo,
-        permission=Permission.READ_SALES,
+        permission=Permission.READ_CUSTOMER_PII,
         schema={
             "name": "cliente_completo",
             "description": "Datos completos de un cliente por NIT: dirección, teléfonos y email. "

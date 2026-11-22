@@ -7,6 +7,8 @@ const EVENT_LABELS: Record<string, string> = {
   interaction: "Conversación",
   tool_failure: "Error de consulta",
   unauthorized: "Acceso no autorizado",
+  permission_denied: "Acceso denegado",
+  role_change: "Cambio de permisos",
   scheduler: "Tarea automática",
   meeting: "Reunión",
   login: "Inicio de sesión",
@@ -33,6 +35,7 @@ const STATUS_LABELS: Record<string, string> = {
   sent: "Enviado",
   acknowledged: "Revisada",
   resolved: "Resuelta",
+  denied: "Denegado",
   connected: "Conectada",
   disconnected: "Desconectada",
   revoked: "Revocada",
@@ -77,6 +80,11 @@ const ROLE_LABELS: Record<string, string> = {
   board_member: "Miembro de junta",
   finance: "Finanzas",
   commercial: "Comercial",
+  Gerencia: "Gerencia",
+  Comercial: "Comercial",
+  Contabilidad: "Contabilidad",
+  "Logística": "Logística",
+  Logistica: "Logística",
 };
 
 const ENGINE_LABELS: Record<string, string> = {

@@ -295,6 +295,13 @@ async def _execute_task(task_id: str, tenant_id: int) -> None:
             user_result = await session.execute(user_stmt)
             user = user_result.scalar_one_or_none()
 
+            if user is None or not user.is_active or user.is_paused:
+                logger.warning(
+                    "Tarea %s omitida: usuario %s inactivo/pausado/inexistente",
+                    task_id, chat_id,
+                )
+                return
+
             auth = AuthResult(allowed=True, user=user)
 
             from mind.agent.orchestrator import process

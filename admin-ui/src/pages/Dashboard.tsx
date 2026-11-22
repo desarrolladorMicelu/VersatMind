@@ -7,7 +7,8 @@ import { useTenant } from "../contexts/TenantContext";
 
 const EVENT_BADGE: Record<string, string> = {
   interaction: "badge-indigo", tool_failure: "badge-red",
-  unauthorized: "badge-amber", scheduler: "badge-slate",
+  unauthorized: "badge-amber", permission_denied: "badge-red",
+  role_change: "badge-amber", scheduler: "badge-slate",
 };
 
 interface ActivityLog {

@@ -7,6 +7,7 @@ Requisitos: 8.1-8.7, 9.6
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 import re
 import sys
@@ -153,6 +154,36 @@ async def log_unauthorized(chat_id: int, user_id: int | None, content: str, tena
         request_content=content,
         status="error",
         error_description="Acceso no autorizado",
+    )
+    await log_interaction(record)
+
+
+async def log_permission_denied(
+    *,
+    tool_name: str,
+    params: dict,
+    reason: str,
+    chat_id: int | None = None,
+    user_id: int | None = None,
+    tenant_id: int | None = None,
+    role_id: int | None = None,
+    source_key: str | None = None,
+) -> None:
+    """Registra un intento bloqueado por la política de acceso a datos."""
+    details = {
+        "reason": reason,
+        "role_id": role_id,
+        "source_key": source_key,
+    }
+    record = AuditRecord(
+        event_type="permission_denied",
+        chat_id=chat_id,
+        user_id=user_id,
+        tenant_id=tenant_id,
+        tool_invoked=tool_name,
+        tool_params=params,
+        status="denied",
+        error_description=json.dumps(details, ensure_ascii=False, default=str),
     )
     await log_interaction(record)
 

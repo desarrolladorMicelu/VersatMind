@@ -187,8 +187,8 @@ export default function Integraciones() {
         <div className="rounded-xl border border-[var(--color-border-subtle)] p-5">
           <p className="section-tag mb-3">Permisos necesarios</p>
           <p className="text-xs text-[var(--color-text)] leading-relaxed">
-            Asigna a los roles los permisos <span className="text-[var(--color-accent-strong)]">READ_MAIL</span> y
-            {" "}<span className="text-[var(--color-accent-strong)]">READ_CALENDAR</span> en la sección Roles para que los
+            Asigna a los roles los permisos <span className="text-[var(--color-accent-strong)]">VER CORREO</span> y
+            {" "}<span className="text-[var(--color-accent-strong)]">VER CALENDARIO</span> en la sección Roles para que los
             usuarios puedan consultar correo y agenda.
           </p>
         </div>
