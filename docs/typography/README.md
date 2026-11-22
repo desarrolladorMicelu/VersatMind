@@ -110,6 +110,26 @@ Capturas adicionales:
 - `after-chat-projects.png`
 - `after-chat-mobile-menu.png`
 
+## Lenguaje para personas no técnicas
+
+- Los valores técnicos del backend se traducen en `admin-ui/src/lib/labels.ts`.
+- Dashboard: `interaction` → “Conversación”, `success` → “Correcto”, `scheduler` → “Tarea automática”.
+- `ON/OFF` reemplazados por “Activo/Inactivo” en clientes, usuarios, tareas y conocimiento.
+- “Cron” se muestra como una frase legible (“Todos los días, 08:00”) y la expresión técnica queda solo en el tooltip.
+- “Prompt” se reemplazó por “envío programado”; “Dashboard” por “Resumen general”; “Chat” por “Asistente”.
+- Se agregaron explicaciones breves para consumo/tokens, herramientas y errores técnicos.
+
+Capturas nuevas:
+
+- `after-dashboard-desktop.png`
+- `after-auditoria-desktop.png`
+- `after-tareas-desktop.png`
+- `after-consumo-desktop.png`
+- `after-programados-desktop.png`
+- `after-usuarios-desktop.png`
+- `after-historial-desktop.png`
+- `after-agente-desktop.png`
+
 ## Verificación
 
 - `npm run build` (incluye `tsc -b`) OK.

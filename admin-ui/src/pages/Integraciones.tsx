@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Mail, Calendar, X, Loader2, RefreshCw, Trash2, ExternalLink } from "lucide-react";
 import { integrationsApi } from "../lib/api";
 import type { IntegrationProviderStatus } from "../lib/api";
+import { statusLabel } from "../lib/labels";
 import PageHeader from "../components/PageHeader";
 import { useTenant } from "../contexts/TenantContext";
 
@@ -116,7 +117,9 @@ export default function Integraciones() {
                       {p.connected ? (
                         <p className="text-xs text-[var(--color-text)] truncate">
                           {p.account_email}
-                          <span className="ml-2 text-[var(--color-accent-strong)]">● {p.status}</span>
+                          <span className="ml-2 text-[var(--color-accent-strong)]" title={p.status ?? undefined}>
+                            ● {statusLabel(p.status)}
+                          </span>
                         </p>
                       ) : (
                         <p className="text-xs text-[var(--color-text)]">Sin vincular</p>
@@ -167,7 +170,14 @@ export default function Integraciones() {
                   </p>
                 )}
                 {p.connected && p.last_error && (
-                  <p className="text-xs text-red-700 mt-3 break-all">último error: {p.last_error}</p>
+                  <div className="mt-3 border border-red-300 bg-red-50 px-3 py-2">
+                    <p className="text-2xs font-semibold uppercase tracking-[0.06em] text-red-700">
+                      No pudimos verificar la conexión
+                    </p>
+                    <p className="mt-1 text-2xs text-red-700 break-all" title={p.last_error ?? undefined}>
+                      Detalle técnico: {p.last_error}
+                    </p>
+                  </div>
                 )}
               </div>
             ))}

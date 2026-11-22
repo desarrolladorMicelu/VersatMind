@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Power, Trash2 } from "lucide-react";
 import api from "../lib/api";
 import { fmtDate } from "../lib/utils";
+import { activeLabel, cronLabel } from "../lib/labels";
 import PageHeader from "../components/PageHeader";
 import { useTenant } from "../contexts/TenantContext";
 
@@ -31,7 +32,7 @@ export default function Tareas() {
   if (!tenantId) {
     return (
       <div>
-        <PageHeader tag="SCHEDULER" title="Tareas" description="Selecciona un cliente" />
+        <PageHeader tag="AUTOMATIZACIÓN" title="Tareas" description="Selecciona un cliente" />
         <div className="px-5 py-16 sm:px-8 text-center">
           <p className="text-xs text-[var(--color-text)] uppercase tracking-[0.06em]">Selecciona un cliente en el panel izquierdo</p>
         </div>
@@ -41,15 +42,15 @@ export default function Tareas() {
 
   return (
     <div>
-      <PageHeader tag="SCHEDULER" title="Tareas" description={`${active} activas`} />
+      <PageHeader tag="AUTOMATIZACIÓN" title="Tareas" description={`${active} ${active === 1 ? "activa" : "activas"}`} />
       <div className="px-5 py-6 sm:px-8 sm:py-8">
         <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
           <div className="grid grid-cols-12 bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
             <div className="col-span-4 th">Descripción</div>
-            <div className="col-span-2 th">Chat ID</div>
-            <div className="col-span-2 th">Cron</div>
+            <div className="col-span-2 th">Destino</div>
+            <div className="col-span-2 th">Programación</div>
             <div className="col-span-1 th">Estado</div>
-            <div className="col-span-2 th">Última ejec.</div>
+            <div className="col-span-2 th">Última ejecución</div>
             <div className="col-span-1 th" />
           </div>
 
@@ -63,13 +64,16 @@ export default function Tareas() {
                 </div>
                 <div className="col-span-2 td text-xs text-[var(--color-text)]">{t.chat_id}</div>
                 <div className="col-span-2 td">
-                  <code className="text-xs text-[var(--color-accent-strong)] bg-[var(--color-accent-surface)] px-2 py-0.5 border border-[var(--color-accent-border)]">
-                    {t.cron_expression}
-                  </code>
+                  <span
+                    className="text-xs font-medium text-[var(--color-text)]"
+                    title={`Programación avanzada: ${t.cron_expression}`}
+                  >
+                    {cronLabel(t.cron_expression)}
+                  </span>
                 </div>
                 <div className="col-span-1 td">
                   <span className={`badge ${t.status === "active" ? "badge-green" : "badge-slate"}`}>
-                    {t.status === "active" ? "ON" : "OFF"}
+                    {activeLabel(t.status === "active", true)}
                   </span>
                 </div>
                 <div className="col-span-2 td text-xs text-[var(--color-text)]">{fmtDate(t.last_execution_at)}</div>
@@ -89,7 +93,7 @@ export default function Tareas() {
             ))
           }
           {!isLoading && tasks.length === 0 && (
-            <p className="px-5 py-10 text-center text-xs text-[var(--color-text)]">SIN TAREAS</p>
+            <p className="px-5 py-10 text-center text-xs text-[var(--color-text)]">Aún no hay tareas</p>
           )}
         </div>
       </div>

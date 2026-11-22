@@ -128,7 +128,7 @@ function ExternalSheetsConfig({
         {/* URL del spreadsheet */}
         <div>
           <label className="label">
-            URL del spreadsheet            {value && <span className="text-[var(--color-text)] ml-2">(vacío desconfigura)</span>}
+            URL de la hoja de cálculo            {value && <span className="text-[var(--color-text)] ml-2">(vacío desconfigura)</span>}
           </label>
           <input
             className="input text-xs"
@@ -137,14 +137,14 @@ function ExternalSheetsConfig({
             onChange={(e) => setField("spreadsheet_url", e.target.value)}
           />
           <p className="text-xs text-[var(--color-text)] mt-1.5">
-            Comparte la hoja con el client_email de la service account
+            Comparte la hoja con el correo de la cuenta de servicio
           </p>
         </div>
 
         {/* Credenciales JSON */}
         <div>
           <label className="label">
-            Credenciales (Service Account JSON)
+            Credenciales (JSON de la cuenta de servicio)
             {value && <span className="text-[var(--color-text)] ml-2">(vacío conserva la guardada)</span>}
           </label>
           <textarea
@@ -155,7 +155,7 @@ function ExternalSheetsConfig({
             spellCheck={false}
           />
           <p className="text-xs text-[var(--color-text)] mt-1.5">
-            Google Cloud → Service Accounts → Add Key → JSON. Pega el contenido completo.
+            Google Cloud → Cuentas de servicio → Crear clave → JSON. Pega el contenido completo.
           </p>
         </div>
 

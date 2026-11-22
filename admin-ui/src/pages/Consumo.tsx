@@ -4,6 +4,7 @@ import { Pause, Play, Bell, BellOff, Check } from "lucide-react";
 import { consumoApi } from "../lib/api";
 import type { UsageGlobalRow, UsageSettings } from "../lib/api";
 import { fmtDate } from "../lib/utils";
+import { roleLabel, sourceLabel, statusLabel } from "../lib/labels";
 import PageHeader from "../components/PageHeader";
 import { useTenant } from "../contexts/TenantContext";
 
@@ -39,9 +40,9 @@ function GlobalConsumo({ onSelect }: { onSelect: (row: UsageGlobalRow) => void }
   return (
     <div>
       <PageHeader
-        tag="ADMIN"
+        tag="CONSUMO"
         title="Consumo"
-        description="Tokens y costo estimado por cliente — selecciona uno para el detalle"
+        description="Uso del asistente y costo estimado por cliente. Selecciona un cliente para ver el detalle."
       />
       <div className="px-5 py-6 sm:px-8 sm:py-8 space-y-8">
         {isError && (
@@ -58,27 +59,31 @@ function GlobalConsumo({ onSelect }: { onSelect: (row: UsageGlobalRow) => void }
           ) : (
             <>
               <Kpi label="Costo total" value={isError ? "—" : fmtUsd(totals?.total_cost_usd)} accent />
-              <Kpi label="Tokens totales" value={isError ? "—" : fmtNum(totals?.total_tokens)} />
+              <Kpi label="Uso total (tokens)" value={isError ? "—" : fmtNum(totals?.total_tokens)} />
               <Kpi label="Clientes con consumo" value={isError ? "—" : fmtNum(totals?.tenants_count)} />
-              <Kpi label="Usuarios sobre umbral" value={isError ? "—" : fmtNum(totals?.over_threshold_count)} danger={(totals?.over_threshold_count ?? 0) > 0} />
+              <Kpi label="Usuarios sobre el límite" value={isError ? "—" : fmtNum(totals?.over_threshold_count)} danger={(totals?.over_threshold_count ?? 0) > 0} />
             </>
           )}
         </div>
+
+        <p className="text-xs text-[var(--color-text-subtle)]">
+          El consumo se mide en tokens, la unidad de uso del asistente. El costo mostrado es una estimación.
+        </p>
 
         <div>
           <p className="section-tag mb-4">Consumo por cliente</p>
           <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
             <div className="grid grid-cols-12 bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
               <div className="col-span-4 th">Cliente</div>
-              <div className="col-span-2 th">Tokens</div>
-              <div className="col-span-2 th">Costo USD</div>
+              <div className="col-span-2 th" title="Los tokens son la unidad de uso del asistente">Uso (tokens)</div>
+              <div className="col-span-2 th">Costo (USD)</div>
               <div className="col-span-2 th">Usuarios</div>
-              <div className="col-span-2 th">Sobre umbral</div>
+              <div className="col-span-2 th">Sobre el límite</div>
             </div>
             {isLoading ? (
               Array(4).fill(0).map((_, i) => <div key={i} className="h-12 border-b border-[var(--color-border-subtle)] animate-pulse" />)
             ) : rows.length === 0 ? (
-              <p className="px-5 py-10 text-center text-xs text-[var(--color-text)]">SIN CONSUMO REGISTRADO</p>
+              <p className="px-5 py-10 text-center text-xs text-[var(--color-text)]">Aún no hay consumo registrado</p>
             ) : (
               rows.map((r) => (
                 <button
@@ -135,7 +140,7 @@ function SettingsForm({ tenantId, config }: { tenantId: number; config: UsageSet
       <p className="section-tag mb-5">Configuración de alertas</p>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         <div>
-          <label className="label text-[var(--color-text)]">Umbral por usuario (USD)</label>
+          <label className="label text-[var(--color-text)]">Límite por usuario (USD)</label>
           <input
             type="number" min={0} step="0.5" className="input"
             value={form.threshold_usd}
@@ -153,7 +158,7 @@ function SettingsForm({ tenantId, config }: { tenantId: number; config: UsageSet
           </select>
         </div>
         <div>
-          <label className="label text-[var(--color-text)]">Email de alertas (opcional)</label>
+          <label className="label text-[var(--color-text)]">Correo de alertas (opcional)</label>
           <input
             type="email" className="input" placeholder="admin@empresa.com"
             value={form.admin_email ?? ""}
@@ -176,7 +181,7 @@ function SettingsForm({ tenantId, config }: { tenantId: number; config: UsageSet
         <label className="flex items-center gap-2 cursor-pointer">
           <input type="checkbox" checked={form.notify_email}
             onChange={(e) => setForm({ ...form, notify_email: e.target.checked })} />
-          <span className="text-xs uppercase tracking-[0.06em] text-[var(--color-text)]">Notificar por email</span>
+          <span className="text-xs uppercase tracking-[0.06em] text-[var(--color-text)]">Notificar por correo</span>
         </label>
         <button className="btn-primary ml-auto" disabled={save.isPending} onClick={() => save.mutate()}>
           Guardar
@@ -258,7 +263,7 @@ function TenantConsumo({ tenantId }: { tenantId: number }) {
 
   return (
     <div>
-      <PageHeader tag="ADMIN" title="Consumo" description="Tokens y costo estimado por usuario" />
+      <PageHeader tag="CONSUMO" title="Consumo" description="Uso del asistente y costo estimado por usuario" />
       <div className="px-5 py-6 sm:px-8 sm:py-8 space-y-8">
 
         {usersError && (
@@ -276,12 +281,16 @@ function TenantConsumo({ tenantId }: { tenantId: number }) {
           ) : (
             <>
               <Kpi label="Costo total" value={usersError ? "—" : fmtUsd(totals?.total_cost_usd)} accent />
-              <Kpi label="Tokens totales" value={usersError ? "—" : fmtNum(totals?.total_tokens)} />
-              <Kpi label="Usuarios sobre umbral" value={usersError ? "—" : fmtNum(totals?.over_threshold_count)} danger={(totals?.over_threshold_count ?? 0) > 0} />
+              <Kpi label="Uso total (tokens)" value={usersError ? "—" : fmtNum(totals?.total_tokens)} />
+              <Kpi label="Usuarios sobre el límite" value={usersError ? "—" : fmtNum(totals?.over_threshold_count)} danger={(totals?.over_threshold_count ?? 0) > 0} />
               <Kpi label="Usuarios pausados" value={usersError ? "—" : fmtNum(totals?.paused_count)} danger={(totals?.paused_count ?? 0) > 0} />
             </>
           )}
         </div>
+
+        <p className="text-xs text-[var(--color-text-subtle)]">
+          El consumo se mide en tokens, la unidad de uso del asistente. El costo mostrado es una estimación.
+        </p>
 
         {config && <SettingsForm key={JSON.stringify(config)} tenantId={tenantId} config={config} />}
 
@@ -320,15 +329,15 @@ function TenantConsumo({ tenantId }: { tenantId: number }) {
           <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
             <div className="grid grid-cols-12 bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
               <div className="col-span-3 th">Usuario</div>
-              <div className="col-span-2 th">Tokens</div>
-              <div className="col-span-2 th">Costo USD</div>
-              <div className="col-span-3 th">Consumo vs umbral ({fmtUsd(threshold)})</div>
+              <div className="col-span-2 th" title="Los tokens son la unidad de uso del asistente">Uso (tokens)</div>
+              <div className="col-span-2 th">Costo (USD)</div>
+              <div className="col-span-3 th">Consumo frente al límite ({fmtUsd(threshold)})</div>
               <div className="col-span-2 th">Acciones</div>
             </div>
             {loadingUsers ? (
               Array(4).fill(0).map((_, i) => <div key={i} className="h-14 border-b border-[var(--color-border-subtle)] animate-pulse" />)
             ) : userRows.length === 0 ? (
-              <p className="px-5 py-10 text-center text-xs text-[var(--color-text)]">SIN CONSUMO EN EL PERÍODO</p>
+              <p className="px-5 py-10 text-center text-xs text-[var(--color-text)]">Aún no hay consumo en este período</p>
             ) : (
               userRows.map((u) => {
                 const pct = threshold > 0 ? Math.min(100, (u.cost_usd / threshold) * 100) : 0;
@@ -336,7 +345,7 @@ function TenantConsumo({ tenantId }: { tenantId: number }) {
                   <div key={u.chat_id} className="grid grid-cols-12 border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-elevated)] transition-colors items-center">
                     <div className="col-span-3 td">
                       <p className="text-sm font-medium text-[var(--color-text)]">{u.username || "—"}</p>
-                      <p className="text-xs text-[var(--color-text)]">chat {u.chat_id} · {u.role_name}</p>
+                      <p className="text-xs text-[var(--color-text)]">Telegram: {u.chat_id} · {roleLabel(u.role_name)}</p>
                     </div>
                     <div className="col-span-2 td text-xs text-[var(--color-text)]">{fmtNum(u.total_tokens)}</div>
                     <div className={`col-span-2 td text-xs ${u.over_threshold ? "text-red-700" : "text-[var(--color-accent-strong)]"}`}>
@@ -384,22 +393,22 @@ function TenantConsumo({ tenantId }: { tenantId: number }) {
               <select className="bg-[var(--color-bg)] border border-[var(--color-border)] text-xs text-[var(--color-text)] px-2 py-1 focus:outline-none"
                 value={source} onChange={(e) => setSource(e.target.value)}>
                 <option value="">Todos los orígenes</option>
-                <option value="chat">Chat</option>
+                <option value="chat">Asistente web</option>
                 <option value="scheduler">Tareas programadas</option>
               </select>
             </div>
             <div className="grid grid-cols-12 bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
               <div className="col-span-3 th">Fecha</div>
               <div className="col-span-2 th">Usuario</div>
-              <div className="col-span-2 th">Modelo</div>
-              <div className="col-span-2 th">Tokens</div>
+              <div className="col-span-2 th">Modelo de IA</div>
+              <div className="col-span-2 th" title="Los tokens son la unidad de uso del asistente">Uso (tokens)</div>
               <div className="col-span-2 th">Costo</div>
               <div className="col-span-1 th">Origen</div>
             </div>
             {loadingHist ? (
               Array(5).fill(0).map((_, i) => <div key={i} className="h-10 border-b border-[var(--color-border-subtle)] animate-pulse" />)
             ) : (historial?.rows.length ?? 0) === 0 ? (
-              <p className="px-5 py-10 text-center text-xs text-[var(--color-text)]">SIN REGISTROS</p>
+              <p className="px-5 py-10 text-center text-xs text-[var(--color-text)]">Aún no hay registros</p>
             ) : (
               historial!.rows.map((h) => (
                 <div key={h.id} className="grid grid-cols-12 border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-elevated)] transition-colors items-center">
@@ -409,7 +418,9 @@ function TenantConsumo({ tenantId }: { tenantId: number }) {
                   <div className="col-span-2 td text-xs text-[var(--color-text)]">{fmtNum(h.total_tokens)}</div>
                   <div className="col-span-2 td text-xs text-[var(--color-accent-strong)]">{fmtUsd(h.cost_usd)}</div>
                   <div className="col-span-1 td">
-                    <span className={`badge ${h.source === "scheduler" ? "badge-amber" : "badge-slate"}`}>{h.source}</span>
+                    <span className={`badge ${h.source === "scheduler" ? "badge-amber" : "badge-slate"}`} title={h.source}>
+                      {sourceLabel(h.source)}
+                    </span>
                   </div>
                 </div>
               ))
@@ -422,7 +433,7 @@ function TenantConsumo({ tenantId }: { tenantId: number }) {
             <div className="grid grid-cols-12 bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
               <div className="col-span-3 th">Usuario</div>
               <div className="col-span-2 th">Consumo</div>
-              <div className="col-span-2 th">Umbral</div>
+              <div className="col-span-2 th">Límite</div>
               <div className="col-span-2 th">Período</div>
               <div className="col-span-2 th">Estado</div>
               <div className="col-span-1 th" />
@@ -430,7 +441,7 @@ function TenantConsumo({ tenantId }: { tenantId: number }) {
             {loadingAlerts ? (
               Array(3).fill(0).map((_, i) => <div key={i} className="h-12 border-b border-[var(--color-border-subtle)] animate-pulse" />)
             ) : alertas.length === 0 ? (
-              <p className="px-5 py-10 text-center text-xs text-[var(--color-text)]">SIN ALERTAS</p>
+              <p className="px-5 py-10 text-center text-xs text-[var(--color-text)]">Aún no hay alertas</p>
             ) : (
               alertas.map((a) => (
                 <div key={a.id} className="grid grid-cols-12 border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-elevated)] transition-colors items-center">
@@ -442,7 +453,9 @@ function TenantConsumo({ tenantId }: { tenantId: number }) {
                   <div className="col-span-2 td text-xs text-[var(--color-text)]">{fmtUsd(a.threshold_usd)}</div>
                   <div className="col-span-2 td text-xs text-[var(--color-text)]">{a.period_key}</div>
                   <div className="col-span-2 td">
-                    <span className={`badge ${a.status === "active" ? "badge-red" : "badge-slate"}`}>{a.status}</span>
+                    <span className={`badge ${a.status === "active" ? "badge-red" : "badge-slate"}`} title={a.status}>
+                      {statusLabel(a.status)}
+                    </span>
                     {a.notified
                       ? <Bell className="w-3 h-3 text-[var(--color-accent-strong)] inline ml-2" />
                       : <BellOff className="w-3 h-3 text-[var(--color-text)] inline ml-2" />}
@@ -477,7 +490,7 @@ export default function Consumo() {
     if (!isSuperAdmin) {
       return (
         <div>
-          <PageHeader tag="ADMIN" title="Consumo" description="Sin cliente asignado" />
+          <PageHeader tag="CONSUMO" title="Consumo" description="Sin cliente asignado" />
           <div className="px-5 py-16 sm:px-8 text-center">
             <p className="text-xs text-[var(--color-text)] uppercase tracking-[0.06em]">Selecciona un cliente en el panel izquierdo</p>
           </div>

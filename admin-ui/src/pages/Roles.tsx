@@ -125,7 +125,7 @@ export default function Roles() {
           ))
         }
         {!isLoading && roles.length === 0 && (
-          <p className="text-center text-xs text-[var(--color-text)] py-10">SIN ROLES — CREA UNO</p>
+          <p className="text-center text-xs text-[var(--color-text)] py-10">Aún no hay roles. Crea el primero.</p>
         )}
       </div>
     </div>

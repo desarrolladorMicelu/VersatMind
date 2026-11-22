@@ -4,6 +4,7 @@ import { Power, Trash2, Pencil, Plus, Save } from "lucide-react";
 import { knowledgeApi } from "../lib/api";
 import type { KnowledgeEntry } from "../lib/api";
 import { fmtDate } from "../lib/utils";
+import { activeLabel } from "../lib/labels";
 import PageHeader from "../components/PageHeader";
 import { useTenant } from "../contexts/TenantContext";
 
@@ -62,7 +63,7 @@ export default function Conocimiento() {
       <PageHeader
         tag="CONTEXTO"
         title="Base de conocimiento"
-        description={`${entries.length} entradas cargadas`}
+        description={`${entries.length} entradas guardadas`}
         action={
           <button className="btn-primary" onClick={() => setForm({ ...EMPTY })}>
             <Plus className="w-3.5 h-3.5" /> Nueva información
@@ -126,7 +127,7 @@ export default function Conocimiento() {
           {isLoading ? (
             Array(3).fill(0).map((_, i) => <div key={i} className="h-12 border-b border-[var(--color-border-subtle)] animate-pulse" />)
           ) : entries.length === 0 ? (
-            <p className="px-5 py-10 text-center text-xs text-[var(--color-text)]">SIN INFORMACIÓN CARGADA</p>
+            <p className="px-5 py-10 text-center text-xs text-[var(--color-text)]">Aún no hay información guardada</p>
           ) : (
             entries.map((e) => (
               <div key={e.id} className="grid grid-cols-12 border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-elevated)] transition-colors items-center">
@@ -137,7 +138,7 @@ export default function Conocimiento() {
                 <div className="col-span-2 td text-xs text-[var(--color-text)]">{e.source || "—"}</div>
                 <div className="col-span-2 td text-xs text-[var(--color-text)] truncate">{e.tags || "—"}</div>
                 <div className="col-span-1 td">
-                  <span className={`badge ${e.is_active ? "badge-green" : "badge-slate"}`}>{e.is_active ? "ON" : "OFF"}</span>
+                  <span className={`badge ${e.is_active ? "badge-green" : "badge-slate"}`}>{activeLabel(e.is_active, true)}</span>
                 </div>
                 <div className="col-span-2 td">
                   <div className="flex items-center justify-between">

@@ -53,7 +53,7 @@ function SuperAdminModal({
                 // {isCreate ? "NUEVO ACCESO ROOT" : "RESTABLECER CONTRASEÑA"}
               </p>
               <h2 className="text-lg font-bold text-[var(--color-text)] tracking-tight leading-none">
-                {isCreate ? "Crear super admin" : state.account?.username}
+                {isCreate ? "Crear superadministrador" : state.account?.username}
               </h2>
             </div>
           </div>
@@ -67,7 +67,7 @@ function SuperAdminModal({
             <AlertTriangle className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
             <p className="text-xs leading-relaxed text-amber-800">
               {isCreate
-                ? "Un super admin puede ver y gestionar TODOS los clientes, cuentas y configuración del sistema. Crea estas cuentas solo para personal de confianza."
+                ? "Un superadministrador puede ver y gestionar TODOS los clientes, cuentas y configuración del sistema. Crea estas cuentas solo para personal de confianza."
                 : "La nueva contraseña reemplaza inmediatamente a la anterior. No se puede recuperar, solo volver a restablecer."}
             </p>
           </div>
@@ -202,7 +202,7 @@ function AccountRow({
       {/* Origen */}
       <div className="col-span-2 td">
         <span className={`badge ${isEnv ? "badge-amber" : "badge-green"}`}>
-          {isEnv ? "RAÍZ · .ENV" : "PANEL"}
+          {isEnv ? "Cuenta raíz" : "Creada aquí"}
         </span>
       </div>
 
@@ -342,12 +342,12 @@ export default function SuperAdmins() {
     <div>
       <PageHeader
         tag="SEGURIDAD · ACCESO TOTAL"
-        title="Super Admins"
+        title="Superadmins"
         description="Cuentas con control absoluto sobre todos los clientes del sistema"
         action={
           <button className="btn-primary flex items-center gap-2" onClick={openCreate}>
             <Plus className="w-3.5 h-3.5" />
-            NUEVO SUPER ADMIN
+            NUEVO SUPERADMIN
           </button>
         }
       />
@@ -378,9 +378,9 @@ export default function SuperAdmins() {
                 </h2>
                 <p className="text-xs text-[var(--color-text-muted)] mt-1.5 leading-relaxed">
                   Estas cuentas pueden ver y gestionar todos los clientes, sus admins,
-                  el agente y la configuración global. Solo el super admin raíz
-                  (<span className="text-[var(--color-accent-strong)]">.env</span>) y los super admins
-                  de panel pueden entrar aquí.
+                  el agente y la configuración global. Solo el superadministrador raíz
+                  (<span className="text-[var(--color-accent-strong)]">.env</span>) y los superadministradores
+                  creados aquí pueden entrar.
                 </p>
               </div>
             </div>
@@ -395,7 +395,7 @@ export default function SuperAdmins() {
                 <p className="text-xl font-bold text-[var(--color-accent-strong)] mt-1">{activeCount}</p>
               </div>
               <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)] px-4 py-3 min-w-[92px]">
-                <p className="text-xs uppercase tracking-[0.06em] text-[var(--color-text-subtle)]">De panel</p>
+                <p className="text-xs uppercase tracking-[0.06em] text-[var(--color-text-subtle)]">Creadas aquí</p>
                 <p className="text-xl font-bold text-[var(--color-text)] mt-1">{panelAccounts.length}</p>
               </div>
             </div>
@@ -433,7 +433,7 @@ export default function SuperAdmins() {
                     onResetPassword={openReset}
                     onToggle={(a) => toggle.mutate(a)}
                     onRemove={(a) =>
-                      window.confirm(`¿Eliminar el super admin "${a.username}"? Esta acción es irreversible.`) &&
+                      window.confirm(`¿Eliminar el superadministrador "${a.username}"? Esta acción es irreversible.`) &&
                       remove.mutate(a)
                     }
                   />
@@ -443,7 +443,7 @@ export default function SuperAdmins() {
                 <div className="px-5 py-16 text-center">
                   <UserCheck className="w-8 h-8 text-[var(--color-border)] mx-auto mb-3" />
                   <p className="text-xs text-[var(--color-text-muted)] uppercase tracking-[0.06em]">
-                    Sin cuentas de super admin
+                    Sin cuentas de superadministrador
                   </p>
                 </div>
               )}

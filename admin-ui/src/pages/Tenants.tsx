@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Plus, Pencil, Trash2, Power, X, Eye, EyeOff, Database, Bot, Users, KeyRound } from "lucide-react";
 import api, { tenantsApi } from "../lib/api";
 import type { Tenant, TenantPayload } from "../lib/api";
+import { activeLabel, engineLabel } from "../lib/labels";
 import PageHeader from "../components/PageHeader";
 import ExternalDbConfig from "../components/ExternalDbConfig";
 import ExternalSheetsConfig from "../components/ExternalSheetsConfig";
@@ -56,7 +57,7 @@ function TenantModal({
           <div>
             <p className="section-tag mb-1">{isEdit ? "EDITAR" : "NUEVO"} CLIENTE</p>
             <h2 className="text-lg font-bold text-[var(--color-text)] tracking-tight">
-              {isEdit ? form.name || "Sin nombre" : "Crear tenant"}
+              {isEdit ? form.name || "Sin nombre" : "Crear cliente"}
             </h2>
           </div>
           <button onClick={onClose} className="text-[var(--color-text)] hover:text-[var(--color-text)] transition-colors p-1">
@@ -96,7 +97,7 @@ function TenantModal({
                 <p className="text-xs text-[var(--color-text-subtle)] mt-1.5">Solo letras, números y guiones</p>
               </div>
               <div>
-                <label className="label">Admin Chat ID <span className="text-[var(--color-text-subtle)]">(Telegram)</span></label>
+                <label className="label">ID de Telegram del administrador</label>
                 <input
                   className="input "
                   placeholder="123456789"
@@ -104,7 +105,7 @@ function TenantModal({
                   value={form.admin_chat_id || ""}
                   onChange={(e) => set("admin_chat_id", parseInt(e.target.value) || 0)}
                 />
-                <p className="text-xs text-[var(--color-text-subtle)] mt-1.5">Chat ID del administrador del tenant</p>
+                <p className="text-xs text-[var(--color-text-subtle)] mt-1.5">Identificador de Telegram del administrador del cliente</p>
               </div>
             </div>
           </div>
@@ -215,7 +216,7 @@ function TenantModal({
                 </div>
               </div>
               <div className="col-span-2">
-                <label className="label">Driver ODBC</label>
+                <label className="label">Controlador ODBC</label>
                 <input
                   className="input text-xs"
                   value={form.sqlserver_driver}
@@ -569,7 +570,7 @@ password: "", // nunca pre-rellenamos la contraseña
   return (
     <div>
       <PageHeader
-        tag="MULTI-TENANT"
+        tag="CLIENTES"
         title="Clientes"
         description={`${tenants.length} cliente${tenants.length !== 1 ? "s" : ""} registrado${tenants.length !== 1 ? "s" : ""}`}
         action={
@@ -592,13 +593,13 @@ password: "", // nunca pre-rellenamos la contraseña
         <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
 
           {/* Cabecera tabla */}
-          <div className="grid grid-cols-[repeat(11,minmax(0,1fr))] bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
+          <div className="grid grid-cols-[repeat(13,minmax(0,1fr))] bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
             <div className="col-span-3 th">Cliente</div>
-            <div className="col-span-2 th">Bot</div>
+            <div className="col-span-2 th">Telegram</div>
             <div className="col-span-2 th">SQL Server</div>
-            <div className="col-span-2 th">DB Externa</div>
-            <div className="col-span-1 th">Estado</div>
-            <div className="col-span-1 th" />
+            <div className="col-span-2 th">Base de datos</div>
+            <div className="col-span-2 th">Estado</div>
+            <div className="col-span-2 th" />
           </div>
 
           {/* Skeleton */}
@@ -610,7 +611,7 @@ password: "", // nunca pre-rellenamos la contraseña
           {/* Filas */}
           {!isLoading && tenants.map((t) => (
             <div key={t.id}>
-              <div className="grid grid-cols-[repeat(11,minmax(0,1fr))] border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-elevated)] transition-colors">
+              <div className="grid grid-cols-[repeat(13,minmax(0,1fr))] border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-elevated)] transition-colors">
               {/* Cliente */}
               <div className="col-span-3 td">
                 <div className="flex items-center gap-3">
@@ -650,12 +651,12 @@ password: "", // nunca pre-rellenamos la contraseña
                 {t.external_db_configured ? (
                   <div>
                     <p className="text-xs text-[var(--color-text)]">
-                      {t.external_db_engine ?? "postgresql"}
+                      {engineLabel(t.external_db_engine)}
                     </p>
-                    <p className="text-xs text-[var(--color-accent-strong)]">✓ DB configurada</p>
+                    <p className="text-xs text-[var(--color-accent-strong)]">✓ Base de datos lista</p>
                   </div>
                 ) : (
-                  <span className="text-xs text-[var(--color-text)]">— no configurada</span>
+                  <span className="text-xs text-[var(--color-text)]">— sin configurar</span>
                 )}
                 {t.external_alegra_configured && (
                   <p className="text-xs text-[var(--color-accent-strong)] mt-1">✓ Alegra</p>
@@ -669,14 +670,14 @@ password: "", // nunca pre-rellenamos la contraseña
               </div>
 
               {/* Estado */}
-              <div className="col-span-1 td">
+              <div className="col-span-2 td">
                 <span className={`badge ${t.is_active ? "badge-green" : "badge-slate"}`}>
-                  {t.is_active ? "ON" : "OFF"}
+                  {activeLabel(t.is_active)}
                 </span>
               </div>
 
               {/* Acciones */}
-              <div className="col-span-1 td">
+              <div className="col-span-2 td">
                 <div className="flex items-center gap-1 justify-end">
                   <button
                     onClick={() => setExpandedId(expandedId === t.id ? null : t.id)}
@@ -725,7 +726,7 @@ password: "", // nunca pre-rellenamos la contraseña
 
           {!isLoading && tenants.length === 0 && (
             <div className="px-5 py-16 text-center">
-              <p className="text-xs text-[var(--color-text)]">SIN CLIENTES REGISTRADOS</p>
+              <p className="text-xs text-[var(--color-text)]">Aún no hay clientes registrados</p>
               <p className="text-xs text-[var(--color-text)] mt-2">
                 Crea el primero con el botón "NUEVO CLIENTE"
               </p>

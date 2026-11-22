@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import api from "../lib/api";
 import { fmtDate } from "../lib/utils";
+import { eventLabel, isErrorStatus, isOkStatus, statusLabel, toolLabel } from "../lib/labels";
 import PageHeader from "../components/PageHeader";
 import { useTenant } from "../contexts/TenantContext";
 
@@ -29,7 +30,7 @@ export default function Dashboard() {
 
   return (
     <div>
-      <PageHeader tag="SISTEMA" title="Dashboard" description="Estado general en tiempo real" />
+      <PageHeader tag="SISTEMA" title="Resumen general" description="Estado del asistente y de tus clientes en tiempo real" />
       <div className="px-5 py-6 sm:px-8 sm:py-8 space-y-8">
 
         <div className="grid grid-cols-2 gap-3 xl:grid-cols-5">
@@ -40,9 +41,9 @@ export default function Dashboard() {
             : [
                 { label: "Usuarios", value: data?.stats.total_users, accent: false },
                 { label: "Solicitudes pendientes", value: data?.stats.pending_requests, accent: data?.stats.pending_requests > 0 },
-                { label: "Interacciones", value: data?.stats.total_interactions, accent: false },
-                { label: "Tareas activas", value: data?.stats.active_tasks, accent: false },
-                { label: "Errores", value: data?.stats.errors_today, accent: data?.stats.errors_today > 0 },
+                { label: "Consultas", value: data?.stats.total_interactions, accent: false },
+                { label: "Tareas en curso", value: data?.stats.active_tasks, accent: false },
+                { label: "Errores de hoy", value: data?.stats.errors_today, accent: data?.stats.errors_today > 0 },
               ].map(({ label, value, accent }) => (
                 <div
                   key={label}
@@ -60,14 +61,17 @@ export default function Dashboard() {
         </div>
 
         <div>
-          <p className="section-tag mb-4">Actividad reciente</p>
+          <p className="section-tag mb-1">Actividad reciente</p>
+          <p className="mb-4 text-xs text-[var(--color-text-subtle)]">
+            Últimas conversaciones y acciones del asistente.
+          </p>
           <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
             <div className="overflow-x-auto">
               <div className="min-w-[880px]">
                 <div className="grid grid-cols-12 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]">
-                  <div className="col-span-2 th">Evento</div>
-                  <div className="col-span-5 th">Mensaje</div>
-                  <div className="col-span-2 th">Estado</div>
+                  <div className="col-span-2 th">Tipo</div>
+                  <div className="col-span-5 th">Detalle</div>
+                  <div className="col-span-2 th">Resultado</div>
                   <div className="col-span-3 th">Hora</div>
                 </div>
                 {isLoading
@@ -77,15 +81,34 @@ export default function Dashboard() {
                   : data?.recent_logs?.map((log: ActivityLog) => (
                       <div key={log.id} className="grid grid-cols-12 border-b border-[var(--color-border-subtle)] transition-colors last:border-b-0 hover:bg-black/[0.03]">
                         <div className="col-span-2 td">
-                          <span className={`badge ${EVENT_BADGE[log.event_type] ?? "badge-slate"}`}>{log.event_type}</span>
+                          <span
+                            className={`badge ${EVENT_BADGE[log.event_type] ?? "badge-slate"}`}
+                            title={log.event_type}
+                          >
+                            {eventLabel(log.event_type)}
+                          </span>
                         </div>
-                        <div className="col-span-5 td truncate text-[var(--color-text)]">
-                          {log.request_content || log.tool_invoked || "—"}
+                        <div className="col-span-5 td text-[var(--color-text)]">
+                          <p className="truncate">{log.request_content || toolLabel(log.tool_invoked)}</p>
+                          {log.request_content && log.tool_invoked && (
+                            <p className="mt-0.5 truncate text-2xs text-[var(--color-text-subtle)]">
+                              Acción: {toolLabel(log.tool_invoked)}
+                            </p>
+                          )}
                         </div>
                         <div className="col-span-2 td">
                           {log.status && (
-                            <span className={`text-2xs font-semibold uppercase tracking-[0.05em] ${log.status === "success" ? "text-[var(--color-accent-strong)]" : "text-red-700"}`}>
-                              {log.status}
+                            <span
+                              className={`text-xs font-semibold ${
+                                isOkStatus(log.status)
+                                  ? "text-[var(--color-accent-strong)]"
+                                  : isErrorStatus(log.status)
+                                  ? "text-red-700"
+                                  : "text-[var(--color-text-muted)]"
+                              }`}
+                              title={log.status}
+                            >
+                              {statusLabel(log.status)}
                             </span>
                           )}
                         </div>

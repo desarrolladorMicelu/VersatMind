@@ -381,7 +381,7 @@ export default function Reuniones() {
               <div key={i} className="h-12 border-b border-[var(--color-border-subtle)] animate-pulse" />
             ))
           ) : meetings.length === 0 ? (
-            <p className="px-5 py-10 text-center text-xs text-[var(--color-text)]">SIN REUNIONES</p>
+            <p className="px-5 py-10 text-center text-xs text-[var(--color-text)]">Aún no hay reuniones</p>
           ) : (
             <>
               {/* Desktop: tabla */}

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { UserX, UserCheck, Trash2 } from "lucide-react";
 import api from "../lib/api";
 import { fmtDateShort } from "../lib/utils";
+import { activeLabel } from "../lib/labels";
 import PageHeader from "../components/PageHeader";
 import { useTenant } from "../contexts/TenantContext";
 
@@ -51,14 +52,14 @@ export default function Usuarios() {
 
   return (
     <div>
-      <PageHeader tag="ACCESO" title="Usuarios" description={`${users.length} registrados`} />
+      <PageHeader tag="ACCESO" title="Usuarios" description={`${users.length} ${users.length === 1 ? "registrado" : "registrados"}`} />
       <div className="px-5 py-6 sm:px-8 sm:py-8">
         <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
-          <div className="grid grid-cols-12 bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
-            <div className="col-span-4 th">Usuario</div>
-            <div className="col-span-2 th">Chat ID</div>
-            <div className="col-span-2 th">Rol</div>
-            <div className="col-span-1 th">Estado</div>
+          <div className="grid grid-cols-[repeat(13,minmax(0,1fr))] bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
+            <div className="col-span-3 th">Usuario</div>
+            <div className="col-span-2 th">ID de Telegram</div>
+            <div className="col-span-3 th">Rol</div>
+            <div className="col-span-2 th">Estado</div>
             <div className="col-span-2 th">Registrado</div>
             <div className="col-span-1 th" />
           </div>
@@ -66,8 +67,8 @@ export default function Usuarios() {
           {isLoading
             ? Array(4).fill(0).map((_, i) => <div key={i} className="h-12 border-b border-[var(--color-border-subtle)] animate-pulse" />)
             : users.map((u: any) => (
-              <div key={u.chat_id} className="grid grid-cols-12 border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-elevated)] transition-colors">
-                <div className="col-span-4 td">
+              <div key={u.chat_id} className="grid grid-cols-[repeat(13,minmax(0,1fr))] border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-elevated)] transition-colors">
+                <div className="col-span-3 td">
                   <div className="flex items-center gap-3">
                     <div className="w-7 h-7 border border-[var(--color-border)] flex items-center justify-center flex-shrink-0">
                       <span className="text-xs text-[var(--color-accent-strong)]">
@@ -76,23 +77,23 @@ export default function Usuarios() {
                     </div>
                     <div>
                       <p className="text-sm font-medium text-[var(--color-text)]">{u.username || "—"}</p>
-                      <p className="text-xs text-[var(--color-text)]">uid {u.user_id}</p>
+                      <p className="text-2xs text-[var(--color-text-subtle)]">ID de usuario: {u.user_id}</p>
                     </div>
                   </div>
                 </div>
                 <div className="col-span-2 td text-xs text-[var(--color-text)]">{u.chat_id}</div>
-                <div className="col-span-2 td">
+                <div className="col-span-3 td">
                   <select
-                    className="bg-[var(--color-bg)] border border-[var(--color-border)] text-xs text-[var(--color-text)] px-2 py-1 focus:outline-none focus:border-accent transition-colors"
+                    className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] text-xs text-[var(--color-text)] px-2 py-1 focus:outline-none focus:border-accent transition-colors"
                     value={u.role_id}
                     onChange={(e) => changeRole.mutate({ chat_id: u.chat_id, role_id: parseInt(e.target.value) })}
                   >
-                    {roles.map((r: any) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                    {roles.map((r: any) => <option key={r.id} value={r.id}>{r.description || r.name}</option>)}
                   </select>
                 </div>
-                <div className="col-span-1 td">
+                <div className="col-span-2 td">
                   <span className={`badge ${u.is_active ? "badge-green" : "badge-slate"}`}>
-                    {u.is_active ? "ON" : "OFF"}
+                    {activeLabel(u.is_active)}
                   </span>
                 </div>
                 <div className="col-span-2 td text-xs text-[var(--color-text)]">{fmtDateShort(u.created_at)}</div>
@@ -112,7 +113,7 @@ export default function Usuarios() {
             ))
           }
           {!isLoading && users.length === 0 && (
-            <p className="px-5 py-10 text-center text-xs text-[var(--color-text)]">SIN USUARIOS</p>
+            <p className="px-5 py-10 text-center text-xs text-[var(--color-text)]">Aún no hay usuarios</p>
           )}
         </div>
       </div>

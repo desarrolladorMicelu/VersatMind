@@ -50,7 +50,7 @@ export default function Accesos() {
           <div className="grid grid-cols-12 bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
             <div className="col-span-3 th">Nombre</div>
             <div className="col-span-3 th">Username</div>
-            <div className="col-span-2 th">Chat ID</div>
+            <div className="col-span-2 th">ID de Telegram</div>
             <div className="col-span-2 th">Estado</div>
             <div className="col-span-2 th">Solicitado</div>
           </div>
@@ -87,7 +87,7 @@ export default function Accesos() {
             ))
           }
           {!isLoading && requests.length === 0 && (
-            <p className="px-5 py-10 text-center text-xs text-[var(--color-text)]">SIN SOLICITUDES</p>
+            <p className="px-5 py-10 text-center text-xs text-[var(--color-text)]">Aún no hay solicitudes</p>
           )}
         </div>
       </div>

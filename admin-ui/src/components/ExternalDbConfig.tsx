@@ -165,7 +165,7 @@ function ExternalDbConfig({
         </div>
 
         <div>
-          <label className="label">Host / IP</label>
+                <label className="label">Servidor / IP</label>
           <input
             className="input text-xs"
             placeholder="db.cliente.com"
@@ -185,7 +185,7 @@ function ExternalDbConfig({
         </div>
 
         <div>
-          <label className="label">Schema (opcional)</label>
+                <label className="label">Esquema (opcional)</label>
           <input
             className="input text-xs"
             placeholder="public"
@@ -240,7 +240,7 @@ function ExternalDbConfig({
             </div>
           )}
           <p className="text-xs text-[var(--color-text)] mt-1.5">
-            Si dejás vacío se analizan todas las tablas del schema. Si elegís
+                  Si dejás vacío se analizan todas las tablas del esquema. Si elegís
             algunas, "Detectar esquema" se enfocará solo en ellas.
           </p>
         </div>

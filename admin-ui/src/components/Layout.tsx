@@ -14,8 +14,8 @@ const NAV_GROUPS_SUPERADMIN = [
   {
     title: "Principal",
     items: [
-      { to: "/chat", icon: MessagesSquare, label: "Chat" },
-      { to: "/", icon: LayoutDashboard, label: "Dashboard" },
+      { to: "/chat", icon: MessagesSquare, label: "Asistente" },
+      { to: "/", icon: LayoutDashboard, label: "Resumen" },
     ],
   },
   {
@@ -44,7 +44,7 @@ const NAV_GROUPS_SUPERADMIN = [
   {
     title: "Sistema",
     items: [
-      { to: "/superadmins", icon: ShieldCheck, label: "Super Admins" },
+      { to: "/superadmins", icon: ShieldCheck, label: "Superadmins" },
     ],
   },
 ];
@@ -53,8 +53,8 @@ const NAV_GROUPS_TENANT = [
   {
     title: "Principal",
     items: [
-      { to: "/chat", icon: MessagesSquare, label: "Chat" },
-      { to: "/", icon: LayoutDashboard, label: "Dashboard" },
+      { to: "/chat", icon: MessagesSquare, label: "Asistente" },
+      { to: "/", icon: LayoutDashboard, label: "Resumen" },
     ],
   },
   {

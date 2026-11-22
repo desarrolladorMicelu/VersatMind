@@ -98,7 +98,7 @@ export default function Agente() {
   if (!tenantId) {
     return (
       <div>
-        <PageHeader tag="CONFIG" title="Agente" description="Selecciona un cliente" />
+        <PageHeader tag="CONFIGURACIÓN" title="Agente" description="Selecciona un cliente" />
         <div className="px-5 py-16 sm:px-8 text-center">
           <p className="text-xs text-[var(--color-text)] uppercase tracking-[0.06em]">Selecciona un cliente en el panel izquierdo</p>
         </div>
@@ -111,7 +111,7 @@ export default function Agente() {
   return (
     <div>
       <PageHeader
-        tag="CONFIG"
+        tag="CONFIGURACIÓN"
         title="Agente"
         description={`${activeTenant?.name ?? "Cliente"} — personalidad y comportamiento del bot`}
         action={
@@ -128,8 +128,8 @@ export default function Agente() {
 
         <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
           <div className="px-5 py-3 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] flex items-center justify-between">
-            <span className="section-tag">SYSTEM PROMPT</span>
-            <span className="text-xs text-[var(--color-text)]">{form.system_prompt.length} chars</span>
+            <span className="section-tag">INSTRUCCIONES DEL ASISTENTE</span>
+            <span className="text-xs text-[var(--color-text)]">{form.system_prompt.length} caracteres</span>
           </div>
           <div className="p-5">
             <p className="text-xs text-[var(--color-text)] mb-3">

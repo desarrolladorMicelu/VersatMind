@@ -101,7 +101,7 @@ function AlegraConfig({
         {/* Email */}
         <div>
           <label className="label">
-            Email de Alegra
+            Correo de Alegra
             {value && <span className="text-[var(--color-border)] ml-2">(vacío conserva el guardado)</span>}
           </label>
           <input

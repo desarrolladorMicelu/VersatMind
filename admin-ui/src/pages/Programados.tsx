@@ -4,6 +4,7 @@ import { Play, Power, Trash2, Pencil, Plus, Send } from "lucide-react";
 import { promptsApi } from "../lib/api";
 import type { Frequency, ScheduledPrompt, ScheduledPromptPayload, Destino } from "../lib/api";
 import { fmtDate } from "../lib/utils";
+import { activeLabel, cronLabel, statusLabel } from "../lib/labels";
 import PageHeader from "../components/PageHeader";
 import { useTenant } from "../contexts/TenantContext";
 
@@ -131,9 +132,9 @@ export default function Programados() {
     mutationFn: (id: number) => promptsApi.runNow(tenantId as number, id),
     onSuccess: (res) => {
       invalidate();
-      window.alert(res.ok ? "Prompt ejecutado y enviado por Telegram." : `Error: ${res.error ?? "desconocido"}`);
+      window.alert(res.ok ? "Mensaje enviado por Telegram." : `Error: ${res.error ?? "desconocido"}`);
     },
-    onError: () => window.alert("No se pudo ejecutar el prompt."),
+    onError: () => window.alert("No se pudo ejecutar el envío."),
   });
 
   const doPreview = async () => {
@@ -195,11 +196,11 @@ export default function Programados() {
     <div>
       <PageHeader
         tag="AUTOMATIZACIÓN"
-        title="Prompts programados"
-        description="Reportes e insights automáticos enviados por Telegram"
+        title="Envíos programados"
+        description="Reportes e información automática enviados por Telegram"
         action={
           <button className="btn-primary" onClick={openNew}>
-            <Plus className="w-3.5 h-3.5" /> Nuevo prompt
+                  <Plus className="w-3.5 h-3.5" /> NUEVO PROGRAMADO
           </button>
         }
       />
@@ -207,7 +208,7 @@ export default function Programados() {
 
         {form && (
           <div className="border border-[var(--color-accent-border)] bg-[var(--color-surface)] p-6 space-y-5">
-            <p className="section-tag">{form.id ? "Editar prompt" : "Nuevo prompt"}</p>
+              <p className="section-tag">{form.id ? "Editar envío" : "Nuevo envío programado"}</p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
@@ -314,11 +315,15 @@ export default function Programados() {
 
               {form.frequency === "custom" && (
                 <div className="md:col-span-2">
-                  <label className="label text-[var(--color-text)]">Regla avanzada (cron de 5 campos)</label>
+                  <label className="label text-[var(--color-text)]">Regla avanzada (para usuarios técnicos)</label>
                   <input className="input" value={form.cron}
                     placeholder="0 8 * * 1-5"
                     onChange={(e) => setForm({ ...form, cron: e.target.value })} />
-                  <p className="text-xs text-[var(--color-text)] mt-1">Ej: <span className="text-[var(--color-accent-strong)]">0 8 * * *</span> (todos los días 8:00), <span className="text-[var(--color-accent-strong)]">30 7 * * mon</span> (lunes 7:30)</p>
+                  <p className="text-xs text-[var(--color-text)] mt-1">
+                    Solo si necesitas una frecuencia especial. Ejemplos:
+                    {" "}<span className="text-[var(--color-accent-strong)]">0 8 * * *</span> (todos los días a las 8:00),
+                    {" "}<span className="text-[var(--color-accent-strong)]">30 7 * * mon</span> (lunes a las 7:30).
+                  </p>
                 </div>
               )}
             </div>
@@ -362,7 +367,7 @@ export default function Programados() {
           {isLoading ? (
             Array(3).fill(0).map((_, i) => <div key={i} className="h-12 border-b border-[var(--color-border-subtle)] animate-pulse" />)
           ) : prompts.length === 0 ? (
-            <p className="px-5 py-10 text-center text-xs text-[var(--color-text)]">SIN PROMPTS PROGRAMADOS</p>
+            <p className="px-5 py-10 text-center text-xs text-[var(--color-text)]">Aún no hay envíos programados</p>
           ) : (
             prompts.map((p) => (
               <div key={p.id} className="grid grid-cols-12 border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-elevated)] transition-colors items-center">
@@ -376,18 +381,22 @@ export default function Programados() {
                 </div>
                 <div className="col-span-2 td">
                   <p className="text-xs text-[var(--color-text)]"><FrequencyLabel p={p} /></p>
-                  <code className="text-xs text-[var(--color-accent-strong)]">{p.cron_expression}</code>
+                  {p.cron_expression && (
+                    <p className="text-2xs text-[var(--color-text-subtle)]" title={`Programación avanzada: ${p.cron_expression}`}>
+                      {cronLabel(p.cron_expression)}
+                    </p>
+                  )}
                 </div>
                 <div className="col-span-2 td text-xs text-[var(--color-text)]">
                   {p.next_run_at ? fmtDate(p.next_run_at) : "—"}
                   {p.last_status && (
-                    <span className={`block text-xs ${p.last_status === "success" ? "text-[var(--color-accent-strong)]" : "text-red-700"}`}>
-                      última: {p.last_status}
+                    <span className={`mt-1 block text-2xs ${p.last_status === "success" ? "text-[var(--color-accent-strong)]" : "text-red-700"}`}>
+                      Último resultado: {statusLabel(p.last_status)}
                     </span>
                   )}
                 </div>
                 <div className="col-span-1 td">
-                  <span className={`badge ${p.is_active ? "badge-green" : "badge-slate"}`}>{p.is_active ? "ON" : "OFF"}</span>
+                  <span className={`badge ${p.is_active ? "badge-green" : "badge-slate"}`}>{activeLabel(p.is_active)}</span>
                 </div>
                 <div className="col-span-2 td">
                   <div className="flex items-center gap-1.5 justify-end">
@@ -403,7 +412,7 @@ export default function Programados() {
                       className={`p-1.5 transition-colors ${p.is_active ? "text-[var(--color-text)] hover:text-amber-700" : "text-[var(--color-text)] hover:text-[var(--color-accent-strong)]"}`}>
                       <Power className="w-3.5 h-3.5" />
                     </button>
-                    <button title="Eliminar" onClick={() => window.confirm("¿Eliminar este prompt?") && remove.mutate(p.id)}
+                    <button title="Eliminar" onClick={() => window.confirm("¿Eliminar este envío programado?") && remove.mutate(p.id)}
                       className="p-1.5 text-[var(--color-text)] hover:text-red-700 transition-colors">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>

@@ -341,9 +341,9 @@ export default function Chat() {
         </div>
 
         <div className="vc-side-body">
-          <button className="vc-new" onClick={newConversation} title="Nuevo chat">
+          <button className="vc-new" onClick={newConversation} title="Nueva conversación">
             <Plus size={16} />
-            <span>Nuevo chat</span>
+            <span>Nueva conversación</span>
           </button>
 
           <nav className="vc-nav" aria-label="Navegación del chat">
@@ -416,7 +416,7 @@ export default function Chat() {
           </button>
 
           <div className="vc-header-info">
-            <div className="vc-header-title">{activeConversation?.title || "Nuevo chat"}</div>
+            <div className="vc-header-title">{activeConversation?.title || "Nueva conversación"}</div>
             <div className="vc-header-sub">Asistente de {activeTenant?.name ?? "tu empresa"}</div>
           </div>
 
@@ -432,7 +432,7 @@ export default function Chat() {
             {menuOpen && (
               <div className="vc-menu-pop">
                 <button className="vc-menu-item" onClick={newConversation}>
-                  <Plus size={14} /> Nuevo chat
+                  <Plus size={14} /> Nueva conversación
                 </button>
                 {activeId !== null && (
                   <button
@@ -569,7 +569,7 @@ export default function Chat() {
                     <div className="vc-settings-row">
                       <span className="vc-settings-label">Rol</span>
                       <span className="vc-settings-value">
-                        {role === "superadmin" ? "Super admin" : "Administrador"}
+                        {role === "superadmin" ? "Superadministrador" : "Administrador"}
                       </span>
                     </div>
                   </div>
