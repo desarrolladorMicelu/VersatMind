@@ -162,7 +162,7 @@ function ExternalExcelConfig({
   return (
     <div className="rounded-xl border border-[var(--color-border-subtle)]">
       <div className="px-4 py-2.5 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] flex items-center gap-2">
-        <FileSpreadsheet className="w-3 h-3 text-accent" />
+        <FileSpreadsheet className="w-3 h-3 text-[var(--color-accent-strong)]" />
         <span className="section-tag">EXCEL (OneDrive/SharePoint)</span>
       </div>
 
@@ -171,7 +171,7 @@ function ExternalExcelConfig({
         <div>
           <label className="label">Conexión a OneDrive</label>
           {connected ? (
-            <p className="flex items-center gap-2 text-xs text-accent">
+            <p className="flex items-center gap-2 text-xs text-[var(--color-accent-strong)]">
               <Check className="w-3.5 h-3.5" />
               OneDrive conectado
             </p>
@@ -243,7 +243,7 @@ function ExternalExcelConfig({
         {local.file_id && (
           <div>
             <label className="label">Archivo seleccionado</label>
-            <p className="flex items-center gap-2 text-xs text-accent">
+            <p className="flex items-center gap-2 text-xs text-[var(--color-accent-strong)]">
               <Check className="w-3.5 h-3.5" />
               {local.file_name || "Archivo Excel"}
             </p>
@@ -282,12 +282,12 @@ function ExternalExcelConfig({
               </button>
 
               {status === "tested" && (
-                <span className="flex items-center gap-1.5 text-xs text-accent">
+                <span className="flex items-center gap-1.5 text-xs text-[var(--color-accent-strong)]">
                   <Check className="w-3.5 h-3.5" /> Conexión exitosa
                 </span>
               )}
               {status === "discovered" && (
-                <span className="flex items-center gap-1.5 text-xs text-accent">
+                <span className="flex items-center gap-1.5 text-xs text-[var(--color-accent-strong)]">
                   <Check className="w-3.5 h-3.5" /> Hojas detectadas — se guardará con el cliente
                 </span>
               )}

@@ -44,8 +44,8 @@ export default function Login() {
         {/* Panel de marca */}
         <div className="relative hidden flex-col justify-between gap-14 border-r border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] p-10 lg:flex">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-accent/25 bg-accent/10">
-              <span className="text-sm font-bold text-accent">M</span>
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--color-accent)] bg-[var(--color-accent)]">
+              <span className="text-sm font-bold text-[var(--color-accent-contrast)]">M</span>
             </div>
             <div>
               <p className="text-sm font-semibold tracking-tight text-[var(--color-text)]">Mind</p>
@@ -70,7 +70,7 @@ export default function Login() {
                 "Consumo, integraciones y auditoría en tiempo real",
               ].map((item) => (
                 <div key={item} className="flex items-start gap-2.5">
-                  <ShieldCheck className="mt-0.5 h-4 w-4 flex-shrink-0 text-accent" />
+                  <ShieldCheck className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-accent-strong)]" />
                   <p className="text-xs leading-relaxed text-[var(--color-text-muted)]">{item}</p>
                 </div>
               ))}
@@ -86,8 +86,8 @@ export default function Login() {
         <div className="flex flex-col justify-center p-8 sm:p-10">
           <div className="mb-8 lg:hidden">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-accent/25 bg-accent/10">
-                <span className="text-sm font-bold text-accent">M</span>
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--color-accent)] bg-[var(--color-accent)]">
+                <span className="text-sm font-bold text-[var(--color-accent-contrast)]">M</span>
               </div>
               <div>
                 <p className="text-sm font-semibold tracking-tight text-[var(--color-text)]">Mind</p>

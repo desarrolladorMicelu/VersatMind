@@ -72,7 +72,7 @@ export default function Conocimiento() {
       <div className="px-5 py-6 sm:px-8 sm:py-8 space-y-6">
 
         {form && (
-          <div className="border border-accent/30 bg-[var(--color-bg-elevated)] p-6 space-y-5">
+          <div className="border border-[var(--color-accent-border)] bg-[var(--color-bg-elevated)] p-6 space-y-5">
             <p className="section-tag">{form.id ? "Editar información" : "Cargar información"}</p>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -144,11 +144,11 @@ export default function Conocimiento() {
                     <span className="text-xs text-[var(--color-text)]">{fmtDate(e.updated_at)}</span>
                     <div className="flex items-center gap-1.5">
                       <button title="Editar" onClick={() => startEdit(e)}
-                        className="p-1.5 text-[var(--color-text)] hover:text-accent transition-colors">
+                        className="p-1.5 text-[var(--color-text)] hover:text-[var(--color-accent-strong)] transition-colors">
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
                       <button title={e.is_active ? "Desactivar" : "Activar"} onClick={() => toggle.mutate(e.id)}
-                        className={`p-1.5 transition-colors ${e.is_active ? "text-[var(--color-text)] hover:text-amber-700" : "text-[var(--color-text)] hover:text-accent"}`}>
+                        className={`p-1.5 transition-colors ${e.is_active ? "text-[var(--color-text)] hover:text-amber-700" : "text-[var(--color-text)] hover:text-[var(--color-accent-strong)]"}`}>
                         <Power className="w-3.5 h-3.5" />
                       </button>
                       <button title="Eliminar" onClick={() => window.confirm("¿Eliminar esta información?") && remove.mutate(e.id)}

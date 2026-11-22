@@ -116,7 +116,7 @@ export default function Agente() {
         description={`${activeTenant?.name ?? "Cliente"} — personalidad y comportamiento del bot`}
         action={
           <div className="flex items-center gap-4">
-            {saved && <span className="text-xs text-accent uppercase tracking-[0.06em]">guardado</span>}
+            {saved && <span className="text-xs text-[var(--color-accent-strong)] uppercase tracking-[0.06em]">guardado</span>}
             {data?.updated_at && <span className="text-xs text-[var(--color-text)]">{fmtDate(data.updated_at)}</span>}
             <button className="btn-primary" onClick={() => mutation.mutate(form)} disabled={mutation.isPending}>
               {mutation.isPending ? "GUARDANDO..." : "GUARDAR →"}
@@ -170,7 +170,7 @@ export default function Agente() {
               </p>
             </div>
             <div>
-              <label className="label">Temperatura — <span className="text-accent">{form.temperature}</span></label>
+              <label className="label">Temperatura — <span className="text-[var(--color-accent-strong)]">{form.temperature}</span></label>
               <input type="range" min="0" max="2" step="0.1" className="w-full mt-2 accent-accent"
                 value={form.temperature} onChange={(e) => setForm({ ...form, temperature: parseFloat(e.target.value) })} />
               <div className="flex justify-between text-xs text-[var(--color-text)] mt-1">

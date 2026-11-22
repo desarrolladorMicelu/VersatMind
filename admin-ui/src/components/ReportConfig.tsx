@@ -70,7 +70,7 @@ function ReportConfig({
   return (
     <div className="rounded-xl border border-[var(--color-border-subtle)]">
       <div className="px-4 py-2.5 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] flex items-center gap-2">
-        <FileText className="w-3 h-3 text-accent" />
+        <FileText className="w-3 h-3 text-[var(--color-accent-strong)]" />
         <span className="section-tag">INFORMES CONTABLES</span>
         {tenantId && (
           <button
@@ -114,7 +114,7 @@ function ReportConfig({
               SUBIR LOGO
             </label>
             {local.company_logo && (
-              <span className="text-xs text-accent">✓ Logo cargado</span>
+              <span className="text-xs text-[var(--color-accent-strong)]">✓ Logo cargado</span>
             )}
           </div>
           {logoPreview && (

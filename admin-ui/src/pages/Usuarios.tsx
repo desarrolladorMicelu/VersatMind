@@ -70,7 +70,7 @@ export default function Usuarios() {
                 <div className="col-span-4 td">
                   <div className="flex items-center gap-3">
                     <div className="w-7 h-7 border border-[var(--color-border)] flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs text-accent">
+                      <span className="text-xs text-[var(--color-accent-strong)]">
                         {(u.username || String(u.user_id))[0]?.toUpperCase()}
                       </span>
                     </div>
@@ -99,7 +99,7 @@ export default function Usuarios() {
                 <div className="col-span-1 td">
                   <div className="flex items-center gap-1.5 justify-end">
                     <button onClick={() => toggle.mutate(u.chat_id)}
-                      className={`p-1.5 transition-colors ${u.is_active ? "text-[var(--color-text)] hover:text-amber-700" : "text-[var(--color-text)] hover:text-accent"}`}>
+                      className={`p-1.5 transition-colors ${u.is_active ? "text-[var(--color-text)] hover:text-amber-700" : "text-[var(--color-text)] hover:text-[var(--color-accent-strong)]"}`}>
                       {u.is_active ? <UserX className="w-3.5 h-3.5" /> : <UserCheck className="w-3.5 h-3.5" />}
                     </button>
                     <button onClick={() => window.confirm("¿Eliminar?") && remove.mutate(u.chat_id)}

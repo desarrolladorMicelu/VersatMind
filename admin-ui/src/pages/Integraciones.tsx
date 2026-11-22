@@ -22,8 +22,8 @@ function bannerFromUrl(): Banner {
 
 function ProviderIcon({ provider }: { provider: string }) {
   return provider === "outlook"
-    ? <Mail className="w-4 h-4 text-accent" />
-    : <Calendar className="w-4 h-4 text-accent" />;
+    ? <Mail className="w-4 h-4 text-[var(--color-accent-strong)]" />
+    : <Calendar className="w-4 h-4 text-[var(--color-accent-strong)]" />;
 }
 
 export default function Integraciones() {
@@ -87,7 +87,7 @@ export default function Integraciones() {
         {banner && (
           <div className={`px-4 py-3 border text-xs ${
             banner.kind === "ok"
-              ? "border-accent/40 bg-accent/10 text-accent"
+              ? "border-[var(--color-accent-border)] bg-[var(--color-accent-surface)] text-[var(--color-accent-strong)]"
               : "border-red-300 bg-red-50 text-red-700"
           }`}>
             {banner.text}
@@ -116,7 +116,7 @@ export default function Integraciones() {
                       {p.connected ? (
                         <p className="text-xs text-[var(--color-text)] truncate">
                           {p.account_email}
-                          <span className="ml-2 text-accent">● {p.status}</span>
+                          <span className="ml-2 text-[var(--color-accent-strong)]">● {p.status}</span>
                         </p>
                       ) : (
                         <p className="text-xs text-[var(--color-text)]">Sin vincular</p>
@@ -162,8 +162,8 @@ export default function Integraciones() {
                 {!p.configured && (
                   <p className="text-xs text-[var(--color-text)] mt-3 leading-relaxed">
                     El servidor no tiene las credenciales OAuth de este proveedor. Define
-                    {" "}<span className="text-accent">{p.provider === "outlook" ? "MS_CLIENT_ID / MS_CLIENT_SECRET" : "GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET"}</span>
-                    {" "}y <span className="text-accent">INTEGRATIONS_BASE_URL</span> en el entorno.
+                    {" "}<span className="text-[var(--color-accent-strong)]">{p.provider === "outlook" ? "MS_CLIENT_ID / MS_CLIENT_SECRET" : "GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET"}</span>
+                    {" "}y <span className="text-[var(--color-accent-strong)]">INTEGRATIONS_BASE_URL</span> en el entorno.
                   </p>
                 )}
                 {p.connected && p.last_error && (
@@ -177,8 +177,8 @@ export default function Integraciones() {
         <div className="rounded-xl border border-[var(--color-border-subtle)] p-5">
           <p className="section-tag mb-3">Permisos necesarios</p>
           <p className="text-xs text-[var(--color-text)] leading-relaxed">
-            Asigna a los roles los permisos <span className="text-accent">READ_MAIL</span> y
-            {" "}<span className="text-accent">READ_CALENDAR</span> en la sección Roles para que los
+            Asigna a los roles los permisos <span className="text-[var(--color-accent-strong)]">READ_MAIL</span> y
+            {" "}<span className="text-[var(--color-accent-strong)]">READ_CALENDAR</span> en la sección Roles para que los
             usuarios puedan consultar correo y agenda.
           </p>
         </div>

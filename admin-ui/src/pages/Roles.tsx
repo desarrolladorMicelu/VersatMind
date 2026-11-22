@@ -76,7 +76,7 @@ export default function Roles() {
       <div className="px-5 py-6 sm:px-8 sm:py-8 space-y-4">
 
         {creating && (
-          <div className="border border-accent/20 bg-[var(--color-bg-elevated)] p-5">
+          <div className="border border-[var(--color-accent-border)] bg-[var(--color-bg-elevated)] p-5">
             <p className="section-tag mb-4">NUEVO ROL</p>
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
@@ -114,7 +114,7 @@ export default function Roles() {
                   return (
                     <button key={perm} onClick={() => toggle(role, perm)}
                       className={`text-xs uppercase tracking-[0.06em] px-3 py-1.5 border transition-all ${
-                        active ? "border-accent text-accent bg-accent/5" : "border-[var(--color-border)] text-[var(--color-text)] hover:border-[var(--color-text-subtle)]"
+                        active ? "border-accent text-[var(--color-accent-strong)] bg-[var(--color-accent-surface)]" : "border-[var(--color-border)] text-[var(--color-text)] hover:border-[var(--color-text-subtle)]"
                       }`}>
                       {active ? "✓ " : ""}{PERM_LABELS[perm] ?? perm}
                     </button>

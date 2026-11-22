@@ -20,6 +20,7 @@
     "Liberation Mono", "Courier New", monospace;
 
   /* Escala de tipos (rem, base 16px) */
+  --text-3xs: 0.625rem;   /* 10px — badges y marcas muy pequeñas */
   --text-2xs: 0.8125rem;  /* 13px — metadatos densos */
   --text-xs: 0.875rem;    /* 14px — etiquetas y ayudas */
   --text-sm: 1rem;        /* 16px — cuerpo por defecto */
@@ -74,11 +75,13 @@
   --color-text: #202124;
   --color-text-muted: #4f5155;
   --color-text-subtle: #5f6267;
-  --color-accent: #0b6b63;        /* único acento */
-  --color-accent-strong: #084f4a;
+  --color-accent: #0a4f46;        /* único acento: verde profundo */
+  --color-accent-strong: #073b34;
   --color-accent-contrast: #ffffff;
-  --color-accent-soft: rgba(11, 107, 99, 0.12);
-  --color-accent-border: rgba(11, 107, 99, 0.28);
+  --color-accent-soft: rgba(10, 79, 70, 0.1);
+  --color-accent-border: rgba(10, 79, 70, 0.3);
+  --color-accent-surface: #e2e9e7;
+  --color-accent-surface-strong: #d1dfdb;
   --color-danger: #a61b14;
   --color-danger-soft: #f7e6e4;
   --color-danger-border: #dcb8b3;

@@ -58,7 +58,7 @@ export default function Historial() {
             ) : users.map((u: any) => (
               <button key={u.chat_id} onClick={() => setSelectedChatId(u.chat_id)}
                 className={`w-full text-left px-4 py-3 border-b border-[var(--color-border-subtle)] transition-colors ${
-                  selectedChatId === u.chat_id ? "bg-accent/5 border-l-2 border-l-accent" : "hover:bg-[var(--color-bg-elevated)]"
+                  selectedChatId === u.chat_id ? "bg-[var(--color-accent-surface)] border-l-2 border-l-accent" : "hover:bg-[var(--color-bg-elevated)]"
                 }`}>
                 <p className="text-xs font-medium text-[var(--color-text)]">{u.username || "—"}</p>
                 <p className="text-xs text-[var(--color-text)]">{u.chat_id}</p>

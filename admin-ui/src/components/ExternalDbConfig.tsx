@@ -132,7 +132,7 @@ function ExternalDbConfig({
   return (
     <div className="rounded-xl border border-[var(--color-border-subtle)]">
       <div className="px-4 py-2.5 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] flex items-center gap-2">
-        <Database className="w-3 h-3 text-accent" />
+        <Database className="w-3 h-3 text-[var(--color-accent-strong)]" />
         <span className="section-tag">BASE DE DATOS EXTERNA</span>
       </div>
 
@@ -211,7 +211,7 @@ function ExternalDbConfig({
               LISTAR TABLAS
             </button>
             {local.tables && local.tables.length > 0 && (
-              <span className="text-xs text-accent">
+              <span className="text-xs text-[var(--color-accent-strong)]">
                 {local.tables.length} seleccionada(s)
               </span>
             )}
@@ -225,7 +225,7 @@ function ExternalDbConfig({
                   <label
                     key={t}
                     className={`flex items-center gap-2 text-xs px-2 py-1 cursor-pointer hover:bg-[var(--color-bg)] ${
-                      checked ? "text-accent" : "text-[var(--color-text)]"
+                      checked ? "text-[var(--color-accent-strong)]" : "text-[var(--color-text)]"
                     }`}
                   >
                     <input
@@ -303,12 +303,12 @@ function ExternalDbConfig({
               </button>
 
               {status === "tested" && (
-                <span className="flex items-center gap-1.5 text-xs text-accent">
+                <span className="flex items-center gap-1.5 text-xs text-[var(--color-accent-strong)]">
                   <Check className="w-3.5 h-3.5" /> Conexión exitosa
                 </span>
               )}
               {status === "discovered" && (
-                <span className="flex items-center gap-1.5 text-xs text-accent">
+                <span className="flex items-center gap-1.5 text-xs text-[var(--color-accent-strong)]">
                   <Check className="w-3.5 h-3.5" /> Esquema detectado — se guardará con el cliente
                 </span>
               )}

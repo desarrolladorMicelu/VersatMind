@@ -19,7 +19,7 @@ function Kpi({ label, value, accent, danger }: { label: string; value: string; a
   return (
     <div className="bg-[var(--color-bg)] p-6">
       <p className="text-xs uppercase tracking-[0.06em] text-[var(--color-text)] mb-3">{label}</p>
-      <p className={`text-3xl font-bold ${danger ? "text-red-700" : accent ? "text-accent" : "text-[var(--color-text)]"}`}>{value}</p>
+      <p className={`text-3xl font-bold ${danger ? "text-red-700" : accent ? "text-[var(--color-accent-strong)]" : "text-[var(--color-text)]"}`}>{value}</p>
     </div>
   );
 }
@@ -96,7 +96,7 @@ function GlobalConsumo({ onSelect }: { onSelect: (row: UsageGlobalRow) => void }
                     </div>
                   </div>
                   <div className="col-span-2 td text-xs text-[var(--color-text)]">{fmtNum(r.total_tokens)}</div>
-                  <div className="col-span-2 td text-xs text-accent">{fmtUsd(r.total_cost_usd)}</div>
+                  <div className="col-span-2 td text-xs text-[var(--color-accent-strong)]">{fmtUsd(r.total_cost_usd)}</div>
                   <div className="col-span-2 td text-xs text-[var(--color-text)]">
                     {fmtNum(r.users_count)}
                     {r.paused_count > 0 && <span className="text-red-700 ml-2">({r.paused_count} paus.)</span>}
@@ -182,7 +182,7 @@ function SettingsForm({ tenantId, config }: { tenantId: number; config: UsageSet
           Guardar
         </button>
       </div>
-      {save.isSuccess && <p className="text-xs text-accent mt-3">Configuración guardada.</p>}
+      {save.isSuccess && <p className="text-xs text-[var(--color-accent-strong)] mt-3">Configuración guardada.</p>}
       {save.isError && <p className="text-xs text-red-700 mt-3">No se pudo guardar.</p>}
     </div>
   );
@@ -304,7 +304,7 @@ function TenantConsumo({ tenantId }: { tenantId: number }) {
                 key={t}
                 onClick={() => setTab(t)}
                 className={`text-xs uppercase tracking-[0.06em] px-3 py-2 border transition-colors ${
-                  tab === t ? "border-accent text-accent" : "border-[var(--color-border)] text-[var(--color-text)] hover:border-[var(--color-border)]"
+                  tab === t ? "border-accent text-[var(--color-accent-strong)]" : "border-[var(--color-border)] text-[var(--color-text)] hover:border-[var(--color-border)]"
                 }`}
               >
                 {t}
@@ -339,7 +339,7 @@ function TenantConsumo({ tenantId }: { tenantId: number }) {
                       <p className="text-xs text-[var(--color-text)]">chat {u.chat_id} · {u.role_name}</p>
                     </div>
                     <div className="col-span-2 td text-xs text-[var(--color-text)]">{fmtNum(u.total_tokens)}</div>
-                    <div className={`col-span-2 td text-xs ${u.over_threshold ? "text-red-700" : "text-accent"}`}>
+                    <div className={`col-span-2 td text-xs ${u.over_threshold ? "text-red-700" : "text-[var(--color-accent-strong)]"}`}>
                       {fmtUsd(u.cost_usd)}
                     </div>
                     <div className="col-span-3 td">
@@ -355,7 +355,7 @@ function TenantConsumo({ tenantId }: { tenantId: number }) {
                         {u.is_paused ? (
                           <button
                             onClick={() => reanudar.mutate(u.chat_id)}
-                            className="flex items-center gap-1 text-xs uppercase tracking-[0.06em] text-accent border border-accent/30 px-2 py-1 hover:bg-accent/10 transition-colors"
+                            className="flex items-center gap-1 text-xs uppercase tracking-[0.06em] text-[var(--color-accent-strong)] border border-[var(--color-accent-border)] px-2 py-1 hover:bg-[var(--color-accent-surface)] transition-colors"
                           >
                             <Play className="w-3 h-3" /> Reanudar
                           </button>
@@ -407,7 +407,7 @@ function TenantConsumo({ tenantId }: { tenantId: number }) {
                   <div className="col-span-2 td text-xs text-[var(--color-text)]">{h.username || h.chat_id || "—"}</div>
                   <div className="col-span-2 td text-xs text-[var(--color-text)] truncate">{h.model || "—"}</div>
                   <div className="col-span-2 td text-xs text-[var(--color-text)]">{fmtNum(h.total_tokens)}</div>
-                  <div className="col-span-2 td text-xs text-accent">{fmtUsd(h.cost_usd)}</div>
+                  <div className="col-span-2 td text-xs text-[var(--color-accent-strong)]">{fmtUsd(h.cost_usd)}</div>
                   <div className="col-span-1 td">
                     <span className={`badge ${h.source === "scheduler" ? "badge-amber" : "badge-slate"}`}>{h.source}</span>
                   </div>
@@ -444,14 +444,14 @@ function TenantConsumo({ tenantId }: { tenantId: number }) {
                   <div className="col-span-2 td">
                     <span className={`badge ${a.status === "active" ? "badge-red" : "badge-slate"}`}>{a.status}</span>
                     {a.notified
-                      ? <Bell className="w-3 h-3 text-accent inline ml-2" />
+                      ? <Bell className="w-3 h-3 text-[var(--color-accent-strong)] inline ml-2" />
                       : <BellOff className="w-3 h-3 text-[var(--color-text)] inline ml-2" />}
                   </div>
                   <div className="col-span-1 td">
                     {a.status === "active" && (
                       <button
                         onClick={() => reconocer.mutate(a.id)}
-                        className="flex items-center gap-1 text-xs uppercase tracking-[0.06em] text-accent hover:underline"
+                        className="flex items-center gap-1 text-xs uppercase tracking-[0.06em] text-[var(--color-accent-strong)] hover:underline"
                       >
                         <Check className="w-3 h-3" /> OK
                       </button>

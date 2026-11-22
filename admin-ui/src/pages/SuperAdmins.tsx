@@ -45,8 +45,8 @@ function SuperAdminModal({
 
         <div className="flex items-start justify-between px-6 py-5 border-b border-[var(--color-border-subtle)] flex-shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 border border-accent/40 bg-accent/5 flex items-center justify-center">
-              {isCreate ? <Fingerprint className="w-4 h-4 text-accent" /> : <KeyRound className="w-4 h-4 text-accent" />}
+            <div className="w-9 h-9 border border-[var(--color-accent-border)] bg-[var(--color-accent-surface)] flex items-center justify-center">
+              {isCreate ? <Fingerprint className="w-4 h-4 text-[var(--color-accent-strong)]" /> : <KeyRound className="w-4 h-4 text-[var(--color-accent-strong)]" />}
             </div>
             <div>
               <p className="section-tag mb-1">
@@ -177,17 +177,17 @@ function AccountRow({
       <div className="col-span-4 td">
         <div className="flex items-center gap-3">
           <div className={`w-9 h-9 border flex items-center justify-center flex-shrink-0 ${
-            isEnv ? "border-accent bg-accent/10" : "border-[var(--color-border)] bg-[var(--color-bg-elevated)]"
+            isEnv ? "border-accent bg-[var(--color-accent-surface)]" : "border-[var(--color-border)] bg-[var(--color-bg-elevated)]"
           }`}>
             {isEnv
-              ? <Crown className="w-4 h-4 text-accent" />
-              : <span className="text-xs text-accent">{initials}</span>}
+              ? <Crown className="w-4 h-4 text-[var(--color-accent-strong)]" />
+              : <span className="text-xs text-[var(--color-accent-strong)]">{initials}</span>}
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <p className="text-xs font-bold text-[var(--color-text)] truncate">{account.username}</p>
               {account.is_self && (
-                <span className="text-xs px-1.5 py-0.5 border border-accent/30 text-accent uppercase tracking-[0.06em]">
+                <span className="rounded-full border border-[var(--color-accent-border)] px-1.5 py-0.5 text-3xs font-semibold uppercase leading-none tracking-[0.04em] text-[var(--color-accent-strong)]">
                   TÚ
                 </span>
               )}
@@ -236,7 +236,7 @@ function AccountRow({
           <div className="flex items-center gap-1 justify-end">
             <button
               onClick={() => onResetPassword(account)}
-              className="p-1.5 text-[var(--color-text-muted)] hover:text-accent transition-colors"
+              className="p-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-accent-strong)] transition-colors"
               title="Restablecer contraseña"
             >
               <KeyRound className="w-3.5 h-3.5" />
@@ -245,7 +245,7 @@ function AccountRow({
               onClick={() => onToggle(account)}
               disabled={account.is_self}
               className={`p-1.5 transition-colors disabled:opacity-25 disabled:cursor-not-allowed ${
-                account.is_active ? "text-[var(--color-text-muted)] hover:text-amber-700" : "text-[var(--color-text-muted)] hover:text-accent"
+                account.is_active ? "text-[var(--color-text-muted)] hover:text-amber-700" : "text-[var(--color-text-muted)] hover:text-[var(--color-accent-strong)]"
               }`}
               title={account.is_self ? "No puedes desactivar tu propia cuenta" : account.is_active ? "Desactivar" : "Activar"}
             >
@@ -355,7 +355,7 @@ export default function SuperAdmins() {
       <div className="px-5 py-6 sm:px-8 sm:py-8 space-y-6">
 
         {/* Hero de seguridad */}
-        <div className="relative overflow-hidden rounded-2xl border border-accent/20 bg-[var(--color-surface)]">
+        <div className="relative overflow-hidden rounded-2xl border border-[var(--color-accent-border)] bg-[var(--color-surface)]">
           <div
             className="pointer-events-none absolute inset-0 opacity-60"
             style={{
@@ -368,8 +368,8 @@ export default function SuperAdmins() {
           />
           <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-6 px-6 py-6">
             <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl border border-accent/40 bg-accent/10">
-                <ShieldCheck className="w-6 h-6 text-accent" />
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl border border-[var(--color-accent)] bg-[var(--color-accent)]">
+                <ShieldCheck className="w-6 h-6 text-[var(--color-accent-contrast)]" />
               </div>
               <div className="max-w-xl">
                 <p className="section-tag mb-1.5">ZONA RESTRINGIDA</p>
@@ -379,7 +379,7 @@ export default function SuperAdmins() {
                 <p className="text-xs text-[var(--color-text-muted)] mt-1.5 leading-relaxed">
                   Estas cuentas pueden ver y gestionar todos los clientes, sus admins,
                   el agente y la configuración global. Solo el super admin raíz
-                  (<span className="text-accent">.env</span>) y los super admins
+                  (<span className="text-[var(--color-accent-strong)]">.env</span>) y los super admins
                   de panel pueden entrar aquí.
                 </p>
               </div>
@@ -392,7 +392,7 @@ export default function SuperAdmins() {
               </div>
               <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] px-4 py-3 min-w-[92px]">
                 <p className="text-xs uppercase tracking-[0.06em] text-[var(--color-text-subtle)]">Activas</p>
-                <p className="text-xl font-bold text-accent mt-1">{activeCount}</p>
+                <p className="text-xl font-bold text-[var(--color-accent-strong)] mt-1">{activeCount}</p>
               </div>
               <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] px-4 py-3 min-w-[92px]">
                 <p className="text-xs uppercase tracking-[0.06em] text-[var(--color-text-subtle)]">De panel</p>

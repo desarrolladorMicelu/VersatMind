@@ -63,7 +63,7 @@ export default function Tareas() {
                 </div>
                 <div className="col-span-2 td text-xs text-[var(--color-text)]">{t.chat_id}</div>
                 <div className="col-span-2 td">
-                  <code className="text-xs text-accent bg-accent/5 px-2 py-0.5 border border-accent/10">
+                  <code className="text-xs text-[var(--color-accent-strong)] bg-[var(--color-accent-surface)] px-2 py-0.5 border border-[var(--color-accent-border)]">
                     {t.cron_expression}
                   </code>
                 </div>
@@ -76,7 +76,7 @@ export default function Tareas() {
                 <div className="col-span-1 td">
                   <div className="flex items-center gap-1.5 justify-end">
                     <button onClick={() => toggle.mutate(t.id)}
-                      className={`p-1.5 transition-colors ${t.status === "active" ? "text-[var(--color-text)] hover:text-amber-700" : "text-[var(--color-text)] hover:text-accent"}`}>
+                      className={`p-1.5 transition-colors ${t.status === "active" ? "text-[var(--color-text)] hover:text-amber-700" : "text-[var(--color-text)] hover:text-[var(--color-accent-strong)]"}`}>
                       <Power className="w-3.5 h-3.5" />
                     </button>
                     <button onClick={() => window.confirm("¿Eliminar?") && remove.mutate(t.id)}

@@ -120,7 +120,7 @@ function ExternalSheetsConfig({
   return (
     <div className="rounded-xl border border-[var(--color-border-subtle)]">
       <div className="px-4 py-2.5 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] flex items-center gap-2">
-        <FileSpreadsheet className="w-3 h-3 text-accent" />
+        <FileSpreadsheet className="w-3 h-3 text-[var(--color-accent-strong)]" />
         <span className="section-tag">GOOGLE SHEETS</span>
       </div>
 
@@ -184,12 +184,12 @@ function ExternalSheetsConfig({
               </button>
 
               {status === "tested" && (
-                <span className="flex items-center gap-1.5 text-xs text-accent">
+                <span className="flex items-center gap-1.5 text-xs text-[var(--color-accent-strong)]">
                   <Check className="w-3.5 h-3.5" /> Conexión exitosa
                 </span>
               )}
               {status === "discovered" && (
-                <span className="flex items-center gap-1.5 text-xs text-accent">
+                <span className="flex items-center gap-1.5 text-xs text-[var(--color-accent-strong)]">
                   <Check className="w-3.5 h-3.5" /> Hojas detectadas — se guardará con el cliente
                 </span>
               )}

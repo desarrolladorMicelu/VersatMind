@@ -87,7 +87,7 @@ export default function Auditoria() {
                 </div>
                 <div className="col-span-2 td">
                   {log.status && (
-                    <span className={`text-xs uppercase tracking-[0.06em] ${log.status === "success" ? "text-accent" : "text-red-700"}`}>
+                    <span className={`text-xs uppercase tracking-[0.06em] ${log.status === "success" ? "text-[var(--color-accent-strong)]" : "text-red-700"}`}>
                       {log.status}
                     </span>
                   )}

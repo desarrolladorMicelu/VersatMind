@@ -71,7 +71,7 @@ export default function Accesos() {
                   {r.status === "pending" ? (
                     <div className="flex items-center gap-2">
                       <button onClick={() => aprobar.mutate(r.chat_id)}
-                        className="flex items-center gap-1 text-xs uppercase tracking-[0.06em] text-accent border border-accent/30 px-2 py-1 hover:bg-accent/10 transition-colors">
+                        className="flex items-center gap-1 text-xs uppercase tracking-[0.06em] text-[var(--color-accent-strong)] border border-[var(--color-accent-border)] px-2 py-1 hover:bg-[var(--color-accent-surface)] transition-colors">
                         <Check className="w-3 h-3" /> OK
                       </button>
                       <button onClick={() => rechazar.mutate(r.chat_id)}

@@ -318,7 +318,7 @@ export default function Reuniones() {
           <div className="w-full max-w-md border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-6 space-y-5">
             <div className="flex items-center justify-between">
               <p className="section-tag">Nueva reunión</p>
-              <button className="text-[var(--color-text)] hover:text-accent" onClick={() => { setShowNew(false); setCreateError(null); }}>
+              <button className="text-[var(--color-text)] hover:text-[var(--color-accent-strong)]" onClick={() => { setShowNew(false); setCreateError(null); }}>
                 <X className="w-4 h-4" />
               </button>
             </div>

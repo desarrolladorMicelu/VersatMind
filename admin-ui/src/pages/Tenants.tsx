@@ -112,7 +112,7 @@ function TenantModal({
           {/* Telegram */}
           <div className="rounded-xl border border-[var(--color-border-subtle)]">
             <div className="px-4 py-2.5 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] flex items-center gap-2">
-              <Bot className="w-3 h-3 text-accent" />
+              <Bot className="w-3 h-3 text-[var(--color-accent-strong)]" />
               <span className="section-tag">TELEGRAM</span>
             </div>
             <div className="p-4 space-y-4">
@@ -161,7 +161,7 @@ function TenantModal({
           {/* SQL Server */}
           <div className="rounded-xl border border-[var(--color-border-subtle)]">
             <div className="px-4 py-2.5 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] flex items-center gap-2">
-              <Database className="w-3 h-3 text-accent" />
+              <Database className="w-3 h-3 text-[var(--color-accent-strong)]" />
               <span className="section-tag">SQL SERVER OFIMA</span>
             </div>
             <div className="p-4 grid grid-cols-2 gap-4">
@@ -319,7 +319,7 @@ function TenantAdmins({ tenantId, tenantName }: { tenantId: number; tenantName: 
       <div className="px-6 py-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <KeyRound className="w-3.5 h-3.5 text-accent" />
+            <KeyRound className="w-3.5 h-3.5 text-[var(--color-accent-strong)]" />
             <span className="section-tag">ACCESOS AL PANEL — {tenantName}</span>
           </div>
           <button
@@ -332,7 +332,7 @@ function TenantAdmins({ tenantId, tenantName }: { tenantId: number; tenantName: 
 
         {/* Formulario nueva cuenta */}
         {creating && (
-          <div className="mb-4 border border-accent/20 bg-[var(--color-bg-elevated)] p-4 flex flex-wrap gap-3 items-end">
+          <div className="mb-4 border border-[var(--color-accent-border)] bg-[var(--color-bg-elevated)] p-4 flex flex-wrap gap-3 items-end">
             <div>
               <label className="label">Usuario</label>
               <input
@@ -399,7 +399,7 @@ function TenantAdmins({ tenantId, tenantName }: { tenantId: number; tenantName: 
                 <div className="col-span-4 td">
                   <div className="flex items-center gap-2">
                     <div className="w-6 h-6 border border-[var(--color-border)] flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs text-accent">{a.username[0]?.toUpperCase()}</span>
+                      <span className="text-xs text-[var(--color-accent-strong)]">{a.username[0]?.toUpperCase()}</span>
                     </div>
                     <span className="text-xs text-[var(--color-text)]">{a.username}</span>
                   </div>
@@ -416,7 +416,7 @@ function TenantAdmins({ tenantId, tenantName }: { tenantId: number; tenantName: 
                   <div className="flex items-center gap-1 justify-end">
                     <button
                       onClick={() => toggleAdmin.mutate({ adminId: a.id, is_active: !a.is_active })}
-                      className={`p-1.5 transition-colors ${a.is_active ? "text-[var(--color-text-muted)] hover:text-amber-700" : "text-[var(--color-text-muted)] hover:text-accent"}`}
+                      className={`p-1.5 transition-colors ${a.is_active ? "text-[var(--color-text-muted)] hover:text-amber-700" : "text-[var(--color-text-muted)] hover:text-[var(--color-accent-strong)]"}`}
                       title={a.is_active ? "Desactivar" : "Activar"}
                     >
                       <Power className="w-3.5 h-3.5" />
@@ -615,7 +615,7 @@ password: "", // nunca pre-rellenamos la contraseña
               <div className="col-span-3 td">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 border border-[var(--color-border)] flex items-center justify-center flex-shrink-0">
-                    <span className="text-xs text-accent">
+                    <span className="text-xs text-[var(--color-accent-strong)]">
                       {t.name[0]?.toUpperCase()}
                     </span>
                   </div>
@@ -652,19 +652,19 @@ password: "", // nunca pre-rellenamos la contraseña
                     <p className="text-xs text-[var(--color-text)]">
                       {t.external_db_engine ?? "postgresql"}
                     </p>
-                    <p className="text-xs text-accent">✓ DB configurada</p>
+                    <p className="text-xs text-[var(--color-accent-strong)]">✓ DB configurada</p>
                   </div>
                 ) : (
                   <span className="text-xs text-[var(--color-text)]">— no configurada</span>
                 )}
                 {t.external_alegra_configured && (
-                  <p className="text-xs text-accent mt-1">✓ Alegra</p>
+                  <p className="text-xs text-[var(--color-accent-strong)] mt-1">✓ Alegra</p>
                 )}
                 {t.external_excel_configured && (
-                  <p className="text-xs text-accent mt-1">✓ Excel</p>
+                  <p className="text-xs text-[var(--color-accent-strong)] mt-1">✓ Excel</p>
                 )}
                 {t.report_config_configured && (
-                  <p className="text-xs text-accent mt-1">✓ Informes</p>
+                  <p className="text-xs text-[var(--color-accent-strong)] mt-1">✓ Informes</p>
                 )}
               </div>
 
@@ -680,14 +680,14 @@ password: "", // nunca pre-rellenamos la contraseña
                 <div className="flex items-center gap-1 justify-end">
                   <button
                     onClick={() => setExpandedId(expandedId === t.id ? null : t.id)}
-                    className={`p-1.5 transition-colors ${expandedId === t.id ? "text-accent" : "text-[var(--color-text)] hover:text-accent"}`}
+                    className={`p-1.5 transition-colors ${expandedId === t.id ? "text-[var(--color-accent-strong)]" : "text-[var(--color-text)] hover:text-[var(--color-accent-strong)]"}`}
                     title="Gestionar accesos al panel"
                   >
                     <Users className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => openEdit(t)}
-                    className="p-1.5 text-[var(--color-text)] hover:text-accent transition-colors"
+                    className="p-1.5 text-[var(--color-text)] hover:text-[var(--color-accent-strong)] transition-colors"
                     title="Editar"
                   >
                     <Pencil className="w-3.5 h-3.5" />
@@ -697,7 +697,7 @@ password: "", // nunca pre-rellenamos la contraseña
                     className={`p-1.5 transition-colors ${
                       t.is_active
                         ? "text-[var(--color-text)] hover:text-amber-700"
-                        : "text-[var(--color-text)] hover:text-accent"
+                        : "text-[var(--color-text)] hover:text-[var(--color-accent-strong)]"
                     }`}
                     title={t.is_active ? "Desactivar" : "Activar"}
                   >

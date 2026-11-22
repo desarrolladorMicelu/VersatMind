@@ -206,7 +206,7 @@ export default function Programados() {
       <div className="px-5 py-6 sm:px-8 sm:py-8 space-y-6">
 
         {form && (
-          <div className="border border-accent/30 bg-[var(--color-bg-elevated)] p-6 space-y-5">
+          <div className="border border-[var(--color-accent-border)] bg-[var(--color-bg-elevated)] p-6 space-y-5">
             <p className="section-tag">{form.id ? "Editar prompt" : "Nuevo prompt"}</p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -318,7 +318,7 @@ export default function Programados() {
                   <input className="input" value={form.cron}
                     placeholder="0 8 * * 1-5"
                     onChange={(e) => setForm({ ...form, cron: e.target.value })} />
-                  <p className="text-xs text-[var(--color-text)] mt-1">Ej: <span className="text-accent">0 8 * * *</span> (todos los días 8:00), <span className="text-accent">30 7 * * mon</span> (lunes 7:30)</p>
+                  <p className="text-xs text-[var(--color-text)] mt-1">Ej: <span className="text-[var(--color-accent-strong)]">0 8 * * *</span> (todos los días 8:00), <span className="text-[var(--color-accent-strong)]">30 7 * * mon</span> (lunes 7:30)</p>
                 </div>
               )}
             </div>
@@ -376,12 +376,12 @@ export default function Programados() {
                 </div>
                 <div className="col-span-2 td">
                   <p className="text-xs text-[var(--color-text)]"><FrequencyLabel p={p} /></p>
-                  <code className="text-xs text-accent">{p.cron_expression}</code>
+                  <code className="text-xs text-[var(--color-accent-strong)]">{p.cron_expression}</code>
                 </div>
                 <div className="col-span-2 td text-xs text-[var(--color-text)]">
                   {p.next_run_at ? fmtDate(p.next_run_at) : "—"}
                   {p.last_status && (
-                    <span className={`block text-xs ${p.last_status === "success" ? "text-accent" : "text-red-700"}`}>
+                    <span className={`block text-xs ${p.last_status === "success" ? "text-[var(--color-accent-strong)]" : "text-red-700"}`}>
                       última: {p.last_status}
                     </span>
                   )}
@@ -392,15 +392,15 @@ export default function Programados() {
                 <div className="col-span-2 td">
                   <div className="flex items-center gap-1.5 justify-end">
                     <button title="Ejecutar ahora" onClick={() => runNow.mutate(p.id)}
-                      className="p-1.5 text-[var(--color-text)] hover:text-accent transition-colors">
+                      className="p-1.5 text-[var(--color-text)] hover:text-[var(--color-accent-strong)] transition-colors">
                       <Play className="w-3.5 h-3.5" />
                     </button>
                     <button title="Editar" onClick={() => openEdit(p)}
-                      className="p-1.5 text-[var(--color-text)] hover:text-accent transition-colors">
+                      className="p-1.5 text-[var(--color-text)] hover:text-[var(--color-accent-strong)] transition-colors">
                       <Pencil className="w-3.5 h-3.5" />
                     </button>
                     <button title={p.is_active ? "Desactivar" : "Activar"} onClick={() => toggle.mutate(p.id)}
-                      className={`p-1.5 transition-colors ${p.is_active ? "text-[var(--color-text)] hover:text-amber-700" : "text-[var(--color-text)] hover:text-accent"}`}>
+                      className={`p-1.5 transition-colors ${p.is_active ? "text-[var(--color-text)] hover:text-amber-700" : "text-[var(--color-text)] hover:text-[var(--color-accent-strong)]"}`}>
                       <Power className="w-3.5 h-3.5" />
                     </button>
                     <button title="Eliminar" onClick={() => window.confirm("¿Eliminar este prompt?") && remove.mutate(p.id)}

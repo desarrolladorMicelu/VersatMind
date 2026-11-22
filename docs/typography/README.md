@@ -63,12 +63,15 @@ Se reemplazó el negro y luego el crema por una paleta gris neutra de tono medio
 | `--color-text` | `#202124` | texto principal |
 | `--color-text-muted` | `#4f5155` | texto secundario |
 | `--color-text-subtle` | `#5f6267` | metadatos |
-| `--color-accent` | `#0b6b63` | único acento |
+| `--color-accent` | `#0a4f46` | único acento, verde profundo |
+| `--color-accent-strong` | `#073b34` | texto/iconos sobre fondos claros |
+| `--color-accent-surface` | `#e2e9e7` | fondos suaves de acento |
 | `--color-danger` | `#a61b14` | errores y acciones destructivas |
 
 - Sin negro absoluto ni blanco: grises neutros con profundidad por capas.
 - `color-scheme: light` para controles nativos y scrollbars coherentes.
-- Botones primarios con texto blanco sobre el acento; texto principal oscuro sobre gris.
+- Botones primarios, logos y marcas con verde profundo y texto blanco.
+- Badges y estados activos usan texto verde oscuro sobre superficies grises, sin verdes fluorescentes.
 - Contraste revisado: cuerpo oscuro sobre gris, secundarios por encima de 4.5:1.
 
 Capturas de este cambio:

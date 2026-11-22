@@ -51,7 +51,7 @@ export default function Dashboard() {
                   <p className="text-2xs font-semibold uppercase tracking-[0.07em] text-[var(--color-text-subtle)]">
                     {label}
                   </p>
-                  <p className={`mt-2.5 text-3xl font-semibold tabular-nums tracking-tight ${accent ? "text-accent" : "text-[var(--color-text)]"}`}>
+                  <p className={`mt-2.5 text-3xl font-semibold tabular-nums tracking-tight ${accent ? "text-[var(--color-accent-strong)]" : "text-[var(--color-text)]"}`}>
                     {value ?? "—"}
                   </p>
                 </div>
@@ -84,7 +84,7 @@ export default function Dashboard() {
                         </div>
                         <div className="col-span-2 td">
                           {log.status && (
-                            <span className={`text-2xs font-semibold uppercase tracking-[0.05em] ${log.status === "success" ? "text-accent" : "text-red-700"}`}>
+                            <span className={`text-2xs font-semibold uppercase tracking-[0.05em] ${log.status === "success" ? "text-[var(--color-accent-strong)]" : "text-red-700"}`}>
                               {log.status}
                             </span>
                           )}

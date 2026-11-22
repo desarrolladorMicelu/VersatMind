@@ -54,9 +54,9 @@
   display: grid;
   place-items: center;
   border-radius: var(--radius-md);
-  border: 1px solid var(--color-accent-border);
-  background: var(--color-accent-soft);
-  color: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
   font-size: 13px;
   font-weight: var(--weight-bold);
 }
@@ -132,7 +132,7 @@
   border-color: var(--color-accent);
   background: var(--color-surface-2);
 }
-.vc-new svg { flex-shrink: 0; color: var(--color-accent); }
+.vc-new svg { flex-shrink: 0; color: var(--color-accent-strong); }
 
 .vc-nav {
   display: flex;
@@ -163,8 +163,9 @@
   color: var(--color-text);
 }
 .vc-nav-item.active {
-  background: var(--color-accent-soft);
-  color: var(--color-accent);
+  background: var(--color-surface);
+  color: var(--color-accent-strong);
+  box-shadow: inset 2px 0 0 var(--color-accent);
 }
 .vc-nav-item:disabled {
   cursor: default;
@@ -246,7 +247,7 @@
 .vc-conv.active { background: var(--color-surface-2); color: var(--color-text); }
 
 .vc-conv-icon { flex-shrink: 0; color: var(--color-text-subtle); }
-.vc-conv.active .vc-conv-icon { color: var(--color-accent); }
+.vc-conv.active .vc-conv-icon { color: var(--color-accent-strong); }
 .vc-conv-text { min-width: 0; flex: 1; }
 .vc-conv-title {
   font-size: var(--text-xs);
@@ -500,10 +501,10 @@
   display: grid;
   place-items: center;
   margin-top: 1px;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-accent);
   border-radius: var(--radius-sm);
-  background: var(--color-surface);
-  color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
   font-size: 12px;
   font-weight: var(--weight-semibold);
 }
@@ -538,10 +539,10 @@
   width: 40px;
   height: 40px;
   margin-bottom: var(--space-4);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-accent);
   border-radius: var(--radius-md);
-  background: var(--color-surface);
-  color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
   font-size: 15px;
   font-weight: var(--weight-bold);
 }
@@ -698,7 +699,7 @@
   line-height: 1.5;
 }
 .vc-tool.done { color: var(--color-text-muted); }
-.vc-tool.done svg { color: var(--color-accent); }
+.vc-tool.done svg { color: var(--color-accent-strong); }
 .vc-spin {
   width: 10px;
   height: 10px;
@@ -946,4 +947,4 @@
   font-size: var(--text-xs);
   line-height: 1.55;
 }
-.vc-project-note svg { flex-shrink: 0; color: var(--color-accent); margin-top: 1px; }
+.vc-project-note svg { flex-shrink: 0; color: var(--color-accent-strong); margin-top: 1px; }

@@ -34,7 +34,7 @@ function Section({ title, items }: { title: string; items?: string[] }) {
       <ul className="space-y-1.5">
         {items.map((it, i) => (
           <li key={i} className="flex gap-2 text-sm text-[var(--color-text)] leading-relaxed">
-            <span className="text-accent mt-1.5">•</span>
+            <span className="text-[var(--color-accent-strong)] mt-1.5">•</span>
             <span>{it}</span>
           </li>
         ))}
@@ -131,7 +131,7 @@ export default function ReunionDetalle() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] p-5 space-y-4">
                   <div className="flex items-center gap-2">
-                    <ListChecks className="w-4 h-4 text-accent" />
+                    <ListChecks className="w-4 h-4 text-[var(--color-accent-strong)]" />
                     <h3 className="section-tag">Resumen estructurado</h3>
                   </div>
                   {summary.resumen_general && (
@@ -148,11 +148,11 @@ export default function ReunionDetalle() {
                       <ul className="space-y-2">
                         {(summary.tareas ?? []).map((t, i) => (
                           <li key={i} className="flex gap-2 text-sm text-[var(--color-text)] leading-relaxed">
-                            <SquareCheck className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" />
+                            <SquareCheck className="w-4 h-4 text-[var(--color-accent-strong)] flex-shrink-0 mt-0.5" />
                             <span>
                               {t.tarea}
                               {t.responsable ? (
-                                <span className="text-[var(--color-text)]"> — <span className="text-accent">{t.responsable}</span></span>
+                                <span className="text-[var(--color-text)]"> — <span className="text-[var(--color-accent-strong)]">{t.responsable}</span></span>
                               ) : null}
                             </span>
                           </li>
@@ -170,7 +170,7 @@ export default function ReunionDetalle() {
 
                 <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] p-5 space-y-4">
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-accent" />
+                    <CheckCircle2 className="w-4 h-4 text-[var(--color-accent-strong)]" />
                     <h3 className="section-tag">Audio</h3>
                   </div>
                   <audio
