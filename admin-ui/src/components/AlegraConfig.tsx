@@ -91,9 +91,9 @@ function AlegraConfig({
   };
 
   return (
-    <div className="rounded-xl border border-[#1f232a]">
-      <div className="px-4 py-2.5 border-b border-[#1f232a] bg-[#0e1013] flex items-center gap-2">
-        <FileText className="w-3 h-3 text-[#34d399]" />
+    <div className="rounded-xl border border-[var(--color-border-subtle)]">
+      <div className="px-4 py-2.5 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] flex items-center gap-2">
+        <FileText className="w-3 h-3 text-accent" />
         <span className="section-tag">ALEGRA (CONTABILIDAD)</span>
       </div>
 
@@ -102,7 +102,7 @@ function AlegraConfig({
         <div>
           <label className="label">
             Email de Alegra
-            {value && <span className="text-[#343b45] ml-2">(vacío conserva el guardado)</span>}
+            {value && <span className="text-[var(--color-border)] ml-2">(vacío conserva el guardado)</span>}
           </label>
           <input
             className="input text-xs"
@@ -116,7 +116,7 @@ function AlegraConfig({
         <div>
           <label className="label">
             Token de API
-            {value && <span className="text-[#343b45] ml-2">(vacío conserva el guardado)</span>}
+            {value && <span className="text-[var(--color-border)] ml-2">(vacío conserva el guardado)</span>}
           </label>
           <input
             className="input text-xs"
@@ -125,7 +125,7 @@ function AlegraConfig({
             value={local.token}
             onChange={(e) => setField("token", e.target.value)}
           />
-          <p className="text-xs text-[#343b45] mt-1.5">
+          <p className="text-xs text-[var(--color-border)] mt-1.5">
             Obtenlo en Alegra → Configuración → API
           </p>
         </div>
@@ -154,17 +154,17 @@ function AlegraConfig({
               </button>
 
               {status === "tested" && (
-                <span className="flex items-center gap-1.5 text-xs text-[#34d399]">
+                <span className="flex items-center gap-1.5 text-xs text-accent">
                   <Check className="w-3.5 h-3.5" /> Conexión exitosa
                 </span>
               )}
               {status === "discovered" && (
-                <span className="flex items-center gap-1.5 text-xs text-[#34d399]">
+                <span className="flex items-center gap-1.5 text-xs text-accent">
                   <Check className="w-3.5 h-3.5" /> Tools detectadas
                 </span>
               )}
               {status === "error" && errorMessage && (
-                <span className="flex items-center gap-1.5 text-xs text-red-400 break-all">
+                <span className="flex items-center gap-1.5 text-xs text-red-700 break-all">
                   <X className="w-3.5 h-3.5 flex-shrink-0" /> {errorMessage}
                 </span>
               )}
@@ -174,7 +174,7 @@ function AlegraConfig({
               <div>
                 <label className="label">Descripción detectada — editable (se guarda con el cliente)</label>
                 <textarea
-                  className="text-xs text-[#a8b0bd] p-3 border border-[#1f232a] bg-[#0e1013] min-h-[160px] resize-y w-full"
+                  className="text-xs text-[var(--color-text-muted)] p-3 border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] min-h-[160px] resize-y w-full"
                   value={schemaPreview}
                   onChange={(e) => {
                     setSchemaPreview(e.target.value);
@@ -183,14 +183,14 @@ function AlegraConfig({
                     onChange(next);
                   }}
                 />
-                <p className="text-xs text-[#a8b0bd] mt-1.5">
+                <p className="text-xs text-[var(--color-text-muted)] mt-1.5">
                   Podés corregir lo que la IA detectó antes de guardar el cliente.
                 </p>
               </div>
             ) : null}
           </>
         ) : (
-          <p className="text-xs text-[#343b45] leading-relaxed">
+          <p className="text-xs text-[var(--color-border)] leading-relaxed">
             La conexión se probará automáticamente al guardar el cliente. Las tools se
             detectan después: edita el cliente y usa «Descubrir tools».
           </p>

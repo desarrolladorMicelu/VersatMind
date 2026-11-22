@@ -99,9 +99,9 @@ function TenantSelector() {
   if (!isSuperAdmin) {
     // Tenant admin: muestra su tenant fijo, sin selector
     return (
-      <div className="rounded-lg border border-[#1f232a] bg-[#0e1013] px-3 py-2.5">
-        <p className="mb-1 text-2xs font-semibold uppercase tracking-[0.1em] text-[#667085]">Cliente</p>
-        <p className="truncate text-xs font-medium text-[#34d399]">
+      <div className="rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] px-3 py-2.5">
+        <p className="mb-1 text-2xs font-semibold uppercase tracking-[0.1em] text-[var(--color-text-subtle)]">Cliente</p>
+        <p className="truncate text-xs font-medium text-accent">
           {activeTenant?.name ?? "—"}
         </p>
       </div>
@@ -112,24 +112,24 @@ function TenantSelector() {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between gap-2 rounded-lg border border-[#1f232a] bg-[#0e1013] px-3 py-2.5 transition-colors hover:border-[#343b45]"
+        className="flex w-full items-center justify-between gap-2 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] px-3 py-2.5 transition-colors hover:border-[var(--color-border)]"
       >
         <div className="min-w-0 text-left">
-          <p className="text-2xs font-semibold uppercase tracking-[0.1em] text-[#667085]">Cliente activo</p>
-          <p className="mt-1 truncate text-xs font-medium text-[#e8ebf0]">
+          <p className="text-2xs font-semibold uppercase tracking-[0.1em] text-[var(--color-text-subtle)]">Cliente activo</p>
+          <p className="mt-1 truncate text-xs font-medium text-[var(--color-text)]">
             {activeTenant?.name ?? "Todos"}
           </p>
         </div>
-        <ChevronDown className={`h-3.5 w-3.5 flex-shrink-0 text-[#7d8592] transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className={`h-3.5 w-3.5 flex-shrink-0 text-[var(--color-text-subtle)] transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && (
-        <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-y-auto rounded-lg border border-[#343b45] bg-[#14171c] p-1 shadow-2xl">
+        <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-y-auto rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-1 shadow-2xl">
           {/* Opción "todos" solo para superadmin */}
           <button
             onClick={() => { setActiveTenant(null); setOpen(false); }}
-            className={`w-full rounded-md px-2.5 py-2 text-left transition-colors hover:bg-white/5 ${
-              activeTenant === null ? "text-[#34d399]" : "text-[#a8b0bd]"
+            className={`w-full rounded-md px-2.5 py-2 text-left transition-colors hover:bg-black/5 ${
+              activeTenant === null ? "text-accent" : "text-[var(--color-text-muted)]"
             }`}
           >
             <p className="text-xs font-medium">Todos los clientes</p>
@@ -138,23 +138,23 @@ function TenantSelector() {
             <button
               key={t.id}
               onClick={() => { setActiveTenant(t); setOpen(false); }}
-              className={`w-full rounded-md px-2.5 py-2 text-left transition-colors hover:bg-white/5 ${
-                activeTenant?.id === t.id ? "bg-[#34d399]/10" : ""
+              className={`w-full rounded-md px-2.5 py-2 text-left transition-colors hover:bg-black/5 ${
+                activeTenant?.id === t.id ? "bg-accent/10" : ""
               }`}
             >
               <div className="flex items-center gap-2.5">
-                <div className={`h-1.5 w-1.5 flex-shrink-0 rounded-full ${t.is_active ? "bg-[#34d399]" : "bg-[#343b45]"}`} />
+                <div className={`h-1.5 w-1.5 flex-shrink-0 rounded-full ${t.is_active ? "bg-accent" : "bg-[var(--color-border)]"}`} />
                 <div className="min-w-0">
-                  <p className={`truncate text-xs font-medium ${activeTenant?.id === t.id ? "text-[#34d399]" : "text-[#e8ebf0]"}`}>
+                  <p className={`truncate text-xs font-medium ${activeTenant?.id === t.id ? "text-accent" : "text-[var(--color-text)]"}`}>
                     {t.name}
                   </p>
-                  <p className="truncate text-2xs text-[#7d8592]">{t.slug}</p>
+                  <p className="truncate text-2xs text-[var(--color-text-subtle)]">{t.slug}</p>
                 </div>
               </div>
             </button>
           ))}
           {tenants.length === 0 && (
-            <p className="px-3 py-3 text-center text-xs text-[#7d8592]">Sin clientes</p>
+            <p className="px-3 py-3 text-center text-xs text-[var(--color-text-subtle)]">Sin clientes</p>
           )}
         </div>
       )}
@@ -172,12 +172,12 @@ export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#0b0c0e]">
+    <div className="flex h-screen overflow-hidden bg-[var(--color-bg)]">
 
       {/* Overlay móvil */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/60 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/30 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -185,34 +185,34 @@ export default function Layout() {
       {/* Sidebar */}
       <aside className={`
         fixed lg:relative inset-y-0 left-0 z-50
-        flex flex-col w-72 lg:w-64 bg-[#101216] border-r border-[#262b33] shadow-[1px_0_0_rgba(255,255,255,0.02)] flex-shrink-0
+        flex flex-col w-72 lg:w-64 bg-[var(--color-bg-elevated)] border-r border-[var(--color-border)] shadow-[1px_0_0_var(--color-border-subtle)] flex-shrink-0
         transition-transform duration-300
         ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
       `}>
 
         {/* Logo */}
-        <div className="px-4 py-5 border-b border-[#1f232a]">
+        <div className="px-4 py-5 border-b border-[var(--color-border-subtle)]">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#34d399]/25 bg-[#34d399]/10">
-              <span className="text-sm font-bold text-[#34d399]">M</span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-accent/25 bg-accent/10">
+              <span className="text-sm font-bold text-accent">M</span>
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold tracking-tight text-white">Mind</span>
-                <span className="text-xs font-medium text-[#7d8592]">Admin</span>
+                <span className="text-sm font-semibold tracking-tight text-[var(--color-text)]">Mind</span>
+                <span className="text-xs font-medium text-[var(--color-text-subtle)]">Admin</span>
                 {isSuperAdmin && (
-                  <span className="rounded border border-[#34d399]/25 bg-[#34d399]/10 px-1.5 py-0.5 text-2xs font-semibold uppercase tracking-[0.04em] text-[#34d399]">
+                  <span className="rounded border border-accent/25 bg-accent/10 px-1.5 py-0.5 text-2xs font-semibold uppercase tracking-[0.04em] text-accent">
                     Super
                   </span>
                 )}
               </div>
-              <p className="mt-0.5 text-2xs font-medium text-[#7d8592]">by Versat</p>
+              <p className="mt-0.5 text-2xs font-medium text-[var(--color-text-subtle)]">by Versat</p>
             </div>
           </div>
         </div>
 
         {/* Selector de tenant */}
-        <div className="px-3 py-3 border-b border-[#1f232a]">
+        <div className="px-3 py-3 border-b border-[var(--color-border-subtle)]">
           <TenantSelector />
         </div>
 
@@ -220,7 +220,7 @@ export default function Layout() {
         <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5">
           {NAV_GROUPS.map((group) => (
             <div key={group.title}>
-              <p className="px-2 pb-2 text-2xs font-semibold uppercase tracking-[0.1em] text-[#8b93a1]">
+              <p className="px-2 pb-2 text-2xs font-semibold uppercase tracking-[0.1em] text-[var(--color-text-subtle)]">
                 {group.title}
               </p>
               <div className="space-y-0.5">
@@ -231,7 +231,7 @@ export default function Layout() {
                     end={to === "/"}
                     onClick={() => setSidebarOpen(false)}
                     className={({ isActive }) =>
-                      `nav-link ${isActive ? "active text-[#34d399]" : ""}`
+                      `nav-link ${isActive ? "active text-accent" : ""}`
                     }
                   >
                     <Icon className="h-4 w-4 flex-shrink-0" />
@@ -247,19 +247,19 @@ export default function Layout() {
         </nav>
 
         {/* User */}
-        <div className="border-t border-[#1f232a] px-3 py-3">
+        <div className="border-t border-[var(--color-border-subtle)] px-3 py-3">
           <div className="flex items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-2.5">
-              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-[#34d399]/25 bg-[#34d399]/10">
-                <span className="text-xs font-semibold text-[#34d399]">
+              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-accent/25 bg-accent/10">
+                <span className="text-xs font-semibold text-accent">
                   {username?.[0]?.toUpperCase()}
                 </span>
               </div>
-              <span className="truncate text-xs font-medium text-[#e8ebf0]">{username}</span>
+              <span className="truncate text-xs font-medium text-[var(--color-text)]">{username}</span>
             </div>
             <button
               onClick={async () => { await logout(); navigate("/login"); }}
-              className="rounded-md p-1.5 text-[#7d8592] transition-colors hover:bg-red-500/10 hover:text-red-400"
+              className="rounded-md p-1.5 text-[var(--color-text-subtle)] transition-colors hover:bg-red-100 hover:text-red-700"
               title="Salir"
             >
               <LogOut className="w-3.5 h-3.5" />
@@ -270,11 +270,11 @@ export default function Layout() {
       </aside>
 
       {/* Main */}
-      <main className="flex-1 overflow-y-auto bg-[#0b0c0e] min-w-0">
+      <main className="flex-1 overflow-y-auto bg-[var(--color-bg)] min-w-0">
         {/* Hamburger */}
         <button
           onClick={() => setSidebarOpen((v) => !v)}
-          className="lg:hidden fixed top-4 left-4 z-30 w-9 h-9 flex items-center justify-center border border-[#262b33] bg-[#101216] hover:bg-[#14171c]"
+          className="lg:hidden fixed top-4 left-4 z-30 w-9 h-9 flex items-center justify-center border border-[var(--color-border)] bg-[var(--color-bg-elevated)] hover:bg-[var(--color-surface)]"
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="white" strokeWidth="1.5">
             <line x1="2" y1="3" x2="12" y2="3" />

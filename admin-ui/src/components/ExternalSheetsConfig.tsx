@@ -118,9 +118,9 @@ function ExternalSheetsConfig({
   };
 
   return (
-    <div className="rounded-xl border border-[#1f232a]">
-      <div className="px-4 py-2.5 border-b border-[#1f232a] bg-[#0e1013] flex items-center gap-2">
-        <FileSpreadsheet className="w-3 h-3 text-[#34d399]" />
+    <div className="rounded-xl border border-[var(--color-border-subtle)]">
+      <div className="px-4 py-2.5 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] flex items-center gap-2">
+        <FileSpreadsheet className="w-3 h-3 text-accent" />
         <span className="section-tag">GOOGLE SHEETS</span>
       </div>
 
@@ -128,7 +128,7 @@ function ExternalSheetsConfig({
         {/* URL del spreadsheet */}
         <div>
           <label className="label">
-            URL del spreadsheet            {value && <span className="text-white ml-2">(vacío desconfigura)</span>}
+            URL del spreadsheet            {value && <span className="text-[var(--color-text)] ml-2">(vacío desconfigura)</span>}
           </label>
           <input
             className="input text-xs"
@@ -136,7 +136,7 @@ function ExternalSheetsConfig({
             value={local.spreadsheet_url}
             onChange={(e) => setField("spreadsheet_url", e.target.value)}
           />
-          <p className="text-xs text-white mt-1.5">
+          <p className="text-xs text-[var(--color-text)] mt-1.5">
             Comparte la hoja con el client_email de la service account
           </p>
         </div>
@@ -145,7 +145,7 @@ function ExternalSheetsConfig({
         <div>
           <label className="label">
             Credenciales (Service Account JSON)
-            {value && <span className="text-white ml-2">(vacío conserva la guardada)</span>}
+            {value && <span className="text-[var(--color-text)] ml-2">(vacío conserva la guardada)</span>}
           </label>
           <textarea
             className="input text-xs min-h-[120px] resize-y"
@@ -154,7 +154,7 @@ function ExternalSheetsConfig({
             onChange={(e) => handleCredentialsText(e.target.value)}
             spellCheck={false}
           />
-          <p className="text-xs text-white mt-1.5">
+          <p className="text-xs text-[var(--color-text)] mt-1.5">
             Google Cloud → Service Accounts → Add Key → JSON. Pega el contenido completo.
           </p>
         </div>
@@ -184,17 +184,17 @@ function ExternalSheetsConfig({
               </button>
 
               {status === "tested" && (
-                <span className="flex items-center gap-1.5 text-xs text-[#34d399]">
+                <span className="flex items-center gap-1.5 text-xs text-accent">
                   <Check className="w-3.5 h-3.5" /> Conexión exitosa
                 </span>
               )}
               {status === "discovered" && (
-                <span className="flex items-center gap-1.5 text-xs text-[#34d399]">
+                <span className="flex items-center gap-1.5 text-xs text-accent">
                   <Check className="w-3.5 h-3.5" /> Hojas detectadas — se guardará con el cliente
                 </span>
               )}
               {status === "error" && errorMessage && (
-                <span className="flex items-center gap-1.5 text-xs text-red-400 break-all">
+                <span className="flex items-center gap-1.5 text-xs text-red-700 break-all">
                   <X className="w-3.5 h-3.5 flex-shrink-0" /> {errorMessage}
                 </span>
               )}
@@ -204,7 +204,7 @@ function ExternalSheetsConfig({
               <div>
                 <label className="label">Descripción detectada — editable (se guarda con el cliente)</label>
                 <textarea
-                  className="text-xs text-white p-3 border border-[#1f232a] bg-[#0e1013] min-h-[160px] resize-y w-full"
+                  className="text-xs text-[var(--color-text)] p-3 border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] min-h-[160px] resize-y w-full"
                   value={schemaPreview}
                   onChange={(e) => {
                     setSchemaPreview(e.target.value);
@@ -213,14 +213,14 @@ function ExternalSheetsConfig({
                     onChange(next);
                   }}
                 />
-                <p className="text-xs text-white mt-1.5">
+                <p className="text-xs text-[var(--color-text)] mt-1.5">
                   Podés corregir lo que la IA detectó antes de guardar el cliente.
                 </p>
               </div>
             ) : null}
           </>
         ) : (
-          <p className="text-xs text-white leading-relaxed">
+          <p className="text-xs text-[var(--color-text)] leading-relaxed">
             La conexión se probará automáticamente al guardar el cliente. Las hojas se
             detectan después: edita el cliente y usa «Detectar hojas».
           </p>

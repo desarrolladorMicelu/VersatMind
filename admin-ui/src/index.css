@@ -9,6 +9,7 @@
 
   html {
     font-size: 16px;
+    color-scheme: light;
     -webkit-text-size-adjust: 100%;
   }
 
@@ -39,8 +40,8 @@
   }
 
   ::selection {
-    background-color: rgba(52, 211, 153, 0.25);
-    color: #ffffff;
+    background-color: var(--color-accent-soft);
+    color: var(--color-text);
   }
 
   :focus-visible {
@@ -51,11 +52,11 @@
   ::-webkit-scrollbar { width: 8px; height: 8px; }
   ::-webkit-scrollbar-track { background: var(--color-bg); }
   ::-webkit-scrollbar-thumb {
-    background: #2c323b;
+    background: var(--color-border-strong);
     border-radius: 8px;
     border: 2px solid var(--color-bg);
   }
-  ::-webkit-scrollbar-thumb:hover { background: var(--color-accent-strong); }
+  ::-webkit-scrollbar-thumb:hover { background: var(--color-text-subtle); }
 }
 
 @layer components {
@@ -71,7 +72,7 @@
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2;
     background-color: var(--color-accent);
-    color: #04150f;
+    color: var(--color-accent-contrast);
     font-family: var(--font-sans);
     font-weight: var(--weight-semibold);
     font-size: var(--text-xs);
@@ -82,8 +83,8 @@
     transition: background-color 0.15s, transform 0.05s, box-shadow 0.15s;
   }
   .btn-primary:hover {
-    background-color: #4adeac;
-    box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.12);
+    background-color: var(--color-accent-strong);
+    box-shadow: 0 0 0 3px var(--color-accent-soft);
   }
   .btn-primary:active { transform: translateY(1px); }
   .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
@@ -123,13 +124,13 @@
   }
   .btn-ghost:hover {
     color: var(--color-text);
-    background-color: rgba(255, 255, 255, 0.04);
+    background-color: var(--color-hover);
   }
 
   .btn-danger {
     @apply inline-flex items-center justify-center gap-2;
     background-color: transparent;
-    border: 1px solid rgba(248, 113, 113, 0.35);
+    border: 1px solid var(--color-danger-border);
     color: var(--color-danger);
     font-family: var(--font-sans);
     font-weight: var(--weight-medium);
@@ -142,13 +143,13 @@
   }
   .btn-danger:hover {
     border-color: var(--color-danger);
-    background-color: rgba(248, 113, 113, 0.08);
+    background-color: var(--color-danger-soft);
   }
 
   /* ── Inputs ─────────────────────────────────── */
   .input {
     @apply w-full;
-    background-color: var(--color-surface);
+    background-color: var(--color-bg);
     border: 1px solid var(--color-border);
     color: var(--color-text);
     font-family: var(--font-sans);
@@ -158,13 +159,13 @@
     border-radius: 7px;
     transition: border-color 0.15s, box-shadow 0.15s, background-color 0.15s;
   }
-  .input::placeholder { color: #667085; }
-  .input:hover { border-color: #343b45; }
+  .input::placeholder { color: var(--color-text-subtle); }
+  .input:hover { border-color: var(--color-border-strong); }
   .input:focus {
     outline: none;
     border-color: var(--color-accent);
-    background-color: var(--color-bg-elevated);
-    box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.12);
+    background-color: var(--color-surface);
+    box-shadow: 0 0 0 3px var(--color-accent-soft);
   }
 
   select.input option {
@@ -197,9 +198,9 @@
     border-radius: 5px;
     line-height: 1.5;
   }
-  .badge-green  { border-color: rgba(52, 211, 153, 0.4); color: #6ee7b7; background-color: rgba(52, 211, 153, 0.08); }
-  .badge-red    { border-color: rgba(248, 113, 113, 0.4); color: #fca5a5; background-color: rgba(248, 113, 113, 0.08); }
-  .badge-amber  { border-color: rgba(251, 191, 36, 0.4); color: #fcd34d; background-color: rgba(251, 191, 36, 0.08); }
+  .badge-green  { border-color: var(--color-accent-border); color: var(--color-accent-strong); background-color: var(--color-accent-soft); }
+  .badge-red    { border-color: var(--color-danger-border); color: var(--color-danger); background-color: var(--color-danger-soft); }
+  .badge-amber  { border-color: var(--color-warning-border); color: var(--color-warning); background-color: var(--color-warning-soft); }
   .badge-indigo { border-color: var(--color-border); color: var(--color-text-muted); background-color: var(--color-surface-2); }
   .badge-slate  { border-color: var(--color-border); color: var(--color-text-subtle); background-color: var(--color-surface); }
 
@@ -220,7 +221,7 @@
   }
   .nav-link:hover {
     color: var(--color-text);
-    background-color: rgba(255, 255, 255, 0.04);
+    background-color: var(--color-hover);
   }
   .nav-link.active {
     color: var(--color-accent);

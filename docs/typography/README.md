@@ -48,6 +48,35 @@ También viven ahí los pesos, interlineados, tracking y la paleta base. Tailwin
 - `after-superadmins-desktop.png` / `after-superadmins-mobile.png`
 - `after-tenants-desktop.png`
 
+## Tema crema (fase actual)
+
+Se reemplazó el fondo negro por una paleta crema cálida y neutra, manteniendo un único acento:
+
+| Token | Valor | Uso |
+|---|---|---|
+| `--color-bg` | `#f7f3ea` | lienzo principal |
+| `--color-bg-elevated` | `#f1ebdf` | sidebar, headers, hero |
+| `--color-surface` | `#fffdf8` | tarjetas, modales, composer |
+| `--color-surface-2` | `#ece5d7` | hover, burbujas, énfasis |
+| `--color-border` | `#d8cfbe` | bordes principales |
+| `--color-border-subtle` | `#e5ddcf` | separadores |
+| `--color-text` | `#26231d` | texto principal |
+| `--color-text-muted` | `#5f594f` | texto secundario |
+| `--color-text-subtle` | `#6e6759` | metadatos |
+| `--color-accent` | `#0f766e` | único acento |
+| `--color-danger` | `#b42318` | errores y acciones destructivas |
+
+- Se eliminaron los glows y degradados verdes del login y de la zona de seguridad.
+- `color-scheme: light` para controles nativos y scrollbars coherentes.
+- Botones primarios con texto blanco sobre el acento; texto principal oscuro sobre crema.
+- Contraste revisado: cuerpo oscuro sobre crema, secundarios por encima de 4.5:1.
+
+Capturas de este cambio:
+
+- `before-cream-login-desktop.png` / `after-login-desktop.png`
+- `before-cream-chat-desktop.png` / `after-chat-desktop.png`
+- `before-cream-dashboard-desktop.png` / `after-dashboard-desktop.png`
+
 ## Chat minimalista (segunda fase)
 
 El chat pasó a ser una pantalla completa (`/admin/chat`) fuera del layout de administración:

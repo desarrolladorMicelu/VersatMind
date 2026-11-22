@@ -5,8 +5,8 @@ export default function SuperAdminRoute({ children }: { children: React.ReactNod
   const { role, loading } = useAuth();
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#0b0c0e]">
-        <div className="w-6 h-6 border-2 border-[#34d399] border-t-transparent rounded-full animate-spin" />
+      <div className="flex h-screen items-center justify-center bg-[var(--color-bg)]">
+        <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }

@@ -48,18 +48,18 @@ function TenantModal({
     set("slug", v.toLowerCase().replace(/[^a-z0-9-]/g, "-"));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="w-full max-w-2xl bg-[#101216] border border-[#262b33] flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="w-full max-w-2xl bg-[var(--color-bg-elevated)] border border-[var(--color-border)] flex flex-col max-h-[90vh]">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#1f232a] flex-shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border-subtle)] flex-shrink-0">
           <div>
             <p className="section-tag mb-1">{isEdit ? "EDITAR" : "NUEVO"} CLIENTE</p>
-            <h2 className="text-lg font-bold text-white tracking-tight">
+            <h2 className="text-lg font-bold text-[var(--color-text)] tracking-tight">
               {isEdit ? form.name || "Sin nombre" : "Crear tenant"}
             </h2>
           </div>
-          <button onClick={onClose} className="text-white hover:text-white transition-colors p-1">
+          <button onClick={onClose} className="text-[var(--color-text)] hover:text-[var(--color-text)] transition-colors p-1">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -68,8 +68,8 @@ function TenantModal({
         <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
 
           {/* Info básica */}
-          <div className="rounded-xl border border-[#1f232a]">
-            <div className="px-4 py-2.5 border-b border-[#1f232a] bg-[#0e1013]">
+          <div className="rounded-xl border border-[var(--color-border-subtle)]">
+            <div className="px-4 py-2.5 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]">
               <span className="section-tag">INFORMACIÓN BÁSICA</span>
             </div>
             <div className="p-4 grid grid-cols-2 gap-4">
@@ -86,17 +86,17 @@ function TenantModal({
                 />
               </div>
               <div>
-                <label className="label">Slug <span className="text-white">(identificador único)</span></label>
+                <label className="label">Slug <span className="text-[var(--color-text)]">(identificador único)</span></label>
                 <input
                   className="input "
                   placeholder="empresa-xyz"
                   value={form.slug}
                   onChange={(e) => handleSlug(e.target.value)}
                 />
-                <p className="text-xs text-[#8b93a1] mt-1.5">Solo letras, números y guiones</p>
+                <p className="text-xs text-[var(--color-text-subtle)] mt-1.5">Solo letras, números y guiones</p>
               </div>
               <div>
-                <label className="label">Admin Chat ID <span className="text-[#8b93a1]">(Telegram)</span></label>
+                <label className="label">Admin Chat ID <span className="text-[var(--color-text-subtle)]">(Telegram)</span></label>
                 <input
                   className="input "
                   placeholder="123456789"
@@ -104,22 +104,22 @@ function TenantModal({
                   value={form.admin_chat_id || ""}
                   onChange={(e) => set("admin_chat_id", parseInt(e.target.value) || 0)}
                 />
-                <p className="text-xs text-[#8b93a1] mt-1.5">Chat ID del administrador del tenant</p>
+                <p className="text-xs text-[var(--color-text-subtle)] mt-1.5">Chat ID del administrador del tenant</p>
               </div>
             </div>
           </div>
 
           {/* Telegram */}
-          <div className="rounded-xl border border-[#1f232a]">
-            <div className="px-4 py-2.5 border-b border-[#1f232a] bg-[#0e1013] flex items-center gap-2">
-              <Bot className="w-3 h-3 text-[#34d399]" />
+          <div className="rounded-xl border border-[var(--color-border-subtle)]">
+            <div className="px-4 py-2.5 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] flex items-center gap-2">
+              <Bot className="w-3 h-3 text-accent" />
               <span className="section-tag">TELEGRAM</span>
             </div>
             <div className="p-4 space-y-4">
               <div>
                 <label className="label">
                   Token del bot
-                  {isEdit && <span className="text-white ml-2">(dejar vacío para no cambiar)</span>}
+                  {isEdit && <span className="text-[var(--color-text)] ml-2">(dejar vacío para no cambiar)</span>}
                 </label>
                 <div className="relative">
                   <input
@@ -133,35 +133,35 @@ function TenantModal({
                   <button
                     type="button"
                     onClick={() => setShowToken((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white hover:text-white transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text)] hover:text-[var(--color-text)] transition-colors"
                   >
                     {showToken ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   </button>
                 </div>
-                <p className="text-xs text-[#8b93a1] mt-1.5">
+                <p className="text-xs text-[var(--color-text-subtle)] mt-1.5">
                   Obtenlo de @BotFather → /newbot
                 </p>
               </div>
               <div>
-                <label className="label">Webhook URL <span className="text-white">(URL pública del servidor)</span></label>
+                <label className="label">Webhook URL <span className="text-[var(--color-text)]">(URL pública del servidor)</span></label>
                 <input
                   className="input text-xs"
                   placeholder="https://tu-servidor.railway.app"
                   value={form.webhook_url}
                   onChange={(e) => set("webhook_url", e.target.value)}
                 />
-                <p className="text-xs text-[#8b93a1] mt-1.5">
+                <p className="text-xs text-[var(--color-text-subtle)] mt-1.5">
                   El webhook se registra automáticamente en{" "}
-                  <span className="text-[#7d8592]">{form.webhook_url || "https://…"}/webhook/&#60;token&#62;</span>
+                  <span className="text-[var(--color-text-subtle)]">{form.webhook_url || "https://…"}/webhook/&#60;token&#62;</span>
                 </p>
               </div>
             </div>
           </div>
 
           {/* SQL Server */}
-          <div className="rounded-xl border border-[#1f232a]">
-            <div className="px-4 py-2.5 border-b border-[#1f232a] bg-[#0e1013] flex items-center gap-2">
-              <Database className="w-3 h-3 text-[#34d399]" />
+          <div className="rounded-xl border border-[var(--color-border-subtle)]">
+            <div className="px-4 py-2.5 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] flex items-center gap-2">
+              <Database className="w-3 h-3 text-accent" />
               <span className="section-tag">SQL SERVER OFIMA</span>
             </div>
             <div className="p-4 grid grid-cols-2 gap-4">
@@ -195,7 +195,7 @@ function TenantModal({
               <div>
                 <label className="label">
                   Contraseña
-                  {isEdit && <span className="text-white ml-2">(dejar vacío para no cambiar)</span>}
+                  {isEdit && <span className="text-[var(--color-text)] ml-2">(dejar vacío para no cambiar)</span>}
                 </label>
                 <div className="relative">
                   <input
@@ -208,7 +208,7 @@ function TenantModal({
                   <button
                     type="button"
                     onClick={() => setShowPass((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white hover:text-white transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text)] hover:text-[var(--color-text)] transition-colors"
                   >
                     {showPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   </button>
@@ -263,7 +263,7 @@ function TenantModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-[#1f232a] flex-shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-t border-[var(--color-border-subtle)] flex-shrink-0">
           <button onClick={onClose} className="btn-ghost">CANCELAR</button>
           <button
             className="btn-primary"
@@ -315,11 +315,11 @@ function TenantAdmins({ tenantId, tenantName }: { tenantId: number; tenantName: 
   });
 
   return (
-    <div className="border-t border-[#1f232a] bg-[#0d0f12]">
+    <div className="border-t border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]">
       <div className="px-6 py-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <KeyRound className="w-3.5 h-3.5 text-[#34d399]" />
+            <KeyRound className="w-3.5 h-3.5 text-accent" />
             <span className="section-tag">ACCESOS AL PANEL — {tenantName}</span>
           </div>
           <button
@@ -332,7 +332,7 @@ function TenantAdmins({ tenantId, tenantName }: { tenantId: number; tenantName: 
 
         {/* Formulario nueva cuenta */}
         {creating && (
-          <div className="mb-4 border border-[#34d399]/20 bg-[#0e1013] p-4 flex flex-wrap gap-3 items-end">
+          <div className="mb-4 border border-accent/20 bg-[var(--color-bg-elevated)] p-4 flex flex-wrap gap-3 items-end">
             <div>
               <label className="label">Usuario</label>
               <input
@@ -355,7 +355,7 @@ function TenantAdmins({ tenantId, tenantName }: { tenantId: number; tenantName: 
                 <button
                   type="button"
                   onClick={() => setShowPass((v) => !v)}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#a8b0bd] hover:text-white"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
                 >
                   {showPass ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
                 </button>
@@ -374,7 +374,7 @@ function TenantAdmins({ tenantId, tenantName }: { tenantId: number; tenantName: 
               </button>
             </div>
             {create.isError && (
-              <p className="w-full text-xs text-red-400">
+              <p className="w-full text-xs text-red-700">
                 {(create.error as any)?.response?.data?.detail ?? "Error al crear la cuenta"}
               </p>
             )}
@@ -383,25 +383,25 @@ function TenantAdmins({ tenantId, tenantName }: { tenantId: number; tenantName: 
 
         {/* Lista de admins */}
         {isLoading ? (
-          <div className="h-10 animate-pulse border border-[#1a1e24]" />
+          <div className="h-10 animate-pulse border border-[var(--color-border-subtle)]" />
         ) : admins.length === 0 ? (
-          <p className="text-xs text-[#a8b0bd] py-3">Sin cuentas creadas — este cliente no puede entrar al panel.</p>
+          <p className="text-xs text-[var(--color-text-muted)] py-3">Sin cuentas creadas — este cliente no puede entrar al panel.</p>
         ) : (
-          <div className="rounded-xl border border-[#1f232a]">
-            <div className="grid grid-cols-12 bg-[#0e1013] border-b border-[#1a1e24]">
+          <div className="rounded-xl border border-[var(--color-border-subtle)]">
+            <div className="grid grid-cols-12 bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
               <div className="col-span-4 th">Usuario</div>
               <div className="col-span-3 th">Estado</div>
               <div className="col-span-3 th">Creado</div>
               <div className="col-span-2 th" />
             </div>
             {admins.map((a: any) => (
-              <div key={a.id} className="grid grid-cols-12 border-b border-[#1a1e24] hover:bg-[#0e1013] transition-colors">
+              <div key={a.id} className="grid grid-cols-12 border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-elevated)] transition-colors">
                 <div className="col-span-4 td">
                   <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 border border-[#262b33] flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs text-[#34d399]">{a.username[0]?.toUpperCase()}</span>
+                    <div className="w-6 h-6 border border-[var(--color-border)] flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs text-accent">{a.username[0]?.toUpperCase()}</span>
                     </div>
-                    <span className="text-xs text-white">{a.username}</span>
+                    <span className="text-xs text-[var(--color-text)]">{a.username}</span>
                   </div>
                 </div>
                 <div className="col-span-3 td">
@@ -409,21 +409,21 @@ function TenantAdmins({ tenantId, tenantName }: { tenantId: number; tenantName: 
                     {a.is_active ? "ACTIVO" : "INACTIVO"}
                   </span>
                 </div>
-                <div className="col-span-3 td text-xs text-[#7d8592]">
+                <div className="col-span-3 td text-xs text-[var(--color-text-subtle)]">
                   {a.created_at ? new Date(a.created_at).toLocaleDateString("es-CO") : "—"}
                 </div>
                 <div className="col-span-2 td">
                   <div className="flex items-center gap-1 justify-end">
                     <button
                       onClick={() => toggleAdmin.mutate({ adminId: a.id, is_active: !a.is_active })}
-                      className={`p-1.5 transition-colors ${a.is_active ? "text-[#b3bac5] hover:text-yellow-500" : "text-[#b3bac5] hover:text-[#34d399]"}`}
+                      className={`p-1.5 transition-colors ${a.is_active ? "text-[var(--color-text-muted)] hover:text-amber-700" : "text-[var(--color-text-muted)] hover:text-accent"}`}
                       title={a.is_active ? "Desactivar" : "Activar"}
                     >
                       <Power className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => window.confirm(`¿Eliminar la cuenta "${a.username}"?`) && removeAdmin.mutate(a.id)}
-                      className="p-1.5 text-[#b3bac5] hover:text-red-500 transition-colors"
+                      className="p-1.5 text-[var(--color-text-muted)] hover:text-red-700 transition-colors"
                       title="Eliminar"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -584,15 +584,15 @@ password: "", // nunca pre-rellenamos la contraseña
 
         {/* Error de mutación */}
         {(create.isError || update.isError || remove.isError) && (
-          <div className="mb-4 px-4 py-3 border border-red-900 bg-red-950/30 text-xs text-red-400">
+          <div className="mb-4 px-4 py-3 border border-red-300 bg-red-50 text-xs text-red-700">
             {saveError || "Error al guardar. Verifica los datos e intenta de nuevo."}
           </div>
         )}
 
-        <div className="rounded-xl border border-[#1f232a]">
+        <div className="rounded-xl border border-[var(--color-border-subtle)]">
 
           {/* Cabecera tabla */}
-          <div className="grid grid-cols-[repeat(11,minmax(0,1fr))] bg-[#0e1013] border-b border-[#1f232a]">
+          <div className="grid grid-cols-[repeat(11,minmax(0,1fr))] bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
             <div className="col-span-3 th">Cliente</div>
             <div className="col-span-2 th">Bot</div>
             <div className="col-span-2 th">SQL Server</div>
@@ -604,31 +604,31 @@ password: "", // nunca pre-rellenamos la contraseña
           {/* Skeleton */}
           {isLoading &&
             Array(3).fill(0).map((_, i) => (
-              <div key={i} className="h-14 border-b border-[#1a1e24] animate-pulse" />
+              <div key={i} className="h-14 border-b border-[var(--color-border-subtle)] animate-pulse" />
             ))}
 
           {/* Filas */}
           {!isLoading && tenants.map((t) => (
             <div key={t.id}>
-              <div className="grid grid-cols-[repeat(11,minmax(0,1fr))] border-b border-[#1a1e24] hover:bg-[#0e1013] transition-colors">
+              <div className="grid grid-cols-[repeat(11,minmax(0,1fr))] border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-elevated)] transition-colors">
               {/* Cliente */}
               <div className="col-span-3 td">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 border border-[#262b33] flex items-center justify-center flex-shrink-0">
-                    <span className="text-xs text-[#34d399]">
+                  <div className="w-8 h-8 border border-[var(--color-border)] flex items-center justify-center flex-shrink-0">
+                    <span className="text-xs text-accent">
                       {t.name[0]?.toUpperCase()}
                     </span>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-white leading-tight">{t.name}</p>
-                    <p className="text-xs text-white">{t.slug}</p>
+                    <p className="text-sm font-medium text-[var(--color-text)] leading-tight">{t.name}</p>
+                    <p className="text-xs text-[var(--color-text)]">{t.slug}</p>
                   </div>
                 </div>
               </div>
 
               {/* Bot token hint */}
               <div className="col-span-2 td">
-                <span className="text-xs text-white bg-[#0e1013] px-2 py-0.5 border border-[#1f232a]">
+                <span className="text-xs text-[var(--color-text)] bg-[var(--color-bg-elevated)] px-2 py-0.5 border border-[var(--color-border-subtle)]">
                   ...{t.bot_token_hint}
                 </span>
               </div>
@@ -637,11 +637,11 @@ password: "", // nunca pre-rellenamos la contraseña
               <div className="col-span-2 td">
                 {t.sqlserver_host ? (
                   <div>
-                    <p className="text-xs text-white truncate" title={t.sqlserver_host}>{t.sqlserver_host}</p>
-                    <p className="text-xs text-white truncate" title={t.sqlserver_db}>{t.sqlserver_db}</p>
+                    <p className="text-xs text-[var(--color-text)] truncate" title={t.sqlserver_host}>{t.sqlserver_host}</p>
+                    <p className="text-xs text-[var(--color-text)] truncate" title={t.sqlserver_db}>{t.sqlserver_db}</p>
                   </div>
                 ) : (
-                  <span className="text-xs text-white">— sin configurar</span>
+                  <span className="text-xs text-[var(--color-text)]">— sin configurar</span>
                 )}
               </div>
 
@@ -649,22 +649,22 @@ password: "", // nunca pre-rellenamos la contraseña
               <div className="col-span-2 td">
                 {t.external_db_configured ? (
                   <div>
-                    <p className="text-xs text-white">
+                    <p className="text-xs text-[var(--color-text)]">
                       {t.external_db_engine ?? "postgresql"}
                     </p>
-                    <p className="text-xs text-[#34d399]">✓ DB configurada</p>
+                    <p className="text-xs text-accent">✓ DB configurada</p>
                   </div>
                 ) : (
-                  <span className="text-xs text-white">— no configurada</span>
+                  <span className="text-xs text-[var(--color-text)]">— no configurada</span>
                 )}
                 {t.external_alegra_configured && (
-                  <p className="text-xs text-[#34d399] mt-1">✓ Alegra</p>
+                  <p className="text-xs text-accent mt-1">✓ Alegra</p>
                 )}
                 {t.external_excel_configured && (
-                  <p className="text-xs text-[#34d399] mt-1">✓ Excel</p>
+                  <p className="text-xs text-accent mt-1">✓ Excel</p>
                 )}
                 {t.report_config_configured && (
-                  <p className="text-xs text-[#34d399] mt-1">✓ Informes</p>
+                  <p className="text-xs text-accent mt-1">✓ Informes</p>
                 )}
               </div>
 
@@ -680,14 +680,14 @@ password: "", // nunca pre-rellenamos la contraseña
                 <div className="flex items-center gap-1 justify-end">
                   <button
                     onClick={() => setExpandedId(expandedId === t.id ? null : t.id)}
-                    className={`p-1.5 transition-colors ${expandedId === t.id ? "text-[#34d399]" : "text-white hover:text-[#34d399]"}`}
+                    className={`p-1.5 transition-colors ${expandedId === t.id ? "text-accent" : "text-[var(--color-text)] hover:text-accent"}`}
                     title="Gestionar accesos al panel"
                   >
                     <Users className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => openEdit(t)}
-                    className="p-1.5 text-white hover:text-[#34d399] transition-colors"
+                    className="p-1.5 text-[var(--color-text)] hover:text-accent transition-colors"
                     title="Editar"
                   >
                     <Pencil className="w-3.5 h-3.5" />
@@ -696,8 +696,8 @@ password: "", // nunca pre-rellenamos la contraseña
                     onClick={() => toggle.mutate({ id: t.id, is_active: !t.is_active })}
                     className={`p-1.5 transition-colors ${
                       t.is_active
-                        ? "text-white hover:text-yellow-500"
-                        : "text-white hover:text-[#34d399]"
+                        ? "text-[var(--color-text)] hover:text-amber-700"
+                        : "text-[var(--color-text)] hover:text-accent"
                     }`}
                     title={t.is_active ? "Desactivar" : "Activar"}
                   >
@@ -708,7 +708,7 @@ password: "", // nunca pre-rellenamos la contraseña
                       window.confirm(`¿Eliminar el cliente "${t.name}"? Esta acción es irreversible.`) &&
                       remove.mutate(t.id)
                     }
-                    className="p-1.5 text-white hover:text-red-500 transition-colors"
+                    className="p-1.5 text-[var(--color-text)] hover:text-red-700 transition-colors"
                     title="Eliminar"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -725,8 +725,8 @@ password: "", // nunca pre-rellenamos la contraseña
 
           {!isLoading && tenants.length === 0 && (
             <div className="px-5 py-16 text-center">
-              <p className="text-xs text-white">SIN CLIENTES REGISTRADOS</p>
-              <p className="text-xs text-white mt-2">
+              <p className="text-xs text-[var(--color-text)]">SIN CLIENTES REGISTRADOS</p>
+              <p className="text-xs text-[var(--color-text)] mt-2">
                 Crea el primero con el botón "NUEVO CLIENTE"
               </p>
             </div>

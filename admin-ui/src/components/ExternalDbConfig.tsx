@@ -130,9 +130,9 @@ function ExternalDbConfig({
   };
 
   return (
-    <div className="rounded-xl border border-[#1f232a]">
-      <div className="px-4 py-2.5 border-b border-[#1f232a] bg-[#0e1013] flex items-center gap-2">
-        <Database className="w-3 h-3 text-[#34d399]" />
+    <div className="rounded-xl border border-[var(--color-border-subtle)]">
+      <div className="px-4 py-2.5 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] flex items-center gap-2">
+        <Database className="w-3 h-3 text-accent" />
         <span className="section-tag">BASE DE DATOS EXTERNA</span>
       </div>
 
@@ -147,7 +147,7 @@ function ExternalDbConfig({
           >
             <option value="postgresql">PostgreSQL</option>
           </select>
-          <p className="text-xs text-white mt-1.5">
+          <p className="text-xs text-[var(--color-text)] mt-1.5">
             Solo lectura — se ejecutan sentencias SELECT
           </p>
         </div>
@@ -192,7 +192,7 @@ function ExternalDbConfig({
             value={local.schema ?? ""}
             onChange={(e) => setField("schema", e.target.value)}
           />
-          <p className="text-xs text-white mt-1.5">
+          <p className="text-xs text-[var(--color-text)] mt-1.5">
             Si la base tiene varios esquemas, indicá cuál usar (default: public)
           </p>
         </div>
@@ -211,21 +211,21 @@ function ExternalDbConfig({
               LISTAR TABLAS
             </button>
             {local.tables && local.tables.length > 0 && (
-              <span className="text-xs text-[#34d399]">
+              <span className="text-xs text-accent">
                 {local.tables.length} seleccionada(s)
               </span>
             )}
           </div>
 
           {availableTables.length > 0 && (
-            <div className="mt-2 max-h-40 overflow-y-auto border border-[#1f232a] bg-[#0e1013] p-2 grid grid-cols-2 gap-1">
+            <div className="mt-2 max-h-40 overflow-y-auto border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] p-2 grid grid-cols-2 gap-1">
               {availableTables.map((t) => {
                 const checked = (local.tables ?? []).includes(t);
                 return (
                   <label
                     key={t}
-                    className={`flex items-center gap-2 text-xs px-2 py-1 cursor-pointer hover:bg-[#0b0c0e] ${
-                      checked ? "text-[#34d399]" : "text-white"
+                    className={`flex items-center gap-2 text-xs px-2 py-1 cursor-pointer hover:bg-[var(--color-bg)] ${
+                      checked ? "text-accent" : "text-[var(--color-text)]"
                     }`}
                   >
                     <input
@@ -239,7 +239,7 @@ function ExternalDbConfig({
               })}
             </div>
           )}
-          <p className="text-xs text-white mt-1.5">
+          <p className="text-xs text-[var(--color-text)] mt-1.5">
             Si dejás vacío se analizan todas las tablas del schema. Si elegís
             algunas, "Detectar esquema" se enfocará solo en ellas.
           </p>
@@ -258,7 +258,7 @@ function ExternalDbConfig({
         <div>
           <label className="label">
             Contraseña
-            {value && <span className="text-white ml-2">(vacío conserva la guardada)</span>}
+            {value && <span className="text-[var(--color-text)] ml-2">(vacío conserva la guardada)</span>}
           </label>
           <div className="relative">
             <input
@@ -271,7 +271,7 @@ function ExternalDbConfig({
             <button
               type="button"
               onClick={() => setShowPass((v) => !v)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-white hover:text-white transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text)] hover:text-[var(--color-text)] transition-colors"
             >
               {showPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
             </button>
@@ -303,17 +303,17 @@ function ExternalDbConfig({
               </button>
 
               {status === "tested" && (
-                <span className="flex items-center gap-1.5 text-xs text-[#34d399]">
+                <span className="flex items-center gap-1.5 text-xs text-accent">
                   <Check className="w-3.5 h-3.5" /> Conexión exitosa
                 </span>
               )}
               {status === "discovered" && (
-                <span className="flex items-center gap-1.5 text-xs text-[#34d399]">
+                <span className="flex items-center gap-1.5 text-xs text-accent">
                   <Check className="w-3.5 h-3.5" /> Esquema detectado — se guardará con el cliente
                 </span>
               )}
               {status === "error" && errorMessage && (
-                <span className="flex items-center gap-1.5 text-xs text-red-400 break-all">
+                <span className="flex items-center gap-1.5 text-xs text-red-700 break-all">
                   <X className="w-3.5 h-3.5 flex-shrink-0" /> {errorMessage}
                 </span>
               )}
@@ -323,7 +323,7 @@ function ExternalDbConfig({
               <div className="col-span-2">
                 <label className="label">Esquema detectado — editable (se guarda con el cliente)</label>
                 <textarea
-                  className="text-xs text-white p-3 border border-[#1f232a] bg-[#0e1013] min-h-[160px] resize-y w-full"
+                  className="text-xs text-[var(--color-text)] p-3 border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] min-h-[160px] resize-y w-full"
                   value={schemaPreview}
                   onChange={(e) => {
                     setSchemaPreview(e.target.value);
@@ -332,7 +332,7 @@ function ExternalDbConfig({
                     onChange(next);
                   }}
                 />
-                <p className="text-xs text-white mt-1.5">
+                <p className="text-xs text-[var(--color-text)] mt-1.5">
                   Podés corregir lo que la IA detectó (quitar tablas/JOINs que no correspondan)
                   antes de guardar el cliente.
                 </p>
@@ -340,7 +340,7 @@ function ExternalDbConfig({
             ) : null}
           </>
         ) : (
-          <p className="col-span-2 text-xs text-white leading-relaxed">
+          <p className="col-span-2 text-xs text-[var(--color-text)] leading-relaxed">
             La conexión se probará automáticamente al guardar el cliente. El esquema se
             detecta después: edita el cliente y usa «Detectar esquema».
           </p>

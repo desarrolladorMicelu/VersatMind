@@ -17,9 +17,9 @@ const fmtNum = (v: number | null | undefined) =>
 
 function Kpi({ label, value, accent, danger }: { label: string; value: string; accent?: boolean; danger?: boolean }) {
   return (
-    <div className="bg-[#0b0c0e] p-6">
-      <p className="text-xs uppercase tracking-[0.06em] text-white mb-3">{label}</p>
-      <p className={`text-3xl font-bold ${danger ? "text-red-500" : accent ? "text-[#34d399]" : "text-white"}`}>{value}</p>
+    <div className="bg-[var(--color-bg)] p-6">
+      <p className="text-xs uppercase tracking-[0.06em] text-[var(--color-text)] mb-3">{label}</p>
+      <p className={`text-3xl font-bold ${danger ? "text-red-700" : accent ? "text-accent" : "text-[var(--color-text)]"}`}>{value}</p>
     </div>
   );
 }
@@ -45,16 +45,16 @@ function GlobalConsumo({ onSelect }: { onSelect: (row: UsageGlobalRow) => void }
       />
       <div className="px-5 py-6 sm:px-8 sm:py-8 space-y-8">
         {isError && (
-          <div className="border border-red-900/50 bg-red-950/20 px-5 py-4">
-            <p className="text-xs text-red-400 uppercase tracking-[0.06em]">
+          <div className="border border-red-300 bg-red-50 px-5 py-4">
+            <p className="text-xs text-red-700 uppercase tracking-[0.06em]">
               No se pudo cargar el consumo. Verifica que el backend esté actualizado y que la
               migración de consumo (0009) esté aplicada.
             </p>
           </div>
         )}
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-px bg-[#14171c]">
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-px bg-[var(--color-surface)]">
           {isLoading ? (
-            Array(4).fill(0).map((_, i) => <div key={i} className="bg-[#0b0c0e] p-6 h-24 animate-pulse" />)
+            Array(4).fill(0).map((_, i) => <div key={i} className="bg-[var(--color-bg)] p-6 h-24 animate-pulse" />)
           ) : (
             <>
               <Kpi label="Costo total" value={isError ? "—" : fmtUsd(totals?.total_cost_usd)} accent />
@@ -67,8 +67,8 @@ function GlobalConsumo({ onSelect }: { onSelect: (row: UsageGlobalRow) => void }
 
         <div>
           <p className="section-tag mb-4">Consumo por cliente</p>
-          <div className="rounded-xl border border-[#1f232a]">
-            <div className="grid grid-cols-12 bg-[#0e1013] border-b border-[#1f232a]">
+          <div className="rounded-xl border border-[var(--color-border-subtle)]">
+            <div className="grid grid-cols-12 bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
               <div className="col-span-4 th">Cliente</div>
               <div className="col-span-2 th">Tokens</div>
               <div className="col-span-2 th">Costo USD</div>
@@ -76,30 +76,30 @@ function GlobalConsumo({ onSelect }: { onSelect: (row: UsageGlobalRow) => void }
               <div className="col-span-2 th">Sobre umbral</div>
             </div>
             {isLoading ? (
-              Array(4).fill(0).map((_, i) => <div key={i} className="h-12 border-b border-[#1a1e24] animate-pulse" />)
+              Array(4).fill(0).map((_, i) => <div key={i} className="h-12 border-b border-[var(--color-border-subtle)] animate-pulse" />)
             ) : rows.length === 0 ? (
-              <p className="px-5 py-10 text-center text-xs text-white">SIN CONSUMO REGISTRADO</p>
+              <p className="px-5 py-10 text-center text-xs text-[var(--color-text)]">SIN CONSUMO REGISTRADO</p>
             ) : (
               rows.map((r) => (
                 <button
                   key={r.tenant_id}
                   onClick={() => onSelect(r)}
-                  className="w-full text-left grid grid-cols-12 border-b border-[#1a1e24] hover:bg-[#0e1013] transition-colors items-center"
+                  className="w-full text-left grid grid-cols-12 border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-elevated)] transition-colors items-center"
                 >
                   <div className="col-span-4 td">
                     <div className="flex items-center gap-2">
-                      <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${r.is_active ? "bg-[#34d399]" : "bg-[#343b45]"}`} />
+                      <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${r.is_active ? "bg-accent" : "bg-[var(--color-border)]"}`} />
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-white truncate">{r.name}</p>
-                        <p className="text-xs text-white">{r.slug}</p>
+                        <p className="text-sm font-medium text-[var(--color-text)] truncate">{r.name}</p>
+                        <p className="text-xs text-[var(--color-text)]">{r.slug}</p>
                       </div>
                     </div>
                   </div>
-                  <div className="col-span-2 td text-xs text-white">{fmtNum(r.total_tokens)}</div>
-                  <div className="col-span-2 td text-xs text-[#34d399]">{fmtUsd(r.total_cost_usd)}</div>
-                  <div className="col-span-2 td text-xs text-white">
+                  <div className="col-span-2 td text-xs text-[var(--color-text)]">{fmtNum(r.total_tokens)}</div>
+                  <div className="col-span-2 td text-xs text-accent">{fmtUsd(r.total_cost_usd)}</div>
+                  <div className="col-span-2 td text-xs text-[var(--color-text)]">
                     {fmtNum(r.users_count)}
-                    {r.paused_count > 0 && <span className="text-red-500 ml-2">({r.paused_count} paus.)</span>}
+                    {r.paused_count > 0 && <span className="text-red-700 ml-2">({r.paused_count} paus.)</span>}
                   </div>
                   <div className="col-span-2 td">
                     <span className={`badge ${r.over_threshold_count > 0 ? "badge-red" : "badge-green"}`}>
@@ -131,11 +131,11 @@ function SettingsForm({ tenantId, config }: { tenantId: number; config: UsageSet
   });
 
   return (
-    <div className="rounded-xl border border-[#1f232a] p-6">
+    <div className="rounded-xl border border-[var(--color-border-subtle)] p-6">
       <p className="section-tag mb-5">Configuración de alertas</p>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         <div>
-          <label className="label text-white">Umbral por usuario (USD)</label>
+          <label className="label text-[var(--color-text)]">Umbral por usuario (USD)</label>
           <input
             type="number" min={0} step="0.5" className="input"
             value={form.threshold_usd}
@@ -143,7 +143,7 @@ function SettingsForm({ tenantId, config }: { tenantId: number; config: UsageSet
           />
         </div>
         <div>
-          <label className="label text-white">Período</label>
+          <label className="label text-[var(--color-text)]">Período</label>
           <select
             className="input" value={form.period}
             onChange={(e) => setForm({ ...form, period: e.target.value as UsageSettings["period"] })}
@@ -153,7 +153,7 @@ function SettingsForm({ tenantId, config }: { tenantId: number; config: UsageSet
           </select>
         </div>
         <div>
-          <label className="label text-white">Email de alertas (opcional)</label>
+          <label className="label text-[var(--color-text)]">Email de alertas (opcional)</label>
           <input
             type="email" className="input" placeholder="admin@empresa.com"
             value={form.admin_email ?? ""}
@@ -166,24 +166,24 @@ function SettingsForm({ tenantId, config }: { tenantId: number; config: UsageSet
         <label className="flex items-center gap-2 cursor-pointer">
           <input type="checkbox" checked={form.auto_pause}
             onChange={(e) => setForm({ ...form, auto_pause: e.target.checked })} />
-          <span className="text-xs uppercase tracking-[0.06em] text-white">Pausar automáticamente</span>
+          <span className="text-xs uppercase tracking-[0.06em] text-[var(--color-text)]">Pausar automáticamente</span>
         </label>
         <label className="flex items-center gap-2 cursor-pointer">
           <input type="checkbox" checked={form.notify_telegram}
             onChange={(e) => setForm({ ...form, notify_telegram: e.target.checked })} />
-          <span className="text-xs uppercase tracking-[0.06em] text-white">Notificar por Telegram</span>
+          <span className="text-xs uppercase tracking-[0.06em] text-[var(--color-text)]">Notificar por Telegram</span>
         </label>
         <label className="flex items-center gap-2 cursor-pointer">
           <input type="checkbox" checked={form.notify_email}
             onChange={(e) => setForm({ ...form, notify_email: e.target.checked })} />
-          <span className="text-xs uppercase tracking-[0.06em] text-white">Notificar por email</span>
+          <span className="text-xs uppercase tracking-[0.06em] text-[var(--color-text)]">Notificar por email</span>
         </label>
         <button className="btn-primary ml-auto" disabled={save.isPending} onClick={() => save.mutate()}>
           Guardar
         </button>
       </div>
-      {save.isSuccess && <p className="text-xs text-[#34d399] mt-3">Configuración guardada.</p>}
-      {save.isError && <p className="text-xs text-red-500 mt-3">No se pudo guardar.</p>}
+      {save.isSuccess && <p className="text-xs text-accent mt-3">Configuración guardada.</p>}
+      {save.isError && <p className="text-xs text-red-700 mt-3">No se pudo guardar.</p>}
     </div>
   );
 }
@@ -262,17 +262,17 @@ function TenantConsumo({ tenantId }: { tenantId: number }) {
       <div className="px-5 py-6 sm:px-8 sm:py-8 space-y-8">
 
         {usersError && (
-          <div className="border border-red-900/50 bg-red-950/20 px-5 py-4">
-            <p className="text-xs text-red-400 uppercase tracking-[0.06em]">
+          <div className="border border-red-300 bg-red-50 px-5 py-4">
+            <p className="text-xs text-red-700 uppercase tracking-[0.06em]">
               No se pudo cargar el consumo. Verifica que el backend esté actualizado y que la
               migración de consumo (0009) esté aplicada en esta base de datos.
             </p>
           </div>
         )}
 
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-px bg-[#14171c]">
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-px bg-[var(--color-surface)]">
           {loadingUsers ? (
-            Array(4).fill(0).map((_, i) => <div key={i} className="bg-[#0b0c0e] p-6 h-24 animate-pulse" />)
+            Array(4).fill(0).map((_, i) => <div key={i} className="bg-[var(--color-bg)] p-6 h-24 animate-pulse" />)
           ) : (
             <>
               <Kpi label="Costo total" value={usersError ? "—" : fmtUsd(totals?.total_cost_usd)} accent />
@@ -288,11 +288,11 @@ function TenantConsumo({ tenantId }: { tenantId: number }) {
         {/* Filtros */}
         <div className="flex flex-wrap items-end gap-4">
           <div className="w-44">
-            <label className="label text-white">Desde</label>
+            <label className="label text-[var(--color-text)]">Desde</label>
             <input type="date" className="input" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
           </div>
           <div className="w-44">
-            <label className="label text-white">Hasta</label>
+            <label className="label text-[var(--color-text)]">Hasta</label>
             <input type="date" className="input" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
           </div>
           {(dateFrom || dateTo) && (
@@ -304,12 +304,12 @@ function TenantConsumo({ tenantId }: { tenantId: number }) {
                 key={t}
                 onClick={() => setTab(t)}
                 className={`text-xs uppercase tracking-[0.06em] px-3 py-2 border transition-colors ${
-                  tab === t ? "border-[#34d399] text-[#34d399]" : "border-[#262b33] text-white hover:border-[#343b45]"
+                  tab === t ? "border-accent text-accent" : "border-[var(--color-border)] text-[var(--color-text)] hover:border-[var(--color-border)]"
                 }`}
               >
                 {t}
                 {t === "alertas" && (usuarios?.totals.over_threshold_count ?? 0) > 0 && (
-                  <span className="ml-2 text-red-500">●</span>
+                  <span className="ml-2 text-red-700">●</span>
                 )}
               </button>
             ))}
@@ -317,8 +317,8 @@ function TenantConsumo({ tenantId }: { tenantId: number }) {
         </div>
 
         {tab === "usuarios" && (
-          <div className="rounded-xl border border-[#1f232a]">
-            <div className="grid grid-cols-12 bg-[#0e1013] border-b border-[#1f232a]">
+          <div className="rounded-xl border border-[var(--color-border-subtle)]">
+            <div className="grid grid-cols-12 bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
               <div className="col-span-3 th">Usuario</div>
               <div className="col-span-2 th">Tokens</div>
               <div className="col-span-2 th">Costo USD</div>
@@ -326,28 +326,28 @@ function TenantConsumo({ tenantId }: { tenantId: number }) {
               <div className="col-span-2 th">Acciones</div>
             </div>
             {loadingUsers ? (
-              Array(4).fill(0).map((_, i) => <div key={i} className="h-14 border-b border-[#1a1e24] animate-pulse" />)
+              Array(4).fill(0).map((_, i) => <div key={i} className="h-14 border-b border-[var(--color-border-subtle)] animate-pulse" />)
             ) : userRows.length === 0 ? (
-              <p className="px-5 py-10 text-center text-xs text-white">SIN CONSUMO EN EL PERÍODO</p>
+              <p className="px-5 py-10 text-center text-xs text-[var(--color-text)]">SIN CONSUMO EN EL PERÍODO</p>
             ) : (
               userRows.map((u) => {
                 const pct = threshold > 0 ? Math.min(100, (u.cost_usd / threshold) * 100) : 0;
                 return (
-                  <div key={u.chat_id} className="grid grid-cols-12 border-b border-[#1a1e24] hover:bg-[#0e1013] transition-colors items-center">
+                  <div key={u.chat_id} className="grid grid-cols-12 border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-elevated)] transition-colors items-center">
                     <div className="col-span-3 td">
-                      <p className="text-sm font-medium text-white">{u.username || "—"}</p>
-                      <p className="text-xs text-white">chat {u.chat_id} · {u.role_name}</p>
+                      <p className="text-sm font-medium text-[var(--color-text)]">{u.username || "—"}</p>
+                      <p className="text-xs text-[var(--color-text)]">chat {u.chat_id} · {u.role_name}</p>
                     </div>
-                    <div className="col-span-2 td text-xs text-white">{fmtNum(u.total_tokens)}</div>
-                    <div className={`col-span-2 td text-xs ${u.over_threshold ? "text-red-500" : "text-[#34d399]"}`}>
+                    <div className="col-span-2 td text-xs text-[var(--color-text)]">{fmtNum(u.total_tokens)}</div>
+                    <div className={`col-span-2 td text-xs ${u.over_threshold ? "text-red-700" : "text-accent"}`}>
                       {fmtUsd(u.cost_usd)}
                     </div>
                     <div className="col-span-3 td">
-                      <div className="h-1.5 bg-[#14171c] w-full">
-                        <div className="h-full" style={{ width: `${pct}%`, backgroundColor: u.over_threshold ? "#f87171" : "#34d399" }} />
+                      <div className="h-1.5 bg-[var(--color-surface)] w-full">
+                        <div className="h-full" style={{ width: `${pct}%`, backgroundColor: u.over_threshold ? "var(--color-danger)" : "var(--color-accent)" }} />
                       </div>
-                      <p className="text-xs text-white mt-1">
-                        {pct.toFixed(0)}% {u.has_alert && <span className="text-red-500 ml-2">ALERTA</span>}
+                      <p className="text-xs text-[var(--color-text)] mt-1">
+                        {pct.toFixed(0)}% {u.has_alert && <span className="text-red-700 ml-2">ALERTA</span>}
                       </p>
                     </div>
                     <div className="col-span-2 td">
@@ -355,14 +355,14 @@ function TenantConsumo({ tenantId }: { tenantId: number }) {
                         {u.is_paused ? (
                           <button
                             onClick={() => reanudar.mutate(u.chat_id)}
-                            className="flex items-center gap-1 text-xs uppercase tracking-[0.06em] text-[#34d399] border border-[#34d399]/30 px-2 py-1 hover:bg-[#34d399]/10 transition-colors"
+                            className="flex items-center gap-1 text-xs uppercase tracking-[0.06em] text-accent border border-accent/30 px-2 py-1 hover:bg-accent/10 transition-colors"
                           >
                             <Play className="w-3 h-3" /> Reanudar
                           </button>
                         ) : (
                           <button
                             onClick={() => window.confirm("¿Pausar el acceso de este usuario?") && pausar.mutate(u.chat_id)}
-                            className="flex items-center gap-1 text-xs uppercase tracking-[0.06em] text-yellow-500 border border-yellow-500/30 px-2 py-1 hover:bg-yellow-500/10 transition-colors"
+                            className="flex items-center gap-1 text-xs uppercase tracking-[0.06em] text-amber-700 border border-amber-300 px-2 py-1 hover:bg-amber-100 transition-colors"
                           >
                             <Pause className="w-3 h-3" /> Pausar
                           </button>
@@ -378,17 +378,17 @@ function TenantConsumo({ tenantId }: { tenantId: number }) {
         )}
 
         {tab === "historial" && (
-          <div className="rounded-xl border border-[#1f232a]">
-            <div className="flex items-center justify-between px-5 py-3 bg-[#0e1013] border-b border-[#1f232a]">
+          <div className="rounded-xl border border-[var(--color-border-subtle)]">
+            <div className="flex items-center justify-between px-5 py-3 bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
               <span className="section-tag">{fmtNum(historial?.total)} registros</span>
-              <select className="bg-[#0b0c0e] border border-[#262b33] text-xs text-white px-2 py-1 focus:outline-none"
+              <select className="bg-[var(--color-bg)] border border-[var(--color-border)] text-xs text-[var(--color-text)] px-2 py-1 focus:outline-none"
                 value={source} onChange={(e) => setSource(e.target.value)}>
                 <option value="">Todos los orígenes</option>
                 <option value="chat">Chat</option>
                 <option value="scheduler">Tareas programadas</option>
               </select>
             </div>
-            <div className="grid grid-cols-12 bg-[#0e1013] border-b border-[#1f232a]">
+            <div className="grid grid-cols-12 bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
               <div className="col-span-3 th">Fecha</div>
               <div className="col-span-2 th">Usuario</div>
               <div className="col-span-2 th">Modelo</div>
@@ -397,17 +397,17 @@ function TenantConsumo({ tenantId }: { tenantId: number }) {
               <div className="col-span-1 th">Origen</div>
             </div>
             {loadingHist ? (
-              Array(5).fill(0).map((_, i) => <div key={i} className="h-10 border-b border-[#1a1e24] animate-pulse" />)
+              Array(5).fill(0).map((_, i) => <div key={i} className="h-10 border-b border-[var(--color-border-subtle)] animate-pulse" />)
             ) : (historial?.rows.length ?? 0) === 0 ? (
-              <p className="px-5 py-10 text-center text-xs text-white">SIN REGISTROS</p>
+              <p className="px-5 py-10 text-center text-xs text-[var(--color-text)]">SIN REGISTROS</p>
             ) : (
               historial!.rows.map((h) => (
-                <div key={h.id} className="grid grid-cols-12 border-b border-[#1a1e24] hover:bg-[#0e1013] transition-colors items-center">
-                  <div className="col-span-3 td text-xs text-white">{fmtDate(h.created_at)}</div>
-                  <div className="col-span-2 td text-xs text-white">{h.username || h.chat_id || "—"}</div>
-                  <div className="col-span-2 td text-xs text-white truncate">{h.model || "—"}</div>
-                  <div className="col-span-2 td text-xs text-white">{fmtNum(h.total_tokens)}</div>
-                  <div className="col-span-2 td text-xs text-[#34d399]">{fmtUsd(h.cost_usd)}</div>
+                <div key={h.id} className="grid grid-cols-12 border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-elevated)] transition-colors items-center">
+                  <div className="col-span-3 td text-xs text-[var(--color-text)]">{fmtDate(h.created_at)}</div>
+                  <div className="col-span-2 td text-xs text-[var(--color-text)]">{h.username || h.chat_id || "—"}</div>
+                  <div className="col-span-2 td text-xs text-[var(--color-text)] truncate">{h.model || "—"}</div>
+                  <div className="col-span-2 td text-xs text-[var(--color-text)]">{fmtNum(h.total_tokens)}</div>
+                  <div className="col-span-2 td text-xs text-accent">{fmtUsd(h.cost_usd)}</div>
                   <div className="col-span-1 td">
                     <span className={`badge ${h.source === "scheduler" ? "badge-amber" : "badge-slate"}`}>{h.source}</span>
                   </div>
@@ -418,8 +418,8 @@ function TenantConsumo({ tenantId }: { tenantId: number }) {
         )}
 
         {tab === "alertas" && (
-          <div className="rounded-xl border border-[#1f232a]">
-            <div className="grid grid-cols-12 bg-[#0e1013] border-b border-[#1f232a]">
+          <div className="rounded-xl border border-[var(--color-border-subtle)]">
+            <div className="grid grid-cols-12 bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
               <div className="col-span-3 th">Usuario</div>
               <div className="col-span-2 th">Consumo</div>
               <div className="col-span-2 th">Umbral</div>
@@ -428,30 +428,30 @@ function TenantConsumo({ tenantId }: { tenantId: number }) {
               <div className="col-span-1 th" />
             </div>
             {loadingAlerts ? (
-              Array(3).fill(0).map((_, i) => <div key={i} className="h-12 border-b border-[#1a1e24] animate-pulse" />)
+              Array(3).fill(0).map((_, i) => <div key={i} className="h-12 border-b border-[var(--color-border-subtle)] animate-pulse" />)
             ) : alertas.length === 0 ? (
-              <p className="px-5 py-10 text-center text-xs text-white">SIN ALERTAS</p>
+              <p className="px-5 py-10 text-center text-xs text-[var(--color-text)]">SIN ALERTAS</p>
             ) : (
               alertas.map((a) => (
-                <div key={a.id} className="grid grid-cols-12 border-b border-[#1a1e24] hover:bg-[#0e1013] transition-colors items-center">
+                <div key={a.id} className="grid grid-cols-12 border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-elevated)] transition-colors items-center">
                   <div className="col-span-3 td">
-                    <p className="text-sm text-white">{a.username || "—"}</p>
-                    <p className="text-xs text-white">{fmtDate(a.created_at)}</p>
+                    <p className="text-sm text-[var(--color-text)]">{a.username || "—"}</p>
+                    <p className="text-xs text-[var(--color-text)]">{fmtDate(a.created_at)}</p>
                   </div>
-                  <div className="col-span-2 td text-xs text-red-500">{fmtUsd(a.total_cost_usd)}</div>
-                  <div className="col-span-2 td text-xs text-white">{fmtUsd(a.threshold_usd)}</div>
-                  <div className="col-span-2 td text-xs text-white">{a.period_key}</div>
+                  <div className="col-span-2 td text-xs text-red-700">{fmtUsd(a.total_cost_usd)}</div>
+                  <div className="col-span-2 td text-xs text-[var(--color-text)]">{fmtUsd(a.threshold_usd)}</div>
+                  <div className="col-span-2 td text-xs text-[var(--color-text)]">{a.period_key}</div>
                   <div className="col-span-2 td">
                     <span className={`badge ${a.status === "active" ? "badge-red" : "badge-slate"}`}>{a.status}</span>
                     {a.notified
-                      ? <Bell className="w-3 h-3 text-[#34d399] inline ml-2" />
-                      : <BellOff className="w-3 h-3 text-white inline ml-2" />}
+                      ? <Bell className="w-3 h-3 text-accent inline ml-2" />
+                      : <BellOff className="w-3 h-3 text-[var(--color-text)] inline ml-2" />}
                   </div>
                   <div className="col-span-1 td">
                     {a.status === "active" && (
                       <button
                         onClick={() => reconocer.mutate(a.id)}
-                        className="flex items-center gap-1 text-xs uppercase tracking-[0.06em] text-[#34d399] hover:underline"
+                        className="flex items-center gap-1 text-xs uppercase tracking-[0.06em] text-accent hover:underline"
                       >
                         <Check className="w-3 h-3" /> OK
                       </button>
@@ -479,7 +479,7 @@ export default function Consumo() {
         <div>
           <PageHeader tag="ADMIN" title="Consumo" description="Sin cliente asignado" />
           <div className="px-5 py-16 sm:px-8 text-center">
-            <p className="text-xs text-white uppercase tracking-[0.06em]">Selecciona un cliente en el panel izquierdo</p>
+            <p className="text-xs text-[var(--color-text)] uppercase tracking-[0.06em]">Selecciona un cliente en el panel izquierdo</p>
           </div>
         </div>
       );
