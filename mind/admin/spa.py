@@ -30,6 +30,14 @@ async def serve_spa_root():
     return get_index()
 
 
+@spa_router.get("/admin/favicon.png", include_in_schema=False)
+async def serve_favicon():
+    icon = STATIC_DIR / "favicon.png"
+    if not icon.exists():
+        raise HTTPException(status_code=404, detail="Not Found")
+    return FileResponse(icon, media_type="image/png")
+
+
 @spa_router.get("/admin/{full_path:path}")
 async def serve_spa(full_path: str):
     # No interceptar archivos estáticos: si no existen, debe ser 404 real.

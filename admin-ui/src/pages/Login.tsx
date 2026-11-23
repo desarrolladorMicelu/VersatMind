@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, LockKeyhole, ShieldCheck } from "lucide-react";
+import { ArrowRight, LockKeyhole } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 
 export default function Login() {
@@ -58,28 +58,9 @@ export default function Login() {
             <h1 className="text-3xl font-semibold leading-[1.15] tracking-tight text-[var(--color-text)]">
               Inteligencia clara para decisiones importantes.
             </h1>
-            <p className="mt-4 max-w-sm text-sm leading-relaxed text-[var(--color-text-muted)]">
-              Administra clientes, usuarios, integraciones y consumo desde un solo
-              lugar, con la tranquilidad de tener todo bajo control.
-            </p>
-
-            <div className="mt-8 space-y-3">
-              {[
-                "Acceso multi-cliente con aislamiento total",
-                "Control de usuarios, roles y permisos",
-                "Consumo, integraciones y auditoría en tiempo real",
-              ].map((item) => (
-                <div key={item} className="flex items-start gap-2.5">
-                  <ShieldCheck className="mt-0.5 h-4 w-4 flex-shrink-0 text-[var(--color-accent-strong)]" />
-                  <p className="text-xs leading-relaxed text-[var(--color-text-muted)]">{item}</p>
-                </div>
-              ))}
-            </div>
           </div>
 
-          <p className="text-2xs font-medium text-[var(--color-text-subtle)]">
-            Acceso restringido · Solo personal autorizado
-          </p>
+          <div aria-hidden className="h-px w-10 bg-[var(--color-border)]" />
         </div>
 
         {/* Formulario */}
