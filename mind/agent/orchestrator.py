@@ -15,6 +15,13 @@ from openai import AsyncOpenAI, APIError, APITimeoutError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from mind.auth.authorization import AuthResult
+from mind.auth.data_policy import (
+    SourcePolicy,
+    empty_policy,
+    load_permissions_for_roles,
+    load_source_policy,
+    load_user_role_ids,
+)
 from mind.db.models import Tenant
 from mind.usage.tracker import record_usage
 
@@ -33,30 +40,8 @@ REGLAS CRÍTICAS — NUNCA las ignores:
 - Responde en español siempre.
 - Después de llamar una herramienta, interpreta los resultados y preséntelos de forma clara y ejecutiva.
 
-Herramientas disponibles:
-- consultar_ventas: ventas del período (usa año actual si no especifican)
-- consultar_ventas_detalle: detalle de transacciones
-- consultar_indicadores: KPIs del año actual
-- consultar_finanzas: CxP, abonos, cuadre de caja
-- consultar_productos: catálogo de productos
-- consultar_cxp: cuentas por pagar
-- catalogo_precios: productos con precio, marca/categoría (búsqueda por texto)
-- stock_celulares: stock en tiempo real de celulares por referencia y bodega
-- gangazos: equipos de servicio técnico listos para venta como gangazo
-- ventas_recientes: ventas de los últimos días (qué, cuándo, quién, a qué cliente)
-- inventario_bodega: inventario físico de una bodega (arqueo, IMEI a IMEI)
-- validar_imei: si un IMEI/serie existe, en qué bodega y qué producto es
-- historial_cliente: compras de un cliente por NIT (qué, cuándo, cuánto)
-- buscar_cliente: verifica si un NIT existe como cliente y devuelve su nombre
-- direccion_proveedor: dirección registrada de un proveedor por nombre
-- estado_sincronizacion_clientes: estado de sincronización de clientes ventas↔Ofima
-- inventario_activos: equipos activos en inventario con descripción
-- cliente_completo: datos del cliente por NIT (dirección, teléfonos, email) para firmas
-- factura_reciente_cliente: última factura de un cliente (para asociar pedidos)
-- medios_pago: medios de pago / bancos registrados
-- movimientos_contables: movimientos de caja/contables por rango de fechas
-- generar_informe: genera PDF o Excel
-- crear_tarea_programada / listar_tareas / eliminar_tarea / modificar_tarea
+Usa únicamente las herramientas que se te entregan en esta conversación.
+La lista exacta de herramientas habilitadas para este usuario aparece al final del prompt.
 
 Cuando pregunten por precios, stock, IMEI, gangazos, historial de un cliente, proveedores,
 arqueos o sincronización, USA la herramienta correspondiente (no inventes datos).
@@ -73,6 +58,17 @@ class AgentResult:
     file_caption: str | None = None
 
 
+def tool_catalog(tools: list[dict]) -> str:
+    """Catálogo de herramientas permitidas para inyectar en el prompt."""
+    lines = ["Herramientas habilitadas para este usuario:"]
+    for tool in tools:
+        fn = tool.get("function", {})
+        name = fn.get("name")
+        if name:
+            lines.append(f"- {name}: {fn.get('description', '')}")
+    return "\n".join(lines)
+
+
 async def process(
     message: str,
     chat_id: int,
@@ -82,6 +78,7 @@ async def process(
     source: str = "chat",
     forced_permissions: frozenset[str] | None = None,
     persist_history: bool = True,
+    source_policy: SourcePolicy | None = None,
 ) -> AgentResult:
     """
     Procesa un mensaje del usuario usando el loop LLM con tool-calling.
@@ -93,10 +90,13 @@ async def process(
         truncate_to_token_limit, Message,
     )
     from mind.agent.tools.registry import (
-        dispatch, get_tool_schemas,
+        dispatch, get_allowed_tool_schemas,
         PermissionDeniedError, ToolNotFoundError, ToolValidationError,
     )
-    from mind.audit.logger import AuditRecord, log_interaction, log_tool_failure
+    from mind.audit.logger import (
+        AuditRecord, log_interaction, log_permission_denied, log_tool_failure,
+    )
+    from mind.auth.context import set_current_permissions
     from mind.tenants.context import set_tenant
 
     # Establecer tenant en el contexto async (para connectors.py)
@@ -121,10 +121,27 @@ async def process(
     except Exception:
         pass
 
+    # --- Permisos funcionales + política de fuentes ---
+    role_ids: frozenset[int] = frozenset()
+    if forced_permissions is not None:
+        user_permissions = forced_permissions
+        policy = source_policy or empty_policy()
+    elif auth_result.user is not None or auth_result.role is not None:
+        if auth_result.user is not None:
+            role_ids = await load_user_role_ids(session, auth_result.user)
+        elif auth_result.role is not None:
+            role_ids = frozenset({auth_result.role.id})
+        user_permissions = await load_permissions_for_roles(session, role_ids)
+        policy = await load_source_policy(session, role_ids, tenant.id)
+    else:
+        user_permissions = frozenset()
+        policy = empty_policy()
+    set_current_permissions(user_permissions)
+
     # Inyectar el esquema de la base de datos externa del cliente si existe
     ext_db = getattr(tenant, "external_db", None)
     schema_description = (ext_db or {}).get("schema_description")
-    if schema_description:
+    if schema_description and policy.allows("external_db"):
         active_system_prompt += (
             "\n\n## Base de datos externa del cliente\n\n"
             "Tienes disponible una base de datos externa con este esquema:\n\n"
@@ -157,11 +174,21 @@ async def process(
             "consúltalas según corresponda.\n"
             "Limita resultados con LIMIT."
         )
+    elif schema_description and policy.restricted:
+        allowed_tables = sorted(policy.allowed_tables())
+        if allowed_tables:
+            active_system_prompt += (
+                "\n\n## Base de datos externa del cliente\n\n"
+                "El usuario solo tiene acceso a estas tablas: "
+                f"{', '.join(allowed_tables)}.\n"
+                "Usa 'ejecutar_consulta' únicamente con esas tablas. "
+                "Si la pregunta requiere otra tabla, indica que no tiene acceso."
+            )
 
     # Inyectar la descripción de Google Sheets del cliente si existe
     ext_sheets = getattr(tenant, "external_sheets", None)
     sheets_description = (ext_sheets or {}).get("schema_description")
-    if sheets_description:
+    if sheets_description and policy.allows("sheets"):
         active_system_prompt += (
             "\n\n## Google Sheets del cliente\n\n"
             "Tienes disponible una hoja de cálculo de Google Sheets con este contenido:\n\n"
@@ -174,7 +201,7 @@ async def process(
     # Inyectar descripción del Excel del cliente si existe
     ext_excel = getattr(tenant, "external_excel", None)
     excel_description = (ext_excel or {}).get("schema_description")
-    if excel_description and (ext_excel or {}).get("access_token"):
+    if excel_description and (ext_excel or {}).get("access_token") and policy.allows("excel"):
         active_system_prompt += (
             "\n\n## Archivo Excel del cliente (OneDrive/SharePoint)\n\n"
             "Tienes disponible un archivo Excel en OneDrive/SharePoint con este contenido:\n\n"
@@ -191,7 +218,7 @@ async def process(
     # Inyectar descripción de Alegra si existe
     ext_alegra = getattr(tenant, "external_alegra", None)
     alegra_description = (ext_alegra or {}).get("schema_description")
-    if alegra_description:
+    if alegra_description and policy.allows("alegra"):
         active_system_prompt += (
             "\n\n" + alegra_description + "\n\n"
             "Para consultarla usa la herramienta 'consultar_alegra' con una descripción "
@@ -200,7 +227,13 @@ async def process(
 
     # Inyectar configuración de informes contables si existe
     report_cfg = getattr(tenant, "report_config", None)
-    if report_cfg and report_cfg.get("company_name"):
+    can_use_reports = (
+        not policy.restricted
+        or policy.allows("external_db")
+        or policy.allows("alegra")
+        or bool(policy.allowed_tables())
+    )
+    if report_cfg and report_cfg.get("company_name") and can_use_reports:
         sections_list = ", ".join(report_cfg.get("sections", ["balance", "income", "expenses"]))
         instructions = report_cfg.get("additional_instructions", "")
         prompt = (
@@ -240,7 +273,10 @@ async def process(
     # Inyectar base de conocimiento del cliente si tiene información cargada
     try:
         from mind.knowledge.retriever import build_knowledge_context
-        knowledge = await build_knowledge_context(session, tenant.id, message)
+        knowledge = await build_knowledge_context(
+            session, tenant.id, message,
+            allowed_sources=policy.allowed if policy.restricted else None,
+        )
         if knowledge:
             active_system_prompt += (
                 "\n\n## Base de conocimiento del cliente\n\n"
@@ -268,20 +304,6 @@ async def process(
         history = []
 
     # --- 2. Obtener permisos del usuario ---
-    # forced_permissions se usa en automatizaciones (prompts programados) que
-    # se configuran por administradores y corren con todos los permisos.
-    user_permissions: frozenset[str] = frozenset()
-    if forced_permissions is not None:
-        user_permissions = forced_permissions
-    elif auth_result.role:
-        from sqlalchemy import select
-        from mind.db.models import RolePermission
-        stmt = select(RolePermission.permission_name).where(
-            RolePermission.role_id == auth_result.role.id
-        )
-        result = await session.execute(stmt)
-        user_permissions = frozenset(row[0] for row in result.fetchall())
-
     # --- 3. Construir messages para OpenAI ---
     prompt_ctx = build_prompt(history, active_window)
     truncated = truncate_to_token_limit(prompt_ctx.messages, max_tokens=100_000)
@@ -292,7 +314,7 @@ async def process(
     openai_messages.extend(m.to_openai_dict() for m in truncated)
     openai_messages.append({"role": "user", "content": message})
 
-    tools = get_tool_schemas()
+    tools = get_allowed_tool_schemas(user_permissions, policy)
     # Proveedores de correo/calendario vinculados (para gatear sus tools)
     try:
         from mind.integrations.store import get_active_providers
@@ -339,6 +361,8 @@ async def process(
             continue
         filtered_tools.append(t)
     tools = filtered_tools
+    active_system_prompt += "\n\n" + tool_catalog(tools)
+    openai_messages[0] = {"role": "system", "content": active_system_prompt}
     logger.info(
         "tenant=%s chat_id=%s permisos=%s tools=%s",
         tenant.slug, chat_id, user_permissions,
@@ -410,7 +434,7 @@ async def process(
                     raw_args = {}
 
                 try:
-                    tool_result_str = await dispatch(tool_name, raw_args, user_permissions)
+                    tool_result_str = await dispatch(tool_name, raw_args, user_permissions, policy)
                     tool_result_data = json.loads(tool_result_str)
 
                     if not tool_result_data.get("error") and "file_path" in tool_result_data:
@@ -423,14 +447,21 @@ async def process(
                 except PermissionDeniedError as exc:
                     tool_result_str = json.dumps({
                         "error": True,
-                        "mensaje": "No tienes permiso para ejecutar esta acción.",
+                        "mensaje": (
+                            "No tienes acceso a esa información. "
+                            "Si la necesitas, pide acceso a tu administrador."
+                        ),
                     })
-                    await log_tool_failure(
+                    from mind.auth.data_policy import source_key_for_tool
+                    await log_permission_denied(
                         tool_name=tool_name,
                         params=raw_args,
-                        error=str(exc),
+                        reason=str(exc),
                         chat_id=chat_id,
+                        user_id=getattr(auth_result.user, "user_id", None),
                         tenant_id=tenant.id,
+                        role_id=next(iter(role_ids), None),
+                        source_key=source_key_for_tool(tool_name),
                     )
 
                 except (ToolNotFoundError, ToolValidationError) as exc:

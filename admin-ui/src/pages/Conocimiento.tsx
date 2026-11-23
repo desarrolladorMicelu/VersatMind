@@ -4,6 +4,7 @@ import { Power, Trash2, Pencil, Plus, Save } from "lucide-react";
 import { knowledgeApi } from "../lib/api";
 import type { KnowledgeEntry } from "../lib/api";
 import { fmtDate } from "../lib/utils";
+import { activeLabel } from "../lib/labels";
 import PageHeader from "../components/PageHeader";
 import { useTenant } from "../contexts/TenantContext";
 
@@ -50,8 +51,8 @@ export default function Conocimiento() {
     return (
       <div>
         <PageHeader tag="CONTEXTO" title="Base de conocimiento" description="Selecciona un cliente" />
-        <div className="px-8 py-16 text-center">
-          <p className="font-mono text-xs text-white uppercase tracking-widest">Selecciona un cliente en el panel izquierdo</p>
+        <div className="px-5 py-16 sm:px-8 text-center">
+          <p className="text-xs text-[var(--color-text)] uppercase tracking-[0.06em]">Selecciona un cliente en el panel izquierdo</p>
         </div>
       </div>
     );
@@ -62,28 +63,28 @@ export default function Conocimiento() {
       <PageHeader
         tag="CONTEXTO"
         title="Base de conocimiento"
-        description={`${entries.length} entradas cargadas`}
+        description={`${entries.length} entradas guardadas`}
         action={
           <button className="btn-primary" onClick={() => setForm({ ...EMPTY })}>
             <Plus className="w-3.5 h-3.5" /> Nueva información
           </button>
         }
       />
-      <div className="px-8 py-8 space-y-6">
+      <div className="px-5 py-6 sm:px-8 sm:py-8 space-y-6">
 
         {form && (
-          <div className="border border-[#00e5a0]/30 bg-[#050505] p-6 space-y-5">
-            <p className="section-tag">{form.id ? "// Editar información" : "// Cargar información"}</p>
+          <div className="border border-[var(--color-accent-border)] bg-[var(--color-surface)] p-6 space-y-5">
+            <p className="section-tag">{form.id ? "Editar información" : "Cargar información"}</p>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               <div className="md:col-span-2">
-                <label className="label text-white">Título</label>
+                <label className="label text-[var(--color-text)]">Título</label>
                 <input className="input" value={form.title}
                   placeholder="Metas de venta por asesor"
                   onChange={(e) => setForm({ ...form, title: e.target.value })} />
               </div>
               <div>
-                <label className="label text-white">Origen</label>
+                <label className="label text-[var(--color-text)]">Origen</label>
                 <input className="input" value={form.source}
                   placeholder="manual / archivo.csv"
                   onChange={(e) => setForm({ ...form, source: e.target.value })} />
@@ -91,14 +92,14 @@ export default function Conocimiento() {
             </div>
 
             <div>
-              <label className="label text-white">Contenido</label>
+              <label className="label text-[var(--color-text)]">Contenido</label>
               <textarea className="input" rows={10} value={form.content}
                 placeholder="Pega aquí la información del negocio: metas, políticas, precios, catálogos, contexto de la tienda, etc."
                 onChange={(e) => setForm({ ...form, content: e.target.value })} />
             </div>
 
             <div>
-              <label className="label text-white">Etiquetas (separadas por coma)</label>
+              <label className="label text-[var(--color-text)]">Etiquetas (separadas por coma)</label>
               <input className="input" value={form.tags}
                 placeholder="ventas, margen, metas"
                 onChange={(e) => setForm({ ...form, tags: e.target.value })} />
@@ -114,8 +115,8 @@ export default function Conocimiento() {
           </div>
         )}
 
-        <div className="border border-[#1a1a1a]">
-          <div className="grid grid-cols-12 bg-[#050505] border-b border-[#1a1a1a]">
+        <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
+          <div className="grid grid-cols-12 bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
             <div className="col-span-5 th">Título</div>
             <div className="col-span-2 th">Origen</div>
             <div className="col-span-2 th">Etiquetas</div>
@@ -124,35 +125,35 @@ export default function Conocimiento() {
           </div>
 
           {isLoading ? (
-            Array(3).fill(0).map((_, i) => <div key={i} className="h-12 border-b border-[#111] animate-pulse" />)
+            Array(3).fill(0).map((_, i) => <div key={i} className="h-12 border-b border-[var(--color-border-subtle)] animate-pulse" />)
           ) : entries.length === 0 ? (
-            <p className="px-5 py-10 text-center font-mono text-xs text-white">SIN INFORMACIÓN CARGADA</p>
+            <p className="px-5 py-10 text-center text-xs text-[var(--color-text)]">Aún no hay información guardada</p>
           ) : (
             entries.map((e) => (
-              <div key={e.id} className="grid grid-cols-12 border-b border-[#111] hover:bg-[#050505] transition-colors items-center">
+              <div key={e.id} className="grid grid-cols-12 border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-elevated)] transition-colors items-center">
                 <div className="col-span-5 td">
-                  <p className="text-sm text-white">{e.title}</p>
-                  <p className="font-mono text-[10px] text-white truncate">{e.content.slice(0, 90)}</p>
+                  <p className="text-sm text-[var(--color-text)]">{e.title}</p>
+                  <p className="text-xs text-[var(--color-text)] truncate">{e.content.slice(0, 90)}</p>
                 </div>
-                <div className="col-span-2 td font-mono text-[11px] text-white">{e.source || "—"}</div>
-                <div className="col-span-2 td font-mono text-[11px] text-white truncate">{e.tags || "—"}</div>
+                <div className="col-span-2 td text-xs text-[var(--color-text)]">{e.source || "—"}</div>
+                <div className="col-span-2 td text-xs text-[var(--color-text)] truncate">{e.tags || "—"}</div>
                 <div className="col-span-1 td">
-                  <span className={`badge ${e.is_active ? "badge-green" : "badge-slate"}`}>{e.is_active ? "ON" : "OFF"}</span>
+                  <span className={`badge ${e.is_active ? "badge-green" : "badge-slate"}`}>{activeLabel(e.is_active, true)}</span>
                 </div>
                 <div className="col-span-2 td">
                   <div className="flex items-center justify-between">
-                    <span className="font-mono text-[11px] text-white">{fmtDate(e.updated_at)}</span>
+                    <span className="text-xs text-[var(--color-text)]">{fmtDate(e.updated_at)}</span>
                     <div className="flex items-center gap-1.5">
                       <button title="Editar" onClick={() => startEdit(e)}
-                        className="p-1.5 text-white hover:text-[#00e5a0] transition-colors">
+                        className="p-1.5 text-[var(--color-text)] hover:text-[var(--color-accent-strong)] transition-colors">
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
                       <button title={e.is_active ? "Desactivar" : "Activar"} onClick={() => toggle.mutate(e.id)}
-                        className={`p-1.5 transition-colors ${e.is_active ? "text-white hover:text-yellow-500" : "text-white hover:text-[#00e5a0]"}`}>
+                        className={`p-1.5 transition-colors ${e.is_active ? "text-[var(--color-text)] hover:text-amber-700" : "text-[var(--color-text)] hover:text-[var(--color-accent-strong)]"}`}>
                         <Power className="w-3.5 h-3.5" />
                       </button>
                       <button title="Eliminar" onClick={() => window.confirm("¿Eliminar esta información?") && remove.mutate(e.id)}
-                        className="p-1.5 text-white hover:text-red-500 transition-colors">
+                        className="p-1.5 text-[var(--color-text)] hover:text-red-700 transition-colors">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>

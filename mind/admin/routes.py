@@ -7,6 +7,7 @@ Multi-tenant: los endpoints de datos aceptan ?tenant_id= para filtrar.
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 from datetime import datetime, timedelta, timezone
 
@@ -41,6 +42,10 @@ class AgentConfigUpdate(BaseModel):
 
 class RolePermissionsUpdate(BaseModel):
     permissions: list[str]
+
+class RoleSourcesUpdate(BaseModel):
+    restricted: bool = True
+    source_ids: list[int] = []
 
 class NewRole(BaseModel):
     name: str
@@ -615,8 +620,11 @@ async def tenant_create(
     session: AsyncSession = Depends(get_session),
 ):
     from mind.db.models import Tenant
+    from mind.tenants.defaults import seed_tenant_defaults
     tenant = Tenant(**body.model_dump())
     session.add(tenant)
+    await session.flush()
+    await seed_tenant_defaults(session, tenant)
     await session.commit()
     await session.refresh(tenant)
 
@@ -1577,15 +1585,40 @@ async def usuario_cambiar_rol(
     session: AsyncSession = Depends(get_session),
     tenant_id: int | None = Query(default=None),
 ):
-    from mind.db.models import User
+    from mind.db.models import Role, User, UserRole
     tid = get_effective_tenant_id(admin, tenant_id)
     user = (await session.execute(
         select(User).where(User.chat_id == chat_id, User.tenant_id == tid)
     )).scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    user.role_id = body["role_id"]
+    role = (await session.execute(
+        select(Role).where(Role.id == body["role_id"], Role.tenant_id == tid)
+    )).scalar_one_or_none()
+    if role is None:
+        raise HTTPException(status_code=400, detail="El rol no pertenece a este cliente")
+    user.role_id = role.id
+    await session.execute(delete(UserRole).where(
+        UserRole.tenant_id == tid, UserRole.chat_id == chat_id,
+    ))
+    session.add(UserRole(tenant_id=tid, chat_id=chat_id, role_id=role.id))
     await session.commit()
+
+    try:
+        from mind.audit.logger import AuditRecord, log_interaction
+        await log_interaction(AuditRecord(
+            event_type="role_change",
+            tenant_id=tid,
+            request_content=json.dumps({
+                "action": "user_role_changed",
+                "chat_id": chat_id,
+                "role_id": role.id,
+                "role_name": role.name,
+            }, ensure_ascii=False),
+            status="success",
+        ))
+    except Exception:
+        logger.warning("No se pudo auditar cambio de rol", exc_info=True)
     return {"ok": True}
 
 
@@ -1662,18 +1695,109 @@ async def roles_list(
     session: AsyncSession = Depends(get_session),
     tenant_id: int | None = Query(default=None),
 ):
-    from mind.db.models import Role, RolePermission
+    from mind.db.models import Role, RolePermission, RoleSourcePermission
     tid = get_effective_tenant_id(admin, tenant_id)
     roles = (await session.execute(select(Role).where(Role.tenant_id == tid))).scalars().all()
-    perms = (await session.execute(select(RolePermission))).scalars().all()
+    role_ids = [r.id for r in roles]
+    perms = (await session.execute(
+        select(RolePermission).where(RolePermission.role_id.in_(role_ids))
+    )).scalars().all() if role_ids else []
     perms_by_role: dict[int, list[str]] = {}
     for p in perms:
         perms_by_role.setdefault(p.role_id, []).append(p.permission_name)
+    source_rows = (await session.execute(
+        select(RoleSourcePermission).where(RoleSourcePermission.role_id.in_(role_ids))
+    )).scalars().all() if role_ids else []
+    sources_by_role: dict[int, list[int]] = {}
+    for row in source_rows:
+        sources_by_role.setdefault(row.role_id, []).append(row.source_id)
     return [
-        {"id": r.id, "name": r.name, "description": r.description,
-         "permissions": perms_by_role.get(r.id, [])}
+        {
+            "id": r.id, "name": r.name, "description": r.description,
+            "permissions": perms_by_role.get(r.id, []),
+            "source_ids": sources_by_role.get(r.id, []),
+            "sources_restricted": bool(sources_by_role.get(r.id)),
+        }
         for r in roles
     ]
+
+
+@router.get("/data-sources")
+async def data_sources_list(
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
+):
+    from mind.db.models import DataSource
+    tid = get_effective_tenant_id(admin, tenant_id)
+    rows = (await session.execute(
+        select(DataSource)
+        .where(DataSource.tenant_id == tid)
+        .order_by(DataSource.kind, DataSource.display_name)
+    )).scalars().all()
+    return [
+        {
+            "id": s.id, "kind": s.kind, "source_key": s.source_key,
+            "display_name": s.display_name, "is_active": s.is_active,
+        }
+        for s in rows
+    ]
+
+
+@router.put("/roles/{role_id}/fuentes")
+async def rol_actualizar_fuentes(
+    role_id: int,
+    body: RoleSourcesUpdate,
+    admin=Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
+):
+    from mind.db.models import DataSource, Role, RoleSourcePermission
+    tid = get_effective_tenant_id(admin, tenant_id)
+    role = (await session.execute(
+        select(Role).where(Role.id == role_id, Role.tenant_id == tid)
+    )).scalar_one_or_none()
+    if role is None:
+        raise HTTPException(status_code=404, detail="Rol no encontrado")
+
+    await session.execute(delete(RoleSourcePermission).where(
+        RoleSourcePermission.role_id == role.id,
+    ))
+    if body.restricted:
+        valid_ids = set((await session.execute(
+            select(DataSource.id).where(
+                DataSource.tenant_id == tid,
+                DataSource.id.in_(body.source_ids),
+            )
+        )).scalars().all())
+        if not valid_ids:
+            raise HTTPException(
+                status_code=400,
+                detail="Selecciona al menos una fuente para restringir el rol",
+            )
+        for source_id in sorted(valid_ids):
+            session.add(RoleSourcePermission(
+                role_id=role.id, source_id=source_id, access="read",
+            ))
+    await session.commit()
+
+    try:
+        from mind.audit.logger import AuditRecord, log_interaction
+        await log_interaction(AuditRecord(
+            event_type="role_change",
+            tenant_id=tid,
+            request_content=json.dumps({
+                "action": "sources_updated",
+                "role_id": role.id,
+                "role_name": role.name,
+                "restricted": body.restricted,
+                "source_ids": body.source_ids,
+            }, ensure_ascii=False),
+            status="success",
+        ))
+    except Exception:
+        logger.warning("No se pudo auditar cambio de fuentes", exc_info=True)
+    return {"ok": True}
 
 
 @router.put("/roles/{role_id}/permisos")
@@ -1682,9 +1806,18 @@ async def rol_actualizar_permisos(
     body: RolePermissionsUpdate,
     admin=Depends(require_admin),
     session: AsyncSession = Depends(get_session),
+    tenant_id: int | None = Query(default=None),
 ):
-    from mind.db.models import RolePermission
+    from mind.db.models import Role, RolePermission
     from mind.auth.authorization import Permission, _invalidate_permissions_cache
+    role = (await session.execute(
+        select(Role).where(
+            Role.id == role_id,
+            Role.tenant_id == get_effective_tenant_id(admin, tenant_id),
+        )
+    )).scalar_one_or_none()
+    if role is None:
+        raise HTTPException(status_code=404, detail="Rol no encontrado")
     valid = {p.value for p in Permission}
     await session.execute(delete(RolePermission).where(RolePermission.role_id == role_id))
     for perm in body.permissions:
@@ -1692,6 +1825,21 @@ async def rol_actualizar_permisos(
             session.add(RolePermission(role_id=role_id, permission_name=perm))
     await session.commit()
     _invalidate_permissions_cache()
+    try:
+        from mind.audit.logger import AuditRecord, log_interaction
+        await log_interaction(AuditRecord(
+            event_type="role_change",
+            tenant_id=role.tenant_id,
+            request_content=json.dumps({
+                "action": "permissions_updated",
+                "role_id": role.id,
+                "role_name": role.name,
+                "permissions": body.permissions,
+            }, ensure_ascii=False),
+            status="success",
+        ))
+    except Exception:
+        logger.warning("No se pudo auditar cambio de permisos", exc_info=True)
     return {"ok": True}
 
 

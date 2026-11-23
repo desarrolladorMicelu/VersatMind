@@ -50,10 +50,24 @@ def main() -> None:
             print("ERROR: Las tablas no existen. Ejecuta primero: alembic upgrade head", file=sys.stderr)
             sys.exit(1)
 
+        # ---- Tenant ----
+        tenant_id = session.execute(
+            text("SELECT id FROM tenants ORDER BY id LIMIT 1")
+        ).scalar()
+        if tenant_id is None:
+            print(
+                "ERROR: No hay tenants. Crea primero un cliente en el panel.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
         # ---- Roles ----
         existing_roles = {
             row[0]: row[1]
-            for row in session.execute(text("SELECT name, id FROM roles")).fetchall()
+            for row in session.execute(
+                text("SELECT name, id FROM roles WHERE tenant_id = :t"),
+                {"t": tenant_id},
+            ).fetchall()
         }
 
         roles_to_create = [
@@ -66,8 +80,11 @@ def main() -> None:
         for role_name, role_desc in roles_to_create:
             if role_name not in existing_roles:
                 result = session.execute(
-                    text("INSERT INTO roles (name, description) VALUES (:n, :d) RETURNING id"),
-                    {"n": role_name, "d": role_desc},
+                    text(
+                        "INSERT INTO roles (tenant_id, name, description) "
+                        "VALUES (:t, :n, :d) RETURNING id"
+                    ),
+                    {"t": tenant_id, "n": role_name, "d": role_desc},
                 )
                 role_ids[role_name] = result.scalar()
                 print(f"  ✓ Rol creado: {role_name}")
@@ -76,8 +93,9 @@ def main() -> None:
 
         # ---- Permisos por rol ----
         all_permissions = [
-            "READ_SALES", "READ_KPI", "READ_FINANCE",
-            "GENERATE_REPORT", "MANAGE_TASKS",
+            "READ_SALES", "READ_KPI", "READ_FINANCE", "GENERATE_REPORT",
+            "MANAGE_TASKS", "READ_EXTERNAL_DB", "READ_MAIL", "READ_CALENDAR",
+            "READ_CUSTOMER_PII",
         ]
         role_permissions = {
             "admin": all_permissions,
@@ -108,22 +126,30 @@ def main() -> None:
         admin_role_id = role_ids.get("admin")
 
         existing_user = session.execute(
-            text("SELECT 1 FROM users WHERE chat_id = :c"),
-            {"c": chat_id},
+            text("SELECT 1 FROM users WHERE chat_id = :c AND tenant_id = :t"),
+            {"c": chat_id, "t": tenant_id},
         ).fetchone()
 
         if not existing_user:
             session.execute(
                 text("""
-                    INSERT INTO users (chat_id, user_id, username, role_id, is_active)
-                    VALUES (:chat_id, :user_id, :username, :role_id, true)
+                    INSERT INTO users (chat_id, tenant_id, user_id, username, role_id, is_active)
+                    VALUES (:chat_id, :tenant_id, :user_id, :username, :role_id, true)
                 """),
                 {
                     "chat_id": chat_id,
+                    "tenant_id": tenant_id,
                     "user_id": user_id,
                     "username": "admin",
                     "role_id": admin_role_id,
                 },
+            )
+            session.execute(
+                text(
+                    "INSERT INTO user_roles (tenant_id, chat_id, role_id) "
+                    "VALUES (:t, :c, :r) ON CONFLICT DO NOTHING"
+                ),
+                {"t": tenant_id, "c": chat_id, "r": admin_role_id},
             )
             print(f"  ✓ Usuario admin creado: chat_id={chat_id}")
         else:

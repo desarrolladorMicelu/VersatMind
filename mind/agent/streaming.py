@@ -23,7 +23,8 @@ from openai import AsyncOpenAI, APIError, APITimeoutError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from mind.db.models import Tenant
-from mind.agent.orchestrator import DEFAULT_SYSTEM_PROMPT
+from mind.agent.orchestrator import DEFAULT_SYSTEM_PROMPT, tool_catalog
+from mind.auth.data_policy import SourcePolicy, source_key_for_tool
 
 logger = logging.getLogger(__name__)
 
@@ -53,13 +54,20 @@ def tool_label(name: str) -> str:
 
 
 async def _build_system_prompt(
-    session: AsyncSession, tenant: Tenant, message: str, base_prompt: str
+    session: AsyncSession,
+    tenant: Tenant,
+    message: str,
+    base_prompt: str,
+    policy: SourcePolicy | None = None,
 ) -> str:
     """Inyecta MCPs/base de conocimiento/contexto temporal, igual que el orquestador."""
+    from mind.auth.data_policy import empty_policy
+
+    policy = policy or empty_policy()
     prompt = base_prompt
 
     schema_description = (getattr(tenant, "external_db", None) or {}).get("schema_description")
-    if schema_description:
+    if schema_description and policy.allows("external_db"):
         prompt += (
             "\n\n## Base de datos externa del cliente\n\n"
             "Tienes disponible una base de datos externa con este esquema:\n\n"
@@ -85,9 +93,18 @@ async def _build_system_prompt(
             "8. Los valores como status están en INGLÉS y MAYÚSCULAS; usa los exactos.\n"
             "Limita resultados con LIMIT."
         )
+    elif schema_description and policy.restricted:
+        allowed_tables = sorted(policy.allowed_tables())
+        if allowed_tables:
+            prompt += (
+                "\n\n## Base de datos externa del cliente\n\n"
+                "El usuario solo tiene acceso a estas tablas: "
+                f"{', '.join(allowed_tables)}.\n"
+                "Usa 'ejecutar_consulta' únicamente con esas tablas."
+            )
 
     sheets_description = (getattr(tenant, "external_sheets", None) or {}).get("schema_description")
-    if sheets_description:
+    if sheets_description and policy.allows("sheets"):
         prompt += (
             "\n\n## Google Sheets del cliente\n\n"
             "Tienes disponible una hoja de cálculo con este contenido:\n\n"
@@ -96,7 +113,11 @@ async def _build_system_prompt(
         )
 
     excel_description = (getattr(tenant, "external_excel", None) or {}).get("schema_description")
-    if excel_description and (getattr(tenant, "external_excel", None) or {}).get("access_token"):
+    if (
+        excel_description
+        and (getattr(tenant, "external_excel", None) or {}).get("access_token")
+        and policy.allows("excel")
+    ):
         prompt += (
             "\n\n## Archivo Excel del cliente (OneDrive/SharePoint)\n\n"
             "Tienes disponible un archivo Excel con este contenido:\n\n"
@@ -109,7 +130,7 @@ async def _build_system_prompt(
         )
 
     alegra_description = (getattr(tenant, "external_alegra", None) or {}).get("schema_description")
-    if alegra_description:
+    if alegra_description and policy.allows("alegra"):
         prompt += (
             "\n\n" + alegra_description + "\n\n"
             "Para consultarla usa 'consultar_alegra' con una descripción en lenguaje "
@@ -117,7 +138,13 @@ async def _build_system_prompt(
         )
 
     report_cfg = getattr(tenant, "report_config", None)
-    if report_cfg and report_cfg.get("company_name"):
+    can_use_reports = (
+        not policy.restricted
+        or policy.allows("external_db")
+        or policy.allows("alegra")
+        or bool(policy.allowed_tables())
+    )
+    if report_cfg and report_cfg.get("company_name") and can_use_reports:
         sections_list = ", ".join(report_cfg.get("sections", ["balance", "income", "expenses"]))
         instructions = report_cfg.get("additional_instructions", "")
         prompt += (
@@ -144,7 +171,10 @@ async def _build_system_prompt(
 
     try:
         from mind.knowledge.retriever import build_knowledge_context
-        knowledge = await build_knowledge_context(session, tenant.id, message)
+        knowledge = await build_knowledge_context(
+            session, tenant.id, message,
+            allowed_sources=policy.allowed if policy.restricted else None,
+        )
         if knowledge:
             prompt += (
                 "\n\n## Base de conocimiento del cliente\n\n"
@@ -160,11 +190,13 @@ async def _build_system_prompt(
 def _filter_tools(
     tools: list[dict], tenant: Tenant, email_providers: frozenset[str] | set[str] = frozenset()
 ) -> list[dict]:
-    tenant_ofima = bool(tenant.sqlserver_host)
-    tenant_ext_db = bool(tenant.external_db)
-    tenant_ext_sheets = bool(tenant.external_sheets)
-    tenant_ext_excel = bool(tenant.external_excel and tenant.external_excel.get("access_token"))
-    tenant_alegra = bool(tenant.external_alegra and tenant.external_alegra.get("token"))
+    tenant_ofima = bool(getattr(tenant, "sqlserver_host", None))
+    tenant_ext_db = bool(getattr(tenant, "external_db", None))
+    tenant_ext_sheets = bool(getattr(tenant, "external_sheets", None))
+    ext_excel = getattr(tenant, "external_excel", None)
+    tenant_ext_excel = bool(ext_excel and ext_excel.get("access_token"))
+    ext_alegra = getattr(tenant, "external_alegra", None)
+    tenant_alegra = bool(ext_alegra and ext_alegra.get("token"))
     ofima_tools = {
         "consultar_ventas", "consultar_ventas_detalle", "consultar_indicadores",
         "consultar_finanzas", "consultar_productos", "consultar_cxp", "generar_informe",
@@ -207,6 +239,8 @@ async def stream_chat(
     owner: str | None = None,
     source: str = "web_chat",
     forced_permissions: frozenset[str] | None = None,
+    source_policy: SourcePolicy | None = None,
+    role_ids: frozenset[int] | None = None,
 ) -> AsyncGenerator[dict[str, Any], None]:
     """Genera eventos del agente en streaming para una conversación."""
     from mind.config import settings
@@ -214,10 +248,14 @@ async def stream_chat(
         load_history, append_messages, build_prompt, truncate_to_token_limit, Message,
     )
     from mind.agent.tools.registry import (
-        dispatch, get_tool_schemas,
+        dispatch, get_allowed_tool_schemas,
         PermissionDeniedError, ToolNotFoundError, ToolValidationError,
     )
-    from mind.audit.logger import AuditRecord, log_interaction, log_tool_failure
+    from mind.audit.logger import (
+        AuditRecord, log_interaction, log_permission_denied, log_tool_failure,
+    )
+    from mind.auth.context import set_current_permissions
+    from mind.auth.data_policy import empty_policy
     from mind.tenants.context import set_tenant
     from mind.usage.tracker import record_usage
 
@@ -242,7 +280,9 @@ async def stream_chat(
     except Exception:
         pass
 
-    active_system_prompt = await _build_system_prompt(session, tenant, message, active_system_prompt)
+    active_system_prompt = await _build_system_prompt(
+        session, tenant, message, active_system_prompt, policy
+    )
 
     client = AsyncOpenAI(
         api_key=settings.OPENAI_API_KEY,
@@ -252,6 +292,8 @@ async def stream_chat(
 
     history = await load_history(chat_id, tenant.id, active_window, session)
     permissions = forced_permissions if forced_permissions is not None else frozenset()
+    policy = source_policy or empty_policy()
+    set_current_permissions(permissions)
 
     prompt_ctx = build_prompt(history, active_window)
     truncated = truncate_to_token_limit(prompt_ctx.messages, max_tokens=100_000)
@@ -266,7 +308,11 @@ async def stream_chat(
         email_providers = await get_active_providers(session, tenant.id)
     except Exception:
         email_providers = set()
-    tools = _filter_tools(get_tool_schemas(), tenant, email_providers)
+    tools = _filter_tools(
+        get_allowed_tool_schemas(permissions, policy), tenant, email_providers
+    )
+    active_system_prompt += "\n\n" + tool_catalog(tools)
+    openai_messages[0] = {"role": "system", "content": active_system_prompt}
 
     new_messages: list[Message] = [Message(role="user", content=message)]
     final_text = ""
@@ -376,15 +422,21 @@ async def stream_chat(
 
                 ok = True
                 try:
-                    tool_result_str = await dispatch(tool_name, raw_args, permissions)
+                    tool_result_str = await dispatch(tool_name, raw_args, permissions, policy)
                 except PermissionDeniedError as exc:
                     ok = False
                     tool_result_str = json.dumps({
-                        "error": True, "mensaje": "No tienes permiso para ejecutar esta acción.",
+                        "error": True,
+                        "mensaje": (
+                            "No tienes acceso a esa información. "
+                            "Si la necesitas, pide acceso a tu administrador."
+                        ),
                     })
-                    await log_tool_failure(
-                        tool_name=tool_name, params=raw_args, error=str(exc),
+                    await log_permission_denied(
+                        tool_name=tool_name, params=raw_args, reason=str(exc),
                         chat_id=chat_id, tenant_id=tenant.id,
+                        role_id=next(iter(role_ids or ()), None),
+                        source_key=source_key_for_tool(tool_name),
                     )
                 except (ToolNotFoundError, ToolValidationError) as exc:
                     ok = False

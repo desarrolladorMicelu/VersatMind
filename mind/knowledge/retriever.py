@@ -41,11 +41,25 @@ def _format_entry(title: str, content: str) -> str:
     return f"### {title}\n{content.strip()}"
 
 
+def _source_tags(tags: str | None) -> set[str]:
+    if not tags:
+        return set()
+    found: set[str] = set()
+    for raw in re.split(r"[,;]", tags):
+        part = raw.strip().lower()
+        if part.startswith("source:"):
+            found.add(part[len("source:"):].strip())
+        elif part.startswith("source="):
+            found.add(part[len("source="):].strip())
+    return {s for s in found if s}
+
+
 async def build_knowledge_context(
     session: AsyncSession,
     tenant_id: int,
     query: str,
     max_chars: int = DEFAULT_MAX_CHARS,
+    allowed_sources: frozenset[str] | None = None,
 ) -> str | None:
     """
     Retorna un bloque de texto con la información relevante del cliente,
@@ -53,11 +67,20 @@ async def build_knowledge_context(
     """
     from mind.db.models import KnowledgeEntry
 
+    if allowed_sources is not None and "knowledge" not in allowed_sources:
+        return None
+
     entries = (await session.execute(
         select(KnowledgeEntry)
         .where(KnowledgeEntry.tenant_id == tenant_id, KnowledgeEntry.is_active.is_(True))
         .order_by(KnowledgeEntry.updated_at.desc())
     )).scalars().all()
+
+    if allowed_sources is not None:
+        entries = [
+            e for e in entries
+            if not (tags := _source_tags(e.tags)) or bool(tags & set(allowed_sources))
+        ]
 
     if not entries:
         return None

@@ -204,7 +204,11 @@ async def chat_stream(
         from mind.db.base import _session_factory
         from mind.tenants.resolver import resolve_by_id
         from mind.agent.streaming import stream_chat
-        from mind.auth.authorization import AuthResult, Permission
+        from mind.auth.authorization import Permission
+        from mind.auth.data_policy import (
+            empty_policy, load_permissions_for_roles, load_source_policy,
+        )
+        from mind.db.models import Role
 
         if not message:
             yield _sse({"type": "error", "message": "El mensaje está vacío."})
@@ -235,8 +239,25 @@ async def chat_stream(
             conv.updated_at = datetime.now(timezone.utc)
             await session.commit()
 
-            auth = AuthResult(allowed=True, user=None, role=None)
-            full_permissions = frozenset(p.value for p in Permission)
+            # El chat web es una consola de administración. El superadmin
+            # conserva acceso total; un tenant_admin usa el rol "admin" del
+            # tenant si existe, para respetar sus restricciones de fuentes.
+            role_ids: frozenset[int] = frozenset()
+            if admin.get("role") == "superadmin":
+                permissions = frozenset(p.value for p in Permission)
+                policy = empty_policy()
+            else:
+                admin_role = (await session.execute(
+                    select(Role).where(Role.tenant_id == tid, Role.name == "admin").limit(1)
+                )).scalar_one_or_none()
+                if admin_role is not None:
+                    role_ids = frozenset({admin_role.id})
+                    permissions = await load_permissions_for_roles(session, role_ids)
+                    policy = await load_source_policy(session, role_ids, tid)
+                else:
+                    # Compatibilidad con tenants existentes sin rol admin.
+                    permissions = frozenset(p.value for p in Permission)
+                    policy = empty_policy()
 
             try:
                 async for event in stream_chat(
@@ -246,7 +267,9 @@ async def chat_stream(
                     session=session,
                     owner=owner,
                     source="web_chat",
-                    forced_permissions=full_permissions,
+                    forced_permissions=permissions,
+                    source_policy=policy,
+                    role_ids=role_ids,
                 ):
                     yield _sse(event)
             except Exception as exc:

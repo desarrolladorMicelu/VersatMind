@@ -37,6 +37,14 @@ export default function App() {
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route
+                path="/chat"
+                element={
+                  <ProtectedRoute>
+                    <Chat />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/"
                 element={
                   <ProtectedRoute>
@@ -54,7 +62,6 @@ export default function App() {
                 <Route path="historial" element={<Historial />} />
                 <Route path="auditoria" element={<Auditoria />} />
                 <Route path="consumo" element={<Consumo />} />
-                <Route path="chat" element={<Chat />} />
                 <Route path="programados" element={<Programados />} />
                 <Route path="conocimiento" element={<Conocimiento />} />
                 <Route path="integraciones" element={<Integraciones />} />

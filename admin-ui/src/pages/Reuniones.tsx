@@ -113,18 +113,18 @@ function RecordingView({
         <ArrowLeft className="w-3.5 h-3.5" /> Volver
       </button>
 
-      <div className="border border-[#1a1a1a] bg-[#050505] p-4 sm:p-8 space-y-6">
+      <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)] p-4 sm:p-8 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="section-tag">// GRABACIÓN EN CURSO</p>
-            <h2 className="text-xl font-bold text-white tracking-tight mt-1">{meeting.title}</h2>
+            <p className="section-tag">GRABACIÓN EN CURSO</p>
+            <h2 className="text-xl font-bold text-[var(--color-text)] tracking-tight mt-1">{meeting.title}</h2>
           </div>
-          <Circle className={`w-4 h-4 ${state === "recording" ? "text-red-500 animate-pulse" : "text-white"}`} />
+          <Circle className={`w-4 h-4 ${state === "recording" ? "text-red-700 animate-pulse" : "text-[var(--color-text)]"}`} />
         </div>
 
-        <p className="font-mono text-4xl text-white tabular-nums">{fmtMs(elapsedMs)}</p>
+        <p className="text-4xl text-[var(--color-text)] tabular-nums">{fmtMs(elapsedMs)}</p>
 
-        {error && <p className="text-xs text-red-400">{error}</p>}
+        {error && <p className="text-xs text-red-700">{error}</p>}
 
         <div className="flex items-center gap-3 flex-wrap">
           {!alreadyStarted ? (
@@ -151,22 +151,22 @@ function RecordingView({
         </div>
 
         {alreadyStarted && (
-          <p className="font-mono text-[11px] text-white">
+          <p className="text-xs text-[var(--color-text)]">
             {chunksUploaded} segmento(s) subido(s)
             {state === "paused" && " · pausada"}
           </p>
         )}
 
         {alreadyStarted && live?.transcript && (
-          <div className="border-t border-[#1a1a1a] pt-4">
-            <p className="section-tag mb-2">// Transcripción en vivo</p>
-            <pre ref={liveRef} className="whitespace-pre-wrap text-sm text-white leading-relaxed max-h-56 overflow-y-auto">
+          <div className="border-t border-[var(--color-border-subtle)] pt-4">
+            <p className="section-tag mb-2">Transcripción en vivo</p>
+            <pre ref={liveRef} className="whitespace-pre-wrap text-sm text-[var(--color-text)] leading-relaxed max-h-56 overflow-y-auto">
               {live.transcript}
             </pre>
           </div>
         )}
 
-        <p className="text-xs text-white leading-relaxed">
+        <p className="text-xs text-[var(--color-text)] leading-relaxed">
           Mantén MIND abierto durante la reunión. El audio se sube y transcribe
           por segmentos: si el teléfono se bloquea o cierras la pestaña, lo ya
           grabado quedará guardado y podrás finalizarlo desde el listado.
@@ -247,8 +247,8 @@ export default function Reuniones() {
     return (
       <div>
         <PageHeader tag="REUNIONES" title="Reuniones" description="Selecciona un cliente" />
-        <div className="px-8 py-16 text-center">
-          <p className="font-mono text-xs text-white uppercase tracking-widest">
+        <div className="px-5 py-16 sm:px-8 text-center">
+          <p className="text-xs text-[var(--color-text)] uppercase tracking-[0.06em]">
             Selecciona un cliente en el panel izquierdo
           </p>
         </div>
@@ -283,10 +283,10 @@ export default function Reuniones() {
       {/* Banner de recuperación: reunión en curso encontrada en sessionStorage */}
       {restoreRec && restoreRec.status === "recording" && (
         <div className={`${pagePad} py-3`}>
-          <div className="border border-red-500/40 bg-red-500/5 p-3 flex items-center justify-between gap-3">
+          <div className="border border-red-300 bg-red-50 p-3 flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="section-tag">// HAY UNA GRABACIÓN EN CURSO</p>
-              <p className="text-sm text-white truncate mt-1">{restoreRec.title}</p>
+              <p className="section-tag">HAY UNA GRABACIÓN EN CURSO</p>
+              <p className="text-sm text-[var(--color-text)] truncate mt-1">{restoreRec.title}</p>
             </div>
             <div className="flex gap-2 shrink-0">
               <button
@@ -314,16 +314,16 @@ export default function Reuniones() {
       )}
 
       {showNew && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center px-4">
-          <div className="w-full max-w-md border border-[#2a2a2a] bg-[#0d0d0d] p-6 space-y-5">
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center px-4">
+          <div className="w-full max-w-md border border-[var(--color-border)] bg-[var(--color-surface)] p-6 space-y-5">
             <div className="flex items-center justify-between">
-              <p className="section-tag">// Nueva reunión</p>
-              <button className="text-white hover:text-[#00e5a0]" onClick={() => { setShowNew(false); setCreateError(null); }}>
+              <p className="section-tag">Nueva reunión</p>
+              <button className="text-[var(--color-text)] hover:text-[var(--color-accent-strong)]" onClick={() => { setShowNew(false); setCreateError(null); }}>
                 <X className="w-4 h-4" />
               </button>
             </div>
             <div>
-              <label className="label text-white">Motivo de la reunión</label>
+              <label className="label text-[var(--color-text)]">Motivo de la reunión</label>
               <input
                 className="input"
                 value={title}
@@ -333,7 +333,7 @@ export default function Reuniones() {
               />
             </div>
             <div>
-              <label className="label text-white">Idioma de la reunión</label>
+              <label className="label text-[var(--color-text)]">Idioma de la reunión</label>
               <select
                 className="input"
                 value={language}
@@ -342,12 +342,12 @@ export default function Reuniones() {
                 <option value="es">Español</option>
                 <option value="en">English</option>
               </select>
-              <p className="text-[11px] text-white mt-1.5">
+              <p className="text-xs text-[var(--color-text)] mt-1.5">
                 Se usa para la transcripción y mejora la precisión.
               </p>
             </div>
-            {createError && <p className="text-xs text-red-400">{createError}</p>}
-            {create.isPending && <p className="text-xs text-white">Creando…</p>}
+            {createError && <p className="text-xs text-red-700">{createError}</p>}
+            {create.isPending && <p className="text-xs text-[var(--color-text)]">Creando…</p>}
             <div className="flex items-center gap-3">
               <button
                 className="btn-primary"
@@ -358,7 +358,7 @@ export default function Reuniones() {
               </button>
               <button className="btn-ghost" onClick={() => setShowNew(false)}>Cancelar</button>
             </div>
-            <p className="text-[11px] text-white leading-relaxed">
+            <p className="text-xs text-[var(--color-text)] leading-relaxed">
               Al crear se pedirá acceso al micrófono del dispositivo. Necesario
               HTTPS (o localhost).
             </p>
@@ -367,8 +367,8 @@ export default function Reuniones() {
       )}
 
       <div className={`${pagePad} py-8`}>
-        <div className="border border-[#1a1a1a]">
-          <div className="hidden sm:grid grid-cols-12 bg-[#050505] border-b border-[#1a1a1a]">
+        <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
+          <div className="hidden sm:grid grid-cols-12 bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
             <div className="col-span-4 th">Título</div>
             <div className="col-span-2 th">Fecha</div>
             <div className="col-span-2 th">Duración</div>
@@ -378,10 +378,10 @@ export default function Reuniones() {
 
           {isLoading ? (
             Array(3).fill(0).map((_, i) => (
-              <div key={i} className="h-12 border-b border-[#111] animate-pulse" />
+              <div key={i} className="h-12 border-b border-[var(--color-border-subtle)] animate-pulse" />
             ))
           ) : meetings.length === 0 ? (
-            <p className="px-5 py-10 text-center font-mono text-xs text-white">SIN REUNIONES</p>
+            <p className="px-5 py-10 text-center text-xs text-[var(--color-text)]">Aún no hay reuniones</p>
           ) : (
             <>
               {/* Desktop: tabla */}
@@ -390,21 +390,21 @@ export default function Reuniones() {
                 return (
                   <div
                     key={m.id}
-                    className="hidden sm:grid grid-cols-12 border-b border-[#111] hover:bg-[#050505] transition-colors items-center cursor-pointer"
+                    className="hidden sm:grid grid-cols-12 border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-elevated)] transition-colors items-center cursor-pointer"
                     onClick={() => navigate(`/reuniones/${m.id}`)}
                   >
                     <div className="col-span-4 td">
-                      <p className="text-sm text-white truncate">{m.title}</p>
+                      <p className="text-sm text-[var(--color-text)] truncate">{m.title}</p>
                     </div>
-                    <div className="col-span-2 td font-mono text-[11px] text-white">{fmtDate(m.created_at)}</div>
-                    <div className="col-span-2 td font-mono text-[11px] text-white">{fmtDuration(m.duration_seconds)}</div>
+                    <div className="col-span-2 td text-xs text-[var(--color-text)]">{fmtDate(m.created_at)}</div>
+                    <div className="col-span-2 td text-xs text-[var(--color-text)]">{fmtDuration(m.duration_seconds)}</div>
                     <div className="col-span-2 td">
                       <span className={`badge ${meta.cls}`}>{meta.label}</span>
                     </div>
                     <div className="col-span-2 td">
                       {m.status === "recording" && (
                         <button
-                          className="text-[11px] font-mono uppercase tracking-widest text-white px-2 py-1 border border-[#2a2a2a] hover:border-red-500 hover:text-red-400 transition-colors"
+                          className="text-xs uppercase tracking-[0.06em] text-[var(--color-text)] px-2 py-1 border border-[var(--color-border)] hover:border-red-500 hover:text-red-700 transition-colors"
                           onClick={(e) => { e.stopPropagation(); finish.mutate(m.id); }}
                         >
                           Finalizar
@@ -421,20 +421,20 @@ export default function Reuniones() {
                   return (
                     <div
                       key={m.id}
-                      className="border border-[#1a1a1a] bg-[#050505] px-3 py-3 cursor-pointer"
+                      className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)] px-3 py-3 cursor-pointer"
                       onClick={() => navigate(`/reuniones/${m.id}`)}
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <p className="text-xs font-medium text-white truncate flex-1">{m.title}</p>
+                        <p className="text-xs font-medium text-[var(--color-text)] truncate flex-1">{m.title}</p>
                         <span className={`badge ${meta.cls} shrink-0`}>{meta.label}</span>
                       </div>
                       <div className="flex items-center gap-3 mt-1.5">
-                        <span className="font-mono text-[10px] text-white">{fmtDate(m.created_at)}</span>
-                        <span className="font-mono text-[10px] text-white">{fmtDuration(m.duration_seconds)}</span>
+                        <span className="text-xs text-[var(--color-text)]">{fmtDate(m.created_at)}</span>
+                        <span className="text-xs text-[var(--color-text)]">{fmtDuration(m.duration_seconds)}</span>
                       </div>
                       {m.status === "recording" && (
                         <button
-                          className="mt-2 text-[11px] font-mono uppercase tracking-widest text-white px-2 py-1 border border-[#2a2a2a] hover:border-red-500 hover:text-red-400 transition-colors"
+                          className="mt-2 text-xs uppercase tracking-[0.06em] text-[var(--color-text)] px-2 py-1 border border-[var(--color-border)] hover:border-red-500 hover:text-red-700 transition-colors"
                           onClick={(e) => { e.stopPropagation(); finish.mutate(m.id); }}
                         >
                           Finalizar

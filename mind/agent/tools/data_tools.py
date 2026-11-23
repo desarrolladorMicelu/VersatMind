@@ -31,6 +31,17 @@ def _year_range():
     y = datetime.now().year
     return f"{y}-01-01", f"{y}-12-31"
 
+
+def _without_finance_fields(rows: list[dict], fields: set[str]) -> list[dict]:
+    """Oculta costo/margen a roles sin READ_FINANCE."""
+    from mind.auth.context import has_permission
+    if has_permission("READ_FINANCE"):
+        return rows
+    return [
+        {key: value for key, value in row.items() if key not in fields}
+        for row in rows
+    ]
+
 async def consultar_ventas(fecha_inicio: str | None = None, fecha_fin: str | None = None):
     if not fecha_inicio or not fecha_fin:
         fecha_inicio, fecha_fin = _year_range()
@@ -40,6 +51,7 @@ async def consultar_ventas(fecha_inicio: str | None = None, fecha_fin: str | Non
     try:
         from mind.data.connectors import get_sales_summary
         data = await asyncio.to_thread(get_sales_summary, date.fromisoformat(fecha_inicio), date.fromisoformat(fecha_fin))
+        data = _without_finance_fields(data, {"total_costo", "utilidad_bruta"})
         return {"error": False, "periodo": {"desde": fecha_inicio, "hasta": fecha_fin}, "resumen_mensual": data, "total_meses": len(data)}
     except Exception as exc:
         logger.error("Error en consultar_ventas: %s\n%s", exc, traceback.format_exc())
@@ -52,6 +64,7 @@ async def consultar_ventas_detalle(fecha_inicio: str, fecha_fin: str):
     try:
         from mind.data.connectors import get_sales
         data = await asyncio.to_thread(get_sales, date.fromisoformat(fecha_inicio), date.fromisoformat(fecha_fin))
+        data = _without_finance_fields(data, {"costo"})
         return {"error": False, "periodo": {"desde": fecha_inicio, "hasta": fecha_fin}, "datos": data[:200], "total_registros": len(data)}
     except Exception as exc:
         logger.error("Error en consultar_ventas_detalle: %s\n%s", exc, traceback.format_exc())
@@ -60,22 +73,36 @@ async def consultar_ventas_detalle(fecha_inicio: str, fecha_fin: str):
 async def consultar_indicadores():
     fi, ff = _year_range()
     try:
+        from mind.auth.context import has_permission
         from mind.data.connectors import get_sales_summary, get_cuentas_por_pagar
-        ventas, cxp = await asyncio.gather(
-            asyncio.to_thread(get_sales_summary, date.fromisoformat(fi), date.fromisoformat(ff)),
-            asyncio.to_thread(get_cuentas_por_pagar, date.fromisoformat(fi), date.fromisoformat(ff)),
+
+        ventas = await asyncio.to_thread(
+            get_sales_summary, date.fromisoformat(fi), date.fromisoformat(ff)
         )
+        cxp = []
+        if has_permission("READ_FINANCE"):
+            cxp = await asyncio.to_thread(
+                get_cuentas_por_pagar, date.fromisoformat(fi), date.fromisoformat(ff)
+            )
+
         tv = sum(r.get("total_ventas") or 0 for r in ventas)
         tc = sum(r.get("total_costo") or 0 for r in ventas)
         tx = sum(r.get("num_transacciones") or 0 for r in ventas)
-        mg = round((tv - tc) / tv * 100, 1) if tv else 0
-        deu = round(sum(r.get("deuda") or 0 for r in cxp), 2)
-        return {"error": False, "año": fi[:4], "indicadores": [
+        indicators = [
             {"indicador": "Ventas Año Actual", "valor": round(tv, 2), "unidad": "COP"},
-            {"indicador": "Costo Total", "valor": round(tc, 2), "unidad": "COP"},
-            {"indicador": "Margen Bruto", "valor": mg, "unidad": "%"},
             {"indicador": "Total Transacciones", "valor": tx, "unidad": "transacciones"},
-            {"indicador": "Cuentas por Pagar", "valor": deu, "unidad": "COP"}]}
+        ]
+        # Costo, margen y cartera son información financiera: solo se
+        # devuelven si el rol tiene READ_FINANCE.
+        if has_permission("READ_FINANCE"):
+            mg = round((tv - tc) / tv * 100, 1) if tv else 0
+            deu = round(sum(r.get("deuda") or 0 for r in cxp), 2)
+            indicators.extend([
+                {"indicador": "Costo Total", "valor": round(tc, 2), "unidad": "COP"},
+                {"indicador": "Margen Bruto", "valor": mg, "unidad": "%"},
+                {"indicador": "Cuentas por Pagar", "valor": deu, "unidad": "COP"},
+            ])
+        return {"error": False, "año": fi[:4], "indicadores": indicators}
     except Exception as exc:
         logger.error("Error en consultar_indicadores: %s\n%s", exc, traceback.format_exc())
         return {"error": True, "mensaje": f"{type(exc).__name__}: {exc}"}

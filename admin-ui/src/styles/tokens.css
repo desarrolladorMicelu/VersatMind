@@ -1,0 +1,94 @@
+/*
+ * Mind by Versat — Design tokens
+ * ---------------------------------------------------------------------------
+ * ÚNICA fuente de verdad para tipografía (familia, escala, pesos) y para la
+ * paleta base de la interfaz. Cualquier cambio tipográfico o de color debe
+ * hacerse aquí; los componentes consumen estos tokens vía CSS o Tailwind.
+ *
+ * Familias:
+ *   --font-sans → toda la interfaz (Inter + fallbacks del sistema)
+ *   --font-mono → SOLO código, bloques pre y datos técnicos tabulares
+ */
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
+:root {
+  /* ── Tipografía ─────────────────────────────────────────────────────── */
+  --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+
+  /* Escala de tipos (rem, base 16px) */
+  --text-3xs: 0.625rem;   /* 10px — badges y marcas muy pequeñas */
+  --text-2xs: 0.8125rem;  /* 13px — metadatos densos */
+  --text-xs: 0.875rem;    /* 14px — etiquetas y ayudas */
+  --text-sm: 1rem;        /* 16px — cuerpo por defecto */
+  --text-base: 1.0625rem; /* 17px — cuerpo destacado */
+  --text-lg: 1.25rem;     /* 20px — H3 */
+  --text-xl: 1.5rem;      /* 24px — H2 */
+  --text-2xl: 2rem;       /* 32px — H1 de página */
+  --text-3xl: 2.5rem;     /* 40px — display */
+  --text-4xl: 3rem;       /* 48px — hero */
+
+  /* Interlineado */
+  --leading-tight: 1.15;
+  --leading-snug: 1.35;
+  --leading-normal: 1.55;
+
+  /* Pesos */
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* Tracking */
+  --tracking-tight: -0.015em;
+  --tracking-normal: 0;
+  --tracking-label: 0.06em;
+  --tracking-tag: 0.12em;
+
+  /* Escala de espaciado (múltiplos de 4 px) */
+  --space-1: 0.25rem;   /* 4px */
+  --space-2: 0.5rem;    /* 8px */
+  --space-3: 0.75rem;   /* 12px */
+  --space-4: 1rem;      /* 16px */
+  --space-6: 1.5rem;    /* 24px */
+  --space-8: 2rem;      /* 32px */
+  --space-12: 3rem;     /* 48px */
+
+  /* Radios */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+
+  /* ── Color base: gris neutro + 1 acento ─────────────────────────────── */
+  --color-bg: #ececea;            /* lienzo principal */
+  --color-bg-elevated: #e2e2e0;   /* sidebar, cabeceras, hero */
+  --color-surface: #fafaf8;       /* tarjetas, inputs, composer */
+  --color-surface-2: #dcdcda;     /* hover, burbujas, énfasis suave */
+  --color-border: #cfcfcc;
+  --color-border-subtle: #dcdcd9;
+  --color-border-strong: #bebeb9;
+  --color-text: #202124;
+  --color-text-muted: #4f5155;
+  --color-text-subtle: #5f6267;
+  --color-accent: #0a4f46;        /* único acento: verde profundo */
+  --color-accent-strong: #073b34;
+  --color-accent-contrast: #ffffff;
+  --color-accent-soft: rgba(10, 79, 70, 0.1);
+  --color-accent-border: rgba(10, 79, 70, 0.3);
+  --color-accent-surface: #e2e9e7;
+  --color-accent-surface-strong: #d1dfdb;
+  --color-danger: #a61b14;
+  --color-danger-soft: #f7e6e4;
+  --color-danger-border: #dcb8b3;
+  --color-warning: #7a5000;
+  --color-warning-soft: #f7edda;
+  --color-warning-border: #dcc79f;
+  --color-hover: rgba(32, 33, 36, 0.06);
+  --color-overlay: rgba(32, 33, 36, 0.42);
+  --color-shadow: rgba(32, 33, 36, 0.16);
+}

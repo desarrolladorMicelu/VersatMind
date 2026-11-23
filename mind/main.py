@@ -15,7 +15,7 @@ from typing import Any
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 logger = logging.getLogger(__name__)
@@ -221,6 +221,11 @@ if _static_dir.exists():
     )
     from mind.admin.spa import spa_router
     app.include_router(spa_router)
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon_root():
+    return RedirectResponse(url="/admin/favicon.png?v=2")
 
 
 # ── Webhook multi-tenant ──────────────────────────────────────────────────────

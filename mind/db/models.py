@@ -9,9 +9,11 @@ from datetime import datetime
 from sqlalchemy import (
     BigInteger,
     Boolean,
+    CheckConstraint,
     DateTime,
     Float,
     ForeignKey,
+    ForeignKeyConstraint,
     Index,
     Integer,
     LargeBinary,
@@ -130,6 +132,55 @@ class RolePermission(Base):
         return f"<RolePermission role_id={self.role_id} permission={self.permission_name!r}>"
 
 
+class DataSource(Base):
+    """
+    Fuente de datos autorizable para un tenant.
+
+    `kind` identifica el tipo (ofima_table, external_db_table, sheets, excel,
+    alegra, mail, calendar, knowledge, etc.) y `source_key` la clave estable
+    que usan las herramientas para validar acceso.
+    """
+    __tablename__ = "data_sources"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "kind", "source_key", name="uq_data_source_tenant_kind_key"),
+        Index("idx_data_sources_tenant", "tenant_id", "is_active"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    tenant_id: Mapped[int] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
+    )
+    kind: Mapped[str] = mapped_column(Text, nullable=False)
+    source_key: Mapped[str] = mapped_column(Text, nullable=False)
+    display_name: Mapped[str] = mapped_column(Text, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    def __repr__(self) -> str:
+        return f"<DataSource tenant_id={self.tenant_id} kind={self.kind!r} key={self.source_key!r}>"
+
+
+class RoleSourcePermission(Base):
+    """Permiso explícito de un rol sobre una fuente de datos (read/none)."""
+    __tablename__ = "role_source_permissions"
+    __table_args__ = (
+        CheckConstraint("access IN ('read', 'none')", name="ck_role_source_access"),
+    )
+
+    role_id: Mapped[int] = mapped_column(
+        ForeignKey("roles.id", ondelete="CASCADE"), primary_key=True
+    )
+    source_id: Mapped[int] = mapped_column(
+        ForeignKey("data_sources.id", ondelete="CASCADE"), primary_key=True
+    )
+    access: Mapped[str] = mapped_column(Text, nullable=False, default="read")
+
+    def __repr__(self) -> str:
+        return f"<RoleSourcePermission role_id={self.role_id} source_id={self.source_id} access={self.access!r}>"
+
+
 # ---------------------------------------------------------------------------
 # Usuarios
 # ---------------------------------------------------------------------------
@@ -175,6 +226,37 @@ class User(Base):
 
     def __repr__(self) -> str:
         return f"<User chat_id={self.chat_id} tenant_id={self.tenant_id} role_id={self.role_id}>"
+
+
+class UserRole(Base):
+    """
+    Asignación de roles a usuarios (soporta múltiples roles por usuario).
+
+    `users.role_id` se conserva como rol legado para compatibilidad; el
+    resolvedor combina ambos y la migración 0023 backfillea esta tabla.
+    """
+    __tablename__ = "user_roles"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["tenant_id", "chat_id"],
+            ["users.tenant_id", "users.chat_id"],
+            ondelete="CASCADE",
+            name="fk_user_roles_user",
+        ),
+        Index("idx_user_roles_tenant_chat", "tenant_id", "chat_id"),
+    )
+
+    tenant_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    chat_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    role_id: Mapped[int] = mapped_column(
+        ForeignKey("roles.id", ondelete="CASCADE"), primary_key=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    def __repr__(self) -> str:
+        return f"<UserRole tenant_id={self.tenant_id} chat_id={self.chat_id} role_id={self.role_id}>"
 
 
 # ---------------------------------------------------------------------------

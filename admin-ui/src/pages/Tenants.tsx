@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Plus, Pencil, Trash2, Power, X, Eye, EyeOff, Database, Bot, Users, KeyRound } from "lucide-react";
 import api, { tenantsApi } from "../lib/api";
 import type { Tenant, TenantPayload } from "../lib/api";
+import { activeLabel, engineLabel } from "../lib/labels";
 import PageHeader from "../components/PageHeader";
 import ExternalDbConfig from "../components/ExternalDbConfig";
 import ExternalSheetsConfig from "../components/ExternalSheetsConfig";
@@ -48,18 +49,18 @@ function TenantModal({
     set("slug", v.toLowerCase().replace(/[^a-z0-9-]/g, "-"));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="w-full max-w-2xl bg-[#0d0d0d] border border-[#2a2a2a] flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+        <div className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-2xl">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#1a1a1a] flex-shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border-subtle)] flex-shrink-0">
           <div>
-            <p className="section-tag mb-1">// {isEdit ? "EDITAR" : "NUEVO"} CLIENTE</p>
-            <h2 className="text-lg font-bold text-white tracking-tight">
-              {isEdit ? form.name || "Sin nombre" : "Crear tenant"}
+            <p className="section-tag mb-1">{isEdit ? "EDITAR" : "NUEVO"} CLIENTE</p>
+            <h2 className="text-lg font-bold text-[var(--color-text)] tracking-tight">
+              {isEdit ? form.name || "Sin nombre" : "Crear cliente"}
             </h2>
           </div>
-          <button onClick={onClose} className="text-white hover:text-white transition-colors p-1">
+          <button onClick={onClose} className="text-[var(--color-text)] hover:text-[var(--color-text)] transition-colors p-1">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -68,9 +69,9 @@ function TenantModal({
         <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
 
           {/* Info básica */}
-          <div className="border border-[#1a1a1a]">
-            <div className="px-4 py-2.5 border-b border-[#1a1a1a] bg-[#050505]">
-              <span className="section-tag">// INFORMACIÓN BÁSICA</span>
+          <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
+            <div className="px-4 py-2.5 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]">
+              <span className="section-tag">INFORMACIÓN BÁSICA</span>
             </div>
             <div className="p-4 grid grid-cols-2 gap-4">
               <div className="col-span-2">
@@ -86,44 +87,44 @@ function TenantModal({
                 />
               </div>
               <div>
-                <label className="label">Slug <span className="text-white">(identificador único)</span></label>
+                <label className="label">Slug <span className="text-[var(--color-text)]">(identificador único)</span></label>
                 <input
-                  className="input font-mono"
+                  className="input "
                   placeholder="empresa-xyz"
                   value={form.slug}
                   onChange={(e) => handleSlug(e.target.value)}
                 />
-                <p className="font-mono text-[10px] text-[#555] mt-1.5">Solo letras, números y guiones</p>
+                <p className="text-xs text-[var(--color-text-subtle)] mt-1.5">Solo letras, números y guiones</p>
               </div>
               <div>
-                <label className="label">Admin Chat ID <span className="text-[#555]">(Telegram)</span></label>
+                <label className="label">ID de Telegram del administrador</label>
                 <input
-                  className="input font-mono"
+                  className="input "
                   placeholder="123456789"
                   type="number"
                   value={form.admin_chat_id || ""}
                   onChange={(e) => set("admin_chat_id", parseInt(e.target.value) || 0)}
                 />
-                <p className="font-mono text-[10px] text-[#555] mt-1.5">Chat ID del administrador del tenant</p>
+                <p className="text-xs text-[var(--color-text-subtle)] mt-1.5">Identificador de Telegram del administrador del cliente</p>
               </div>
             </div>
           </div>
 
           {/* Telegram */}
-          <div className="border border-[#1a1a1a]">
-            <div className="px-4 py-2.5 border-b border-[#1a1a1a] bg-[#050505] flex items-center gap-2">
-              <Bot className="w-3 h-3 text-[#00e5a0]" />
-              <span className="section-tag">// TELEGRAM</span>
+          <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
+            <div className="px-4 py-2.5 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] flex items-center gap-2">
+              <Bot className="w-3 h-3 text-[var(--color-accent-strong)]" />
+              <span className="section-tag">TELEGRAM</span>
             </div>
             <div className="p-4 space-y-4">
               <div>
                 <label className="label">
                   Token del bot
-                  {isEdit && <span className="text-white ml-2">(dejar vacío para no cambiar)</span>}
+                  {isEdit && <span className="text-[var(--color-text)] ml-2">(dejar vacío para no cambiar)</span>}
                 </label>
                 <div className="relative">
                   <input
-                    className="input pr-10 font-mono text-xs"
+                    className="input pr-10 text-xs"
                     placeholder="1234567890:ABCDefgh..."
                     type={showToken ? "text" : "password"}
                     autoComplete="new-password"
@@ -133,42 +134,42 @@ function TenantModal({
                   <button
                     type="button"
                     onClick={() => setShowToken((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white hover:text-white transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text)] hover:text-[var(--color-text)] transition-colors"
                   >
                     {showToken ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   </button>
                 </div>
-                <p className="font-mono text-[10px] text-[#555] mt-1.5">
+                <p className="text-xs text-[var(--color-text-subtle)] mt-1.5">
                   Obtenlo de @BotFather → /newbot
                 </p>
               </div>
               <div>
-                <label className="label">Webhook URL <span className="text-white">(URL pública del servidor)</span></label>
+                <label className="label">Webhook URL <span className="text-[var(--color-text)]">(URL pública del servidor)</span></label>
                 <input
-                  className="input font-mono text-xs"
+                  className="input text-xs"
                   placeholder="https://tu-servidor.railway.app"
                   value={form.webhook_url}
                   onChange={(e) => set("webhook_url", e.target.value)}
                 />
-                <p className="font-mono text-[10px] text-[#555] mt-1.5">
+                <p className="text-xs text-[var(--color-text-subtle)] mt-1.5">
                   El webhook se registra automáticamente en{" "}
-                  <span className="text-[#444]">{form.webhook_url || "https://…"}/webhook/&#60;token&#62;</span>
+                  <span className="text-[var(--color-text-subtle)]">{form.webhook_url || "https://…"}/webhook/&#60;token&#62;</span>
                 </p>
               </div>
             </div>
           </div>
 
           {/* SQL Server */}
-          <div className="border border-[#1a1a1a]">
-            <div className="px-4 py-2.5 border-b border-[#1a1a1a] bg-[#050505] flex items-center gap-2">
-              <Database className="w-3 h-3 text-[#00e5a0]" />
-              <span className="section-tag">// SQL SERVER OFIMA</span>
+          <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
+            <div className="px-4 py-2.5 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] flex items-center gap-2">
+              <Database className="w-3 h-3 text-[var(--color-accent-strong)]" />
+              <span className="section-tag">SQL SERVER OFIMA</span>
             </div>
             <div className="p-4 grid grid-cols-2 gap-4">
               <div>
                 <label className="label">Host / IP</label>
                 <input
-                  className="input font-mono text-xs"
+                  className="input text-xs"
                   placeholder="172.200.231.95"
                   value={form.sqlserver_host}
                   onChange={(e) => set("sqlserver_host", e.target.value)}
@@ -177,7 +178,7 @@ function TenantModal({
               <div>
                 <label className="label">Base de datos</label>
                 <input
-                  className="input font-mono text-xs"
+                  className="input text-xs"
                   placeholder="MICELU"
                   value={form.sqlserver_db}
                   onChange={(e) => set("sqlserver_db", e.target.value)}
@@ -186,7 +187,7 @@ function TenantModal({
               <div>
                 <label className="label">Usuario</label>
                 <input
-                  className="input font-mono text-xs"
+                  className="input text-xs"
                   placeholder="db_read"
                   value={form.sqlserver_user}
                   onChange={(e) => set("sqlserver_user", e.target.value)}
@@ -195,11 +196,11 @@ function TenantModal({
               <div>
                 <label className="label">
                   Contraseña
-                  {isEdit && <span className="text-white ml-2">(dejar vacío para no cambiar)</span>}
+                  {isEdit && <span className="text-[var(--color-text)] ml-2">(dejar vacío para no cambiar)</span>}
                 </label>
                 <div className="relative">
                   <input
-                    className="input pr-10 font-mono text-xs"
+                    className="input pr-10 text-xs"
                     placeholder="••••••••"
                     type={showPass ? "text" : "password"}
                     value={form.sqlserver_password}
@@ -208,16 +209,16 @@ function TenantModal({
                   <button
                     type="button"
                     onClick={() => setShowPass((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white hover:text-white transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text)] hover:text-[var(--color-text)] transition-colors"
                   >
                     {showPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   </button>
                 </div>
               </div>
               <div className="col-span-2">
-                <label className="label">Driver ODBC</label>
+                <label className="label">Controlador ODBC</label>
                 <input
-                  className="input font-mono text-xs"
+                  className="input text-xs"
                   value={form.sqlserver_driver}
                   onChange={(e) => set("sqlserver_driver", e.target.value)}
                 />
@@ -263,7 +264,7 @@ function TenantModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-[#1a1a1a] flex-shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-t border-[var(--color-border-subtle)] flex-shrink-0">
           <button onClick={onClose} className="btn-ghost">CANCELAR</button>
           <button
             className="btn-primary"
@@ -315,16 +316,16 @@ function TenantAdmins({ tenantId, tenantName }: { tenantId: number; tenantName: 
   });
 
   return (
-    <div className="border-t border-[#1a1a1a] bg-[#080808]">
+    <div className="border-t border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]">
       <div className="px-6 py-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <KeyRound className="w-3.5 h-3.5 text-[#00e5a0]" />
-            <span className="section-tag">// ACCESOS AL PANEL — {tenantName}</span>
+            <KeyRound className="w-3.5 h-3.5 text-[var(--color-accent-strong)]" />
+            <span className="section-tag">ACCESOS AL PANEL — {tenantName}</span>
           </div>
           <button
             onClick={() => setCreating((v) => !v)}
-            className="btn-primary flex items-center gap-1.5 text-[10px] py-1 px-3"
+            className="btn-primary flex items-center gap-1.5 text-xs py-1 px-3"
           >
             <Plus className="w-3 h-3" /> NUEVA CUENTA
           </button>
@@ -332,7 +333,7 @@ function TenantAdmins({ tenantId, tenantName }: { tenantId: number; tenantName: 
 
         {/* Formulario nueva cuenta */}
         {creating && (
-          <div className="mb-4 border border-[#00e5a0]/20 bg-[#050505] p-4 flex flex-wrap gap-3 items-end">
+          <div className="mb-4 border border-[var(--color-accent-border)] bg-[var(--color-surface)] p-4 flex flex-wrap gap-3 items-end">
             <div>
               <label className="label">Usuario</label>
               <input
@@ -346,7 +347,7 @@ function TenantAdmins({ tenantId, tenantName }: { tenantId: number; tenantName: 
               <label className="label">Contraseña</label>
               <div className="relative">
                 <input
-                  className="input w-44 pr-9 font-mono"
+                  className="input w-44 pr-9 "
                   placeholder="••••••••"
                   type={showPass ? "text" : "password"}
                   value={newPassword}
@@ -355,7 +356,7 @@ function TenantAdmins({ tenantId, tenantName }: { tenantId: number; tenantName: 
                 <button
                   type="button"
                   onClick={() => setShowPass((v) => !v)}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#888] hover:text-white"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
                 >
                   {showPass ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
                 </button>
@@ -363,18 +364,18 @@ function TenantAdmins({ tenantId, tenantName }: { tenantId: number; tenantName: 
             </div>
             <div className="flex gap-2">
               <button
-                className="btn-primary py-1 px-3 text-[10px]"
+                className="btn-primary py-1 px-3 text-xs"
                 disabled={!newUsername || !newPassword || create.isPending}
                 onClick={() => create.mutate()}
               >
                 {create.isPending ? "CREANDO..." : "CREAR →"}
               </button>
-              <button className="btn-ghost py-1 px-3 text-[10px]" onClick={() => setCreating(false)}>
+              <button className="btn-ghost py-1 px-3 text-xs" onClick={() => setCreating(false)}>
                 CANCELAR
               </button>
             </div>
             {create.isError && (
-              <p className="w-full font-mono text-[10px] text-red-400">
+              <p className="w-full text-xs text-red-700">
                 {(create.error as any)?.response?.data?.detail ?? "Error al crear la cuenta"}
               </p>
             )}
@@ -383,25 +384,25 @@ function TenantAdmins({ tenantId, tenantName }: { tenantId: number; tenantName: 
 
         {/* Lista de admins */}
         {isLoading ? (
-          <div className="h-10 animate-pulse border border-[#111]" />
+          <div className="h-10 animate-pulse border border-[var(--color-border-subtle)]" />
         ) : admins.length === 0 ? (
-          <p className="font-mono text-[10px] text-[#888] py-3">Sin cuentas creadas — este cliente no puede entrar al panel.</p>
+          <p className="text-xs text-[var(--color-text-muted)] py-3">Sin cuentas creadas — este cliente no puede entrar al panel.</p>
         ) : (
-          <div className="border border-[#1a1a1a]">
-            <div className="grid grid-cols-12 bg-[#050505] border-b border-[#111]">
+          <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
+            <div className="grid grid-cols-12 bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
               <div className="col-span-4 th">Usuario</div>
               <div className="col-span-3 th">Estado</div>
               <div className="col-span-3 th">Creado</div>
               <div className="col-span-2 th" />
             </div>
             {admins.map((a: any) => (
-              <div key={a.id} className="grid grid-cols-12 border-b border-[#111] hover:bg-[#050505] transition-colors">
+              <div key={a.id} className="grid grid-cols-12 border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-elevated)] transition-colors">
                 <div className="col-span-4 td">
                   <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 border border-[#2a2a2a] flex items-center justify-center flex-shrink-0">
-                      <span className="font-mono text-[9px] text-[#00e5a0]">{a.username[0]?.toUpperCase()}</span>
+                    <div className="w-6 h-6 border border-[var(--color-border)] flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs text-[var(--color-accent-strong)]">{a.username[0]?.toUpperCase()}</span>
                     </div>
-                    <span className="font-mono text-xs text-white">{a.username}</span>
+                    <span className="text-xs text-[var(--color-text)]">{a.username}</span>
                   </div>
                 </div>
                 <div className="col-span-3 td">
@@ -409,21 +410,21 @@ function TenantAdmins({ tenantId, tenantName }: { tenantId: number; tenantName: 
                     {a.is_active ? "ACTIVO" : "INACTIVO"}
                   </span>
                 </div>
-                <div className="col-span-3 td font-mono text-[11px] text-[#444]">
+                <div className="col-span-3 td text-xs text-[var(--color-text-subtle)]">
                   {a.created_at ? new Date(a.created_at).toLocaleDateString("es-CO") : "—"}
                 </div>
                 <div className="col-span-2 td">
                   <div className="flex items-center gap-1 justify-end">
                     <button
                       onClick={() => toggleAdmin.mutate({ adminId: a.id, is_active: !a.is_active })}
-                      className={`p-1.5 transition-colors ${a.is_active ? "text-[#999] hover:text-yellow-500" : "text-[#999] hover:text-[#00e5a0]"}`}
+                      className={`p-1.5 transition-colors ${a.is_active ? "text-[var(--color-text-muted)] hover:text-amber-700" : "text-[var(--color-text-muted)] hover:text-[var(--color-accent-strong)]"}`}
                       title={a.is_active ? "Desactivar" : "Activar"}
                     >
                       <Power className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => window.confirm(`¿Eliminar la cuenta "${a.username}"?`) && removeAdmin.mutate(a.id)}
-                      className="p-1.5 text-[#999] hover:text-red-500 transition-colors"
+                      className="p-1.5 text-[var(--color-text-muted)] hover:text-red-700 transition-colors"
                       title="Eliminar"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -569,7 +570,7 @@ password: "", // nunca pre-rellenamos la contraseña
   return (
     <div>
       <PageHeader
-        tag="MULTI-TENANT"
+        tag="CLIENTES"
         title="Clientes"
         description={`${tenants.length} cliente${tenants.length !== 1 ? "s" : ""} registrado${tenants.length !== 1 ? "s" : ""}`}
         action={
@@ -580,55 +581,55 @@ password: "", // nunca pre-rellenamos la contraseña
         }
       />
 
-      <div className="px-8 py-8">
+      <div className="px-5 py-6 sm:px-8 sm:py-8">
 
         {/* Error de mutación */}
         {(create.isError || update.isError || remove.isError) && (
-          <div className="mb-4 px-4 py-3 border border-red-900 bg-red-950/30 font-mono text-xs text-red-400">
+          <div className="mb-4 px-4 py-3 border border-red-300 bg-red-50 text-xs text-red-700">
             {saveError || "Error al guardar. Verifica los datos e intenta de nuevo."}
           </div>
         )}
 
-        <div className="border border-[#1a1a1a]">
+        <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
 
           {/* Cabecera tabla */}
-          <div className="grid grid-cols-[repeat(11,minmax(0,1fr))] bg-[#050505] border-b border-[#1a1a1a]">
+          <div className="grid grid-cols-[repeat(13,minmax(0,1fr))] bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
             <div className="col-span-3 th">Cliente</div>
-            <div className="col-span-2 th">Bot</div>
+            <div className="col-span-2 th">Telegram</div>
             <div className="col-span-2 th">SQL Server</div>
-            <div className="col-span-2 th">DB Externa</div>
-            <div className="col-span-1 th">Estado</div>
-            <div className="col-span-1 th" />
+            <div className="col-span-2 th">Base de datos</div>
+            <div className="col-span-2 th">Estado</div>
+            <div className="col-span-2 th" />
           </div>
 
           {/* Skeleton */}
           {isLoading &&
             Array(3).fill(0).map((_, i) => (
-              <div key={i} className="h-14 border-b border-[#111] animate-pulse" />
+              <div key={i} className="h-14 border-b border-[var(--color-border-subtle)] animate-pulse" />
             ))}
 
           {/* Filas */}
           {!isLoading && tenants.map((t) => (
             <div key={t.id}>
-              <div className="grid grid-cols-[repeat(11,minmax(0,1fr))] border-b border-[#111] hover:bg-[#050505] transition-colors">
+              <div className="grid grid-cols-[repeat(13,minmax(0,1fr))] border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-elevated)] transition-colors">
               {/* Cliente */}
               <div className="col-span-3 td">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 border border-[#2a2a2a] flex items-center justify-center flex-shrink-0">
-                    <span className="font-mono text-[11px] text-[#00e5a0]">
+                  <div className="w-8 h-8 border border-[var(--color-border)] flex items-center justify-center flex-shrink-0">
+                    <span className="text-xs text-[var(--color-accent-strong)]">
                       {t.name[0]?.toUpperCase()}
                     </span>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-white leading-tight">{t.name}</p>
-                    <p className="font-mono text-[10px] text-white">{t.slug}</p>
+                    <p className="text-sm font-medium text-[var(--color-text)] leading-tight">{t.name}</p>
+                    <p className="text-xs text-[var(--color-text)]">{t.slug}</p>
                   </div>
                 </div>
               </div>
 
               {/* Bot token hint */}
               <div className="col-span-2 td">
-                <span className="font-mono text-[11px] text-white bg-[#0a0a0a] px-2 py-0.5 border border-[#1a1a1a]">
+                <span className="text-xs text-[var(--color-text)] bg-[var(--color-bg-elevated)] px-2 py-0.5 border border-[var(--color-border-subtle)]">
                   ...{t.bot_token_hint}
                 </span>
               </div>
@@ -637,11 +638,11 @@ password: "", // nunca pre-rellenamos la contraseña
               <div className="col-span-2 td">
                 {t.sqlserver_host ? (
                   <div>
-                    <p className="font-mono text-[11px] text-white truncate" title={t.sqlserver_host}>{t.sqlserver_host}</p>
-                    <p className="font-mono text-[10px] text-white truncate" title={t.sqlserver_db}>{t.sqlserver_db}</p>
+                    <p className="text-xs text-[var(--color-text)] truncate" title={t.sqlserver_host}>{t.sqlserver_host}</p>
+                    <p className="text-xs text-[var(--color-text)] truncate" title={t.sqlserver_db}>{t.sqlserver_db}</p>
                   </div>
                 ) : (
-                  <span className="font-mono text-[11px] text-white">— sin configurar</span>
+                  <span className="text-xs text-[var(--color-text)]">— sin configurar</span>
                 )}
               </div>
 
@@ -649,45 +650,45 @@ password: "", // nunca pre-rellenamos la contraseña
               <div className="col-span-2 td">
                 {t.external_db_configured ? (
                   <div>
-                    <p className="font-mono text-[11px] text-white">
-                      {t.external_db_engine ?? "postgresql"}
+                    <p className="text-xs text-[var(--color-text)]">
+                      {engineLabel(t.external_db_engine)}
                     </p>
-                    <p className="font-mono text-[10px] text-[#00e5a0]">✓ DB configurada</p>
+                    <p className="text-xs text-[var(--color-accent-strong)]">✓ Base de datos lista</p>
                   </div>
                 ) : (
-                  <span className="font-mono text-[11px] text-white">— no configurada</span>
+                  <span className="text-xs text-[var(--color-text)]">— sin configurar</span>
                 )}
                 {t.external_alegra_configured && (
-                  <p className="font-mono text-[10px] text-[#00e5a0] mt-1">✓ Alegra</p>
+                  <p className="text-xs text-[var(--color-accent-strong)] mt-1">✓ Alegra</p>
                 )}
                 {t.external_excel_configured && (
-                  <p className="font-mono text-[10px] text-[#00e5a0] mt-1">✓ Excel</p>
+                  <p className="text-xs text-[var(--color-accent-strong)] mt-1">✓ Excel</p>
                 )}
                 {t.report_config_configured && (
-                  <p className="font-mono text-[10px] text-[#00e5a0] mt-1">✓ Informes</p>
+                  <p className="text-xs text-[var(--color-accent-strong)] mt-1">✓ Informes</p>
                 )}
               </div>
 
               {/* Estado */}
-              <div className="col-span-1 td">
+              <div className="col-span-2 td">
                 <span className={`badge ${t.is_active ? "badge-green" : "badge-slate"}`}>
-                  {t.is_active ? "ON" : "OFF"}
+                  {activeLabel(t.is_active)}
                 </span>
               </div>
 
               {/* Acciones */}
-              <div className="col-span-1 td">
+              <div className="col-span-2 td">
                 <div className="flex items-center gap-1 justify-end">
                   <button
                     onClick={() => setExpandedId(expandedId === t.id ? null : t.id)}
-                    className={`p-1.5 transition-colors ${expandedId === t.id ? "text-[#00e5a0]" : "text-white hover:text-[#00e5a0]"}`}
+                    className={`p-1.5 transition-colors ${expandedId === t.id ? "text-[var(--color-accent-strong)]" : "text-[var(--color-text)] hover:text-[var(--color-accent-strong)]"}`}
                     title="Gestionar accesos al panel"
                   >
                     <Users className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => openEdit(t)}
-                    className="p-1.5 text-white hover:text-[#00e5a0] transition-colors"
+                    className="p-1.5 text-[var(--color-text)] hover:text-[var(--color-accent-strong)] transition-colors"
                     title="Editar"
                   >
                     <Pencil className="w-3.5 h-3.5" />
@@ -696,8 +697,8 @@ password: "", // nunca pre-rellenamos la contraseña
                     onClick={() => toggle.mutate({ id: t.id, is_active: !t.is_active })}
                     className={`p-1.5 transition-colors ${
                       t.is_active
-                        ? "text-white hover:text-yellow-500"
-                        : "text-white hover:text-[#00e5a0]"
+                        ? "text-[var(--color-text)] hover:text-amber-700"
+                        : "text-[var(--color-text)] hover:text-[var(--color-accent-strong)]"
                     }`}
                     title={t.is_active ? "Desactivar" : "Activar"}
                   >
@@ -708,7 +709,7 @@ password: "", // nunca pre-rellenamos la contraseña
                       window.confirm(`¿Eliminar el cliente "${t.name}"? Esta acción es irreversible.`) &&
                       remove.mutate(t.id)
                     }
-                    className="p-1.5 text-white hover:text-red-500 transition-colors"
+                    className="p-1.5 text-[var(--color-text)] hover:text-red-700 transition-colors"
                     title="Eliminar"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -725,8 +726,8 @@ password: "", // nunca pre-rellenamos la contraseña
 
           {!isLoading && tenants.length === 0 && (
             <div className="px-5 py-16 text-center">
-              <p className="font-mono text-xs text-white">SIN CLIENTES REGISTRADOS</p>
-              <p className="font-mono text-[10px] text-white mt-2">
+              <p className="text-xs text-[var(--color-text)]">Aún no hay clientes registrados</p>
+              <p className="text-xs text-[var(--color-text)] mt-2">
                 Crea el primero con el botón "NUEVO CLIENTE"
               </p>
             </div>
