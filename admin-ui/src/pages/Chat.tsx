@@ -108,7 +108,7 @@ const SUGGESTIONS = [
   { title: "Resumen de ventas", text: "Dame el resumen de ventas de este mes por canal." },
   { title: "Margen del mes", text: "¿Cómo estuvo el margen este mes comparado con el anterior?" },
   { title: "Productos top", text: "Muéstrame los 10 productos más vendidos del mes." },
-  { title: "Cuentas por pagar", text: "¿Cuáles son las cuentas por pagar pendientes?" },
+  { title: "Indicadores del mes", text: "¿Cómo van los indicadores de este mes?" },
 ];
 
 function fmtWhen(iso: string | null): string {
@@ -121,7 +121,7 @@ export default function Chat() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const { username, role, logout } = useAuth();
-  const { tenantId, activeTenant, tenants, setActiveTenant, isSuperAdmin } = useTenant();
+  const { tenantId, activeTenant, tenants, setActiveTenant, isSuperAdmin, isPortalUser } = useTenant();
 
   const [activeId, setActiveId] = useState<number | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -364,13 +364,23 @@ export default function Chat() {
       <div className="vc-app" style={{ alignItems: "center", justifyContent: "center" }}>
         <div className="vc-empty" style={{ textAlign: "center" }}>
           <div className="vc-empty-mark" style={{ margin: "0 auto var(--space-4)" }}>M</div>
-          <h1 className="vc-empty-title">Selecciona un cliente</h1>
+          <h1 className="vc-empty-title">
+            {isPortalUser ? "Sin tiendas asignadas" : "Selecciona un cliente"}
+          </h1>
           <p className="vc-empty-sub" style={{ margin: "var(--space-3) auto var(--space-6)" }}>
-            Elige un cliente en el panel para comenzar a conversar.
+            {isPortalUser
+              ? "Pide a tu administrador que te asigne una tienda."
+              : "Elige un cliente en el panel para comenzar a conversar."}
           </p>
-          <button className="btn-secondary" onClick={() => navigate("/")}>
-            <LayoutDashboard size={14} /> Ir al panel
-          </button>
+          {isPortalUser ? (
+            <button className="btn-secondary" onClick={async () => { await logout(); navigate("/login"); }}>
+              <LogOut size={14} /> Cerrar sesión
+            </button>
+          ) : (
+            <button className="btn-secondary" onClick={() => navigate("/")}>
+              <LayoutDashboard size={14} /> Ir al panel
+            </button>
+          )}
         </div>
       </div>
     );
@@ -426,11 +436,15 @@ export default function Chat() {
               <Settings className="vc-nav-icon" size={16} />
               <span className="vc-nav-label">Configuración</span>
             </button>
-            <div className="vc-nav-sep" />
-            <button className="vc-nav-item" onClick={() => navigate("/")} title="Volver al panel">
-              <LayoutDashboard className="vc-nav-icon" size={16} />
-              <span className="vc-nav-label">Panel de administración</span>
-            </button>
+            {!isPortalUser && (
+              <>
+                <div className="vc-nav-sep" />
+                <button className="vc-nav-item" onClick={() => navigate("/")} title="Volver al panel">
+                  <LayoutDashboard className="vc-nav-icon" size={16} />
+                  <span className="vc-nav-label">Panel de administración</span>
+                </button>
+              </>
+            )}
           </nav>
 
           <div className="vc-side-section">
@@ -460,10 +474,10 @@ export default function Chat() {
         </div>
 
         <div className="vc-side-foot">
-          <button className="vc-tenant" onClick={() => openPanel("config")} title="Cambiar cliente">
+          <button className="vc-tenant" onClick={() => openPanel("config")} title={isPortalUser ? "Cambiar tienda" : "Cambiar cliente"}>
             <span className="vc-tenant-dot" />
             <span className="vc-tenant-text">
-              <span className="vc-tenant-label">Cliente</span>
+              <span className="vc-tenant-label">{isPortalUser ? "Tienda" : "Cliente"}</span>
               <span className="vc-tenant-name">{activeTenant?.name ?? "Tu empresa"}</span>
             </span>
           </button>
@@ -476,10 +490,12 @@ export default function Chat() {
             <Menu size={18} />
           </button>
 
-          <button className="vc-back" onClick={() => navigate("/")} title="Volver al panel de administración">
-            <ArrowLeft size={16} />
-            <span>Panel</span>
-          </button>
+          {!isPortalUser && (
+            <button className="vc-back" onClick={() => navigate("/")} title="Volver al panel de administración">
+              <ArrowLeft size={16} />
+              <span>Panel</span>
+            </button>
+          )}
 
           <div className="vc-header-info">
             <div className="vc-header-title">{activeConversation?.title || "Nueva conversación"}</div>
@@ -621,7 +637,7 @@ export default function Chat() {
                 <h2 className="vc-modal-title">{panel === "config" ? "Configuración" : "Proyectos"}</h2>
                 <p className="vc-modal-sub">
                   {panel === "config"
-                    ? "Cuenta, cliente activo y acceso al panel."
+                    ? (isPortalUser ? "Cuenta, tienda activa y sesión." : "Cuenta, cliente activo y acceso al panel.")
                     : "Un espacio para organizar tus conversaciones."}
                 </p>
               </div>
@@ -641,14 +657,18 @@ export default function Chat() {
                     <div className="vc-settings-row">
                       <span className="vc-settings-label">Rol</span>
                       <span className="vc-settings-value">
-                        {role === "superadmin" ? "Superadministrador" : "Administrador"}
+                        {role === "superadmin"
+                          ? "Superadministrador"
+                          : role === "portal_user"
+                          ? ((activeTenant as any)?.role_name ?? "Usuario")
+                          : "Administrador"}
                       </span>
                     </div>
                   </div>
 
-                  {isSuperAdmin && tenants.length > 0 ? (
+                  {(isSuperAdmin || isPortalUser) && tenants.length > 0 ? (
                     <div className="vc-field">
-                      <label className="label" htmlFor="chat-tenant">Cliente activo</label>
+                      <label className="label" htmlFor="chat-tenant">{isPortalUser ? "Tienda activa" : "Cliente activo"}</label>
                       <select
                         id="chat-tenant"
                         className="vc-select"
@@ -662,19 +682,21 @@ export default function Chat() {
                     </div>
                   ) : (
                     <div className="vc-settings-row">
-                      <span className="vc-settings-label">Cliente</span>
+                      <span className="vc-settings-label">{isPortalUser ? "Tienda" : "Cliente"}</span>
                       <span className="vc-settings-value">{activeTenant?.name ?? "Tu empresa"}</span>
                     </div>
                   )}
                 </div>
 
                 <div className="vc-modal-actions">
-                  <button
-                    className="btn-primary"
-                    onClick={() => { setPanel(null); setSidebarOpen(false); navigate("/"); }}
-                  >
-                    <LayoutDashboard size={14} /> Ir al panel
-                  </button>
+                  {!isPortalUser && (
+                    <button
+                      className="btn-primary"
+                      onClick={() => { setPanel(null); setSidebarOpen(false); navigate("/"); }}
+                    >
+                      <LayoutDashboard size={14} /> Ir al panel
+                    </button>
+                  )}
                   <button
                     className="btn-ghost"
                     onClick={async () => { await logout(); navigate("/login"); }}

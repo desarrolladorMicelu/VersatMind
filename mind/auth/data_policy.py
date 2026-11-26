@@ -20,6 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from mind.db.models import (
     DataSource,
+    Membership,
     RolePermission,
     RoleSourcePermission,
     UserRole,
@@ -115,6 +116,15 @@ async def load_user_role_ids(session: AsyncSession, user) -> frozenset[int]:
     """Roles del usuario: user_roles + columna legada users.role_id."""
     if user is None:
         return frozenset()
+    if getattr(user, "portal_user_id", None) is not None:
+        rows = (await session.execute(
+            select(Membership.role_id).where(
+                Membership.portal_user_id == user.portal_user_id,
+                Membership.tenant_id == user.tenant_id,
+                Membership.is_active.is_(True),
+            )
+        )).scalars().all()
+        return frozenset(int(r) for r in rows)
     ids: set[int] = set()
     legacy = getattr(user, "role_id", None)
     if legacy:

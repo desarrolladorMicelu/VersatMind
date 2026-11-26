@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TenantProvider } from "./contexts/TenantContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminOnlyRoute from "./components/AdminOnlyRoute";
 import SuperAdminRoute from "./components/SuperAdminRoute";
 import Layout from "./components/Layout";
 import Login from "./pages/Login";
@@ -48,7 +49,9 @@ export default function App() {
                 path="/"
                 element={
                   <ProtectedRoute>
-                    <Layout />
+                    <AdminOnlyRoute>
+                      <Layout />
+                    </AdminOnlyRoute>
                   </ProtectedRoute>
                 }
               >

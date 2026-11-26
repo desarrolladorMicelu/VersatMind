@@ -185,11 +185,64 @@ class RoleSourcePermission(Base):
 # Usuarios
 # ---------------------------------------------------------------------------
 
+class PortalUser(Base):
+    """Cuenta global de negocio: usuario/contraseña y pertenencias por tienda."""
+    __tablename__ = "portal_users"
+    __table_args__ = (
+        Index("idx_portal_users_active", "is_active"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    username: Mapped[str] = mapped_column(Text, unique=True, nullable=False)
+    password_hash: Mapped[str | None] = mapped_column(Text, nullable=True)
+    full_name: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    must_change_password: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False, server_default="false"
+    )
+    # Contraseña temporal cifrada; se borra al iniciar sesión.
+    temp_password_enc: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    def __repr__(self) -> str:
+        return f"<PortalUser id={self.id} username={self.username!r}>"
+
+
+class Membership(Base):
+    """Pertenencia de un usuario portal a una tienda, con su rol en esa tienda."""
+    __tablename__ = "memberships"
+    __table_args__ = (
+        UniqueConstraint("portal_user_id", "tenant_id", name="uq_membership_user_tenant"),
+        Index("idx_memberships_tenant", "tenant_id", "is_active"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    portal_user_id: Mapped[int] = mapped_column(
+        ForeignKey("portal_users.id", ondelete="CASCADE"), nullable=False
+    )
+    tenant_id: Mapped[int] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
+    )
+    role_id: Mapped[int] = mapped_column(
+        ForeignKey("roles.id", ondelete="RESTRICT"), nullable=False
+    )
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    def __repr__(self) -> str:
+        return f"<Membership user={self.portal_user_id} tenant={self.tenant_id} role={self.role_id}>"
+
+
 class User(Base):
     """Usuarios autorizados — scoped por tenant."""
     __tablename__ = "users"
     __table_args__ = (
         Index("idx_users_tenant_chat", "tenant_id", "chat_id"),
+        Index("idx_users_portal_user", "portal_user_id"),
     )
 
     chat_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
@@ -202,6 +255,11 @@ class User(Base):
         ForeignKey("roles.id", ondelete="RESTRICT"), nullable=False
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    # Cuenta global de plataforma asociada. Puede ser null solo durante la
+    # migración; el backfill crea una cuenta para cada usuario de Telegram.
+    portal_user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("portal_users.id", ondelete="CASCADE"), nullable=True
+    )
 
     # Pausa por consumo de tokens (bolsa agotada). Distinto de is_active:
     # is_active=False dispara el flujo de solicitud de acceso; is_paused=True

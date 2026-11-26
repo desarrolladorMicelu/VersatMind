@@ -13,6 +13,8 @@ interface TenantContextType {
   tenantId: number | null;
   isSuperAdmin: boolean;
   setIsSuperAdmin: (v: boolean) => void;
+  isPortalUser: boolean;
+  setIsPortalUser: (v: boolean) => void;
   jwtTenantId: number | null;
   setJwtTenantId: (id: number | null) => void;
 }
@@ -23,6 +25,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [activeTenant, _setActiveTenant] = useState<Tenant | null>(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(true);
+  const [isPortalUser, setIsPortalUser] = useState(false);
   const [jwtTenantId, setJwtTenantId] = useState<number | null>(null);
 
   const setActiveTenant = useCallback((t: Tenant | null) => {
@@ -32,7 +35,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
 
   // tenant_admin: el tenant es el del JWT, no elegible
   // superadmin: el que elija en el selector
-  const tenantId: number | null = isSuperAdmin
+  const tenantId: number | null = isSuperAdmin || isPortalUser
     ? activeTenant?.id ?? null
     : jwtTenantId;
 
@@ -45,6 +48,8 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       tenantId,
       isSuperAdmin,
       setIsSuperAdmin,
+      isPortalUser,
+      setIsPortalUser,
       jwtTenantId,
       setJwtTenantId,
     }}>

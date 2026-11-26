@@ -18,7 +18,8 @@ from pydantic import BaseModel
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from mind.admin.auth import get_effective_tenant_id, require_admin
+from mind.admin.auth import require_chat_user
+from mind.chat.identity import resolve_chat_identity
 from mind.db.base import get_session
 from mind.db.models import ChatConversation, ConversationMessage, Report
 
@@ -64,14 +65,15 @@ def _sse(event: dict) -> str:
 
 @router.get("/conversations")
 async def list_conversations(
-    admin=Depends(require_admin),
+    auth=Depends(require_chat_user),
     session: AsyncSession = Depends(get_session),
     tenant_id: int | None = Query(default=None),
 ):
-    tid = get_effective_tenant_id(admin, tenant_id)
+    identity = await resolve_chat_identity(session, auth, tenant_id)
+    tid = identity.tenant_id
     rows = (await session.execute(
         select(ChatConversation)
-        .where(ChatConversation.tenant_id == tid, ChatConversation.owner == _owner(admin))
+        .where(ChatConversation.tenant_id == tid, ChatConversation.owner == identity.owner)
         .order_by(ChatConversation.updated_at.desc())
     )).scalars().all()
     return [_conv_dict(c) for c in rows]
@@ -80,15 +82,16 @@ async def list_conversations(
 @router.post("/conversations")
 async def create_conversation(
     body: ConversationCreate | None = Body(default=None),
-    admin=Depends(require_admin),
+    auth=Depends(require_chat_user),
     session: AsyncSession = Depends(get_session),
     tenant_id: int | None = Query(default=None),
 ):
-    tid = get_effective_tenant_id(admin, tenant_id)
+    identity = await resolve_chat_identity(session, auth, tenant_id)
+    tid = identity.tenant_id
     title = (body.title if body and body.title else "Nueva conversación").strip() or "Nueva conversación"
     conv = ChatConversation(
         tenant_id=tid,
-        owner=_owner(admin),
+        owner=identity.owner,
         title=title[:80],
         chat_id=0,
     )
@@ -104,16 +107,17 @@ async def create_conversation(
 async def rename_conversation(
     conversation_id: int,
     body: ConversationRename,
-    admin=Depends(require_admin),
+    auth=Depends(require_chat_user),
     session: AsyncSession = Depends(get_session),
     tenant_id: int | None = Query(default=None),
 ):
-    tid = get_effective_tenant_id(admin, tenant_id)
+    identity = await resolve_chat_identity(session, auth, tenant_id)
+    tid = identity.tenant_id
     conv = (await session.execute(
         select(ChatConversation).where(
             ChatConversation.id == conversation_id,
             ChatConversation.tenant_id == tid,
-            ChatConversation.owner == _owner(admin),
+            ChatConversation.owner == identity.owner,
         )
     )).scalar_one_or_none()
     if not conv:
@@ -126,16 +130,17 @@ async def rename_conversation(
 @router.delete("/conversations/{conversation_id}")
 async def delete_conversation(
     conversation_id: int,
-    admin=Depends(require_admin),
+    auth=Depends(require_chat_user),
     session: AsyncSession = Depends(get_session),
     tenant_id: int | None = Query(default=None),
 ):
-    tid = get_effective_tenant_id(admin, tenant_id)
+    identity = await resolve_chat_identity(session, auth, tenant_id)
+    tid = identity.tenant_id
     conv = (await session.execute(
         select(ChatConversation).where(
             ChatConversation.id == conversation_id,
             ChatConversation.tenant_id == tid,
-            ChatConversation.owner == _owner(admin),
+            ChatConversation.owner == identity.owner,
         )
     )).scalar_one_or_none()
     if not conv:
@@ -154,16 +159,17 @@ async def delete_conversation(
 @router.get("/conversations/{conversation_id}/messages")
 async def list_messages(
     conversation_id: int,
-    admin=Depends(require_admin),
+    auth=Depends(require_chat_user),
     session: AsyncSession = Depends(get_session),
     tenant_id: int | None = Query(default=None),
 ):
-    tid = get_effective_tenant_id(admin, tenant_id)
+    identity = await resolve_chat_identity(session, auth, tenant_id)
+    tid = identity.tenant_id
     conv = (await session.execute(
         select(ChatConversation).where(
             ChatConversation.id == conversation_id,
             ChatConversation.tenant_id == tid,
-            ChatConversation.owner == _owner(admin),
+            ChatConversation.owner == identity.owner,
         )
     )).scalar_one_or_none()
     if not conv:
@@ -185,7 +191,7 @@ async def list_messages(
         .where(
             Report.tenant_id == tid,
             Report.conversation_id == conv.id,
-            Report.owner == _owner(admin),
+            Report.owner == identity.owner,
         )
         .order_by(Report.created_at.asc())
     )).scalars().all()
@@ -220,22 +226,15 @@ async def list_messages(
 @router.post("/stream")
 async def chat_stream(
     body: ChatStreamRequest,
-    admin=Depends(require_admin),
+    auth=Depends(require_chat_user),
     tenant_id: int | None = Query(default=None),
 ):
-    tid = get_effective_tenant_id(admin, tenant_id if tenant_id is not None else body.tenant_id)
-    owner = _owner(admin)
     message = (body.message or "").strip()
 
     async def event_gen():
         from mind.db.base import _session_factory
         from mind.tenants.resolver import resolve_by_id
         from mind.agent.streaming import stream_chat
-        from mind.auth.authorization import Permission
-        from mind.auth.data_policy import (
-            empty_policy, load_permissions_for_roles, load_source_policy,
-        )
-        from mind.db.models import Role
 
         if not message:
             yield _sse({"type": "error", "message": "El mensaje está vacío."})
@@ -244,12 +243,16 @@ async def chat_stream(
             yield _sse({"type": "error", "message": "Base de datos no disponible."})
             return
 
-        tenant = resolve_by_id(tid)
-        if tenant is None:
-            yield _sse({"type": "error", "message": "Cliente no encontrado."})
-            return
-
         async with _session_factory() as session:
+            requested_tenant = tenant_id if tenant_id is not None else body.tenant_id
+            identity = await resolve_chat_identity(session, auth, requested_tenant)
+            tid = identity.tenant_id
+            owner = identity.owner
+            tenant = resolve_by_id(tid)
+            if tenant is None:
+                yield _sse({"type": "error", "message": "Cliente no encontrado."})
+                return
+
             conv = (await session.execute(
                 select(ChatConversation).where(
                     ChatConversation.id == body.conversation_id,
@@ -266,26 +269,6 @@ async def chat_stream(
             conv.updated_at = datetime.now(timezone.utc)
             await session.commit()
 
-            # El chat web es una consola de administración. El superadmin
-            # conserva acceso total; un tenant_admin usa el rol "admin" del
-            # tenant si existe, para respetar sus restricciones de fuentes.
-            role_ids: frozenset[int] = frozenset()
-            if admin.get("role") == "superadmin":
-                permissions = frozenset(p.value for p in Permission)
-                policy = empty_policy()
-            else:
-                admin_role = (await session.execute(
-                    select(Role).where(Role.tenant_id == tid, Role.name == "admin").limit(1)
-                )).scalar_one_or_none()
-                if admin_role is not None:
-                    role_ids = frozenset({admin_role.id})
-                    permissions = await load_permissions_for_roles(session, role_ids)
-                    policy = await load_source_policy(session, role_ids, tid)
-                else:
-                    # Compatibilidad con tenants existentes sin rol admin.
-                    permissions = frozenset(p.value for p in Permission)
-                    policy = empty_policy()
-
             try:
                 async for event in stream_chat(
                     message=message,
@@ -295,9 +278,9 @@ async def chat_stream(
                     owner=owner,
                     conversation_id=conv.id,
                     source="web_chat",
-                    forced_permissions=permissions,
-                    source_policy=policy,
-                    role_ids=role_ids,
+                    forced_permissions=identity.permissions,
+                    source_policy=identity.policy,
+                    role_ids=identity.role_ids,
                 ):
                     yield _sse(event)
             except Exception as exc:

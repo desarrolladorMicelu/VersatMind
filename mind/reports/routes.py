@@ -10,7 +10,8 @@ from fastapi.responses import HTMLResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from mind.admin.auth import get_effective_tenant_id, require_admin
+from mind.admin.auth import require_chat_user
+from mind.chat.identity import resolve_chat_identity
 from mind.db.base import get_session
 from mind.db.models import Report
 
@@ -23,8 +24,7 @@ _CSP = (
 )
 
 
-def _owner(admin: dict) -> str:
-    return str(admin.get("sub") or "admin")
+
 
 
 def _filename(report: Report) -> str:
@@ -35,16 +35,16 @@ def _filename(report: Report) -> str:
 
 async def _load(
     report_id: int,
-    admin: dict,
+    auth: dict,
     tenant_id: int | None,
     session: AsyncSession,
 ) -> Report:
-    tid = get_effective_tenant_id(admin, tenant_id)
+    identity = await resolve_chat_identity(session, auth, tenant_id)
     report = (await session.execute(
         select(Report).where(
             Report.id == report_id,
-            Report.tenant_id == tid,
-            Report.owner == _owner(admin),
+            Report.tenant_id == identity.tenant_id,
+            Report.owner == identity.owner,
         )
     )).scalar_one_or_none()
     if report is None:
@@ -55,11 +55,11 @@ async def _load(
 @router.get("/{report_id}/html", response_class=HTMLResponse)
 async def report_html(
     report_id: int,
-    admin=Depends(require_admin),
+    auth=Depends(require_chat_user),
     session: AsyncSession = Depends(get_session),
     tenant_id: int | None = None,
 ):
-    report = await _load(report_id, admin, tenant_id, session)
+    report = await _load(report_id, auth, tenant_id, session)
     return HTMLResponse(
         content=report.html,
         headers={
@@ -73,11 +73,11 @@ async def report_html(
 @router.get("/{report_id}/download")
 async def report_download(
     report_id: int,
-    admin=Depends(require_admin),
+    auth=Depends(require_chat_user),
     session: AsyncSession = Depends(get_session),
     tenant_id: int | None = None,
 ):
-    report = await _load(report_id, admin, tenant_id, session)
+    report = await _load(report_id, auth, tenant_id, session)
     return Response(
         content=report.html,
         media_type="text/html; charset=utf-8",
@@ -92,11 +92,11 @@ async def report_download(
 @router.get("/{report_id}/pdf")
 async def report_pdf(
     report_id: int,
-    admin=Depends(require_admin),
+    auth=Depends(require_chat_user),
     session: AsyncSession = Depends(get_session),
     tenant_id: int | None = None,
 ):
-    report = await _load(report_id, admin, tenant_id, session)
+    report = await _load(report_id, auth, tenant_id, session)
     from mind.reports.service import can_generate_pdf
     if not can_generate_pdf():
         raise HTTPException(

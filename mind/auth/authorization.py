@@ -13,7 +13,7 @@ from enum import Enum
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from mind.db.models import Role, RolePermission, User
+from mind.db.models import Membership, Role, RolePermission, User
 
 
 class Permission(str, Enum):
@@ -98,9 +98,24 @@ async def check_access(
             if not user.is_active:
                 return AuthResult(allowed=False)
 
-            role_stmt = select(Role).where(Role.id == user.role_id)
-            role_result = await session.execute(role_stmt)
-            role = role_result.scalar_one_or_none()
+            if user.portal_user_id is not None:
+                membership_row = (await session.execute(
+                    select(Membership, Role)
+                    .join(Role, Role.id == Membership.role_id)
+                    .where(
+                        Membership.portal_user_id == user.portal_user_id,
+                        Membership.tenant_id == tenant_id,
+                        Membership.is_active.is_(True),
+                    )
+                    .limit(1)
+                )).first()
+                if membership_row is None:
+                    return AuthResult(allowed=False, user=user)
+                _membership, role = membership_row
+            else:
+                role_stmt = select(Role).where(Role.id == user.role_id)
+                role_result = await session.execute(role_stmt)
+                role = role_result.scalar_one_or_none()
 
             return AuthResult(allowed=True, user=user, role=role)
 

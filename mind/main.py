@@ -96,8 +96,19 @@ async def lifespan(app: FastAPI):
         logger.critical("Error ejecutando migraciones: %s", exc)
         sys.exit(1)
 
-    # 5. Cargar todos los tenants activos
+    # 4b. Cuentas de portal para usuarios de Telegram existentes
     from mind.db.base import _session_factory
+    try:
+        from mind.auth.portal import backfill_portal_users
+        async with _session_factory() as session:
+            created_portal = await backfill_portal_users(session)
+            await session.commit()
+        if created_portal:
+            logger.info("Cuentas de portal creadas para %s usuarios de Telegram.", created_portal)
+    except Exception as exc:
+        logger.warning("No se pudo completar el backfill de cuentas de portal: %s", exc)
+
+    # 5. Cargar todos los tenants activos
     from mind.tenants.resolver import load_all_active_tenants
 
     async with _session_factory() as session:
@@ -205,6 +216,10 @@ app.include_router(chat_router)
 # Informes HTML del chat web
 from mind.reports.routes import router as reports_router
 app.include_router(reports_router)
+
+# Usuarios de portal y pertenencias multi-tienda
+from mind.admin.portal_users import router as portal_users_router
+app.include_router(portal_users_router)
 
 # Integraciones OAuth (Outlook / Google: correo y calendario)
 from mind.integrations.routes import router as integrations_router

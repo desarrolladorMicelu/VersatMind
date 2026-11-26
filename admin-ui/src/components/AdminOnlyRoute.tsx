@@ -1,0 +1,17 @@
+import { Navigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+
+export default function AdminOnlyRoute({ children }: { children: React.ReactNode }) {
+  const { role, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[var(--color-bg)]">
+        <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+  if (role !== "superadmin" && role !== "tenant_admin") {
+    return <Navigate to="/chat" replace />;
+  }
+  return <>{children}</>;
+}

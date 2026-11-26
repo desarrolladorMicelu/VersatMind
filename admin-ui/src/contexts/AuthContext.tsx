@@ -2,14 +2,16 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from "
 import api, { tenantsApi } from "../lib/api";
 import { useTenant } from "./TenantContext";
 
+type Role = "superadmin" | "tenant_admin" | "portal_user" | null;
+
 interface AuthState {
   username: string | null;
   loading: boolean;
-  role: "superadmin" | "tenant_admin" | null;
+  role: Role;
 }
 
 interface AuthContextType extends AuthState {
-  login: (username: string, password: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<Role>;
   logout: () => Promise<void>;
 }
 
@@ -17,9 +19,28 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({ username: null, loading: true, role: null });
-  const { setTenants, setActiveTenant, setIsSuperAdmin, setJwtTenantId } = useTenant();
+  const {
+    setTenants, setActiveTenant, setIsSuperAdmin, setJwtTenantId, setIsPortalUser,
+  } = useTenant();
 
-  const _loadTenants = async (role: string, jwtTenantId: number | null) => {
+  const _loadTenants = async (role: Role, jwtTenantId: number | null, memberships: any[] = []) => {
+    if (role === "portal_user") {
+      setIsSuperAdmin(false);
+      setIsPortalUser(true);
+      setJwtTenantId(null);
+      const list = (memberships ?? []).map((m) => ({
+        id: m.tenant_id,
+        name: m.tenant_name,
+        slug: m.tenant_slug,
+        role_id: m.role_id,
+        role_name: m.role_name,
+      }));
+      setTenants(list as any);
+      setActiveTenant((list[0] as any) ?? null);
+      return;
+    }
+
+    setIsPortalUser(false);
     if (role === "superadmin") {
       setIsSuperAdmin(true);
       setJwtTenantId(null);
@@ -33,6 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } else {
       setIsSuperAdmin(false);
       setJwtTenantId(jwtTenantId);
+      setTenants([]);
       if (jwtTenantId) {
         setActiveTenant({ id: jwtTenantId } as any);
       }
@@ -42,18 +64,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     api.get("/me")
       .then((r) => {
-        const { username, role, tenant_id } = r.data;
-        setState({ username, loading: false, role: role ?? "superadmin" });
-        _loadTenants(role ?? "superadmin", tenant_id ?? null);
+        const { username, role, tenant_id, memberships } = r.data;
+        const nextRole: Role = role ?? "superadmin";
+        setState({ username, loading: false, role: nextRole });
+        _loadTenants(nextRole, tenant_id ?? null, memberships ?? []);
       })
       .catch(() => setState({ username: null, loading: false, role: null }));
   }, []);
 
-  const login = async (username: string, password: string) => {
+  const login = async (username: string, password: string): Promise<Role> => {
     const r = await api.post("/login", { username, password });
-    const { username: uname, role, tenant_id } = r.data;
-    setState({ username: uname, loading: false, role: role ?? "superadmin" });
-    await _loadTenants(role ?? "superadmin", tenant_id ?? null);
+    const { username: uname, role, tenant_id, memberships } = r.data;
+    const nextRole: Role = role ?? "superadmin";
+    setState({ username: uname, loading: false, role: nextRole });
+    await _loadTenants(nextRole, tenant_id ?? null, memberships ?? []);
+    return nextRole;
   };
 
   const logout = async () => {
@@ -62,6 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setTenants([]);
     setActiveTenant(null);
     setIsSuperAdmin(true);
+    setIsPortalUser(false);
     setJwtTenantId(null);
   };
 

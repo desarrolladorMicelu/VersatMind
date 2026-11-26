@@ -32,8 +32,9 @@ def _secret() -> str:
 
 def create_access_token(
     username: str,
-    role: Literal["superadmin", "tenant_admin"] = "superadmin",
+    role: Literal["superadmin", "tenant_admin", "portal_user"] = "superadmin",
     tenant_id: int | None = None,
+    portal_user_id: int | None = None,
 ) -> str:
     payload: dict = {
         "sub": username,
@@ -42,6 +43,8 @@ def create_access_token(
     }
     if tenant_id is not None:
         payload["tenant_id"] = tenant_id
+    if portal_user_id is not None:
+        payload["portal_user_id"] = portal_user_id
     return jwt.encode(payload, _secret(), algorithm=ALGORITHM)
 
 
@@ -102,7 +105,31 @@ def require_admin(request: Request) -> dict:
     payload = decode_token(token)
     if payload is None:
         raise HTTPException(status_code=401, detail="Token inválido o expirado")
+    if payload.get("role") not in ("superadmin", "tenant_admin"):
+        raise HTTPException(status_code=403, detail="Requiere acceso de administrador")
     return payload
+
+
+def require_authenticated(request: Request) -> dict:
+    """Admin o usuario de portal autenticado."""
+    token = request.cookies.get("admin_token")
+    if not token:
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header[7:]
+    if not token:
+        raise HTTPException(status_code=401, detail="No autenticado")
+    payload = decode_token(token)
+    if payload is None:
+        raise HTTPException(status_code=401, detail="Token inválido o expirado")
+    if payload.get("role") not in ("superadmin", "tenant_admin", "portal_user"):
+        raise HTTPException(status_code=403, detail="Requiere autenticación")
+    return payload
+
+
+def require_chat_user(request: Request) -> dict:
+    """Acceso al chat: administradores y usuarios de portal."""
+    return require_authenticated(request)
 
 
 def require_superadmin(request: Request) -> dict:

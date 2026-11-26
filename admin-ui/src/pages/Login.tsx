@@ -16,8 +16,8 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
-      await login(username, password);
-      navigate("/");
+      const role = await login(username, password);
+      navigate(role === "portal_user" ? "/chat" : "/");
     } catch {
       setError("Credenciales incorrectas");
     } finally {

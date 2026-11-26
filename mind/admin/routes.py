@@ -17,7 +17,7 @@ from sqlalchemy import delete, select, func as sqlfunc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from mind.admin.auth import (
-    create_access_token, require_admin, require_superadmin,
+    create_access_token, require_admin, require_authenticated, require_superadmin,
     verify_superadmin, get_effective_tenant_id,
     hash_password, verify_password,
 )
@@ -248,16 +248,52 @@ async def login(
         )
     )
     ta = result.scalar_one_or_none()
-    if ta is None or not verify_password(body.password, ta.password_hash):
+    if ta is not None:
+        if not verify_password(body.password, ta.password_hash):
+            raise HTTPException(status_code=401, detail="Credenciales inválidas")
+        token = create_access_token(body.username, role="tenant_admin", tenant_id=ta.tenant_id)
+        response.set_cookie(
+            "admin_token", token,
+            httponly=True, samesite="lax",
+            max_age=86400, path="/",
+        )
+        return {"token": token, "username": body.username, "role": "tenant_admin", "tenant_id": ta.tenant_id}
+
+    # 4. Usuario de portal (usuario/contraseña, multi-tienda)
+    from mind.auth.portal import clear_temp_after_login
+    from mind.db.models import PortalUser
+
+    portal = (await session.execute(
+        select(PortalUser).where(
+            PortalUser.username == body.username,
+            PortalUser.is_active.is_(True),
+        )
+    )).scalar_one_or_none()
+    if (
+        portal is None
+        or not portal.password_hash
+        or not verify_password(body.password, portal.password_hash)
+    ):
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
 
-    token = create_access_token(body.username, role="tenant_admin", tenant_id=ta.tenant_id)
+    clear_temp_after_login(portal)
+    await session.commit()
+    token = create_access_token(
+        body.username, role="portal_user", portal_user_id=portal.id,
+    )
     response.set_cookie(
         "admin_token", token,
         httponly=True, samesite="lax",
         max_age=86400, path="/",
     )
-    return {"token": token, "username": body.username, "role": "tenant_admin", "tenant_id": ta.tenant_id}
+    return {
+        "token": token,
+        "username": body.username,
+        "role": "portal_user",
+        "user_id": portal.id,
+        "tenant_id": None,
+        "must_change_password": portal.must_change_password,
+    }
 
 
 @router.post("/logout")
@@ -267,11 +303,36 @@ async def logout(response: Response):
 
 
 @router.get("/me")
-async def me(admin=Depends(require_admin)):
+async def me(
+    admin=Depends(require_authenticated),
+    session: AsyncSession = Depends(get_session),
+):
+    role = admin.get("role", "superadmin")
+    if role == "portal_user":
+        from mind.auth.portal import resolve_memberships
+        rows = await resolve_memberships(session, int(admin["portal_user_id"]))
+        return {
+            "username": admin.get("sub"),
+            "role": "portal_user",
+            "user_id": admin.get("portal_user_id"),
+            "tenant_id": None,
+            "memberships": [
+                {
+                    "tenant_id": tenant.id,
+                    "tenant_name": tenant.name,
+                    "tenant_slug": tenant.slug,
+                    "role_id": role_obj.id,
+                    "role_name": role_obj.name,
+                    "role_description": role_obj.description,
+                }
+                for _membership, tenant, role_obj in rows
+            ],
+        }
     return {
         "username": admin.get("sub"),
-        "role": admin.get("role", "superadmin"),
+        "role": role,
         "tenant_id": admin.get("tenant_id"),
+        "memberships": [],
     }
 
 
@@ -343,6 +404,11 @@ async def superadmin_create(
     )).first()
     if tenant_admin_taken is not None:
         raise HTTPException(status_code=409, detail="Ese usuario ya está en uso por un admin de cliente")
+    from mind.db.models import PortalUser
+    if (await session.execute(
+        select(PortalUser.id).where(PortalUser.username == username)
+    )).first() is not None:
+        raise HTTPException(status_code=409, detail="Ese usuario ya está en uso por un usuario de portal")
 
     sa = SuperAdmin(
         username=username,
@@ -468,6 +534,11 @@ async def tenant_admin_create(
         select(SuperAdmin.id).where(SuperAdmin.username == body.username)
     )).first() is not None:
         raise HTTPException(status_code=409, detail="Ese usuario ya está en uso por un superadmin")
+    from mind.db.models import PortalUser
+    if (await session.execute(
+        select(PortalUser.id).where(PortalUser.username == body.username)
+    )).first() is not None:
+        raise HTTPException(status_code=409, detail="Ese usuario ya está en uso por un usuario de portal")
 
     ta = TenantAdmin(
         tenant_id=tenant_id,
@@ -1598,6 +1669,21 @@ async def usuario_cambiar_rol(
     if role is None:
         raise HTTPException(status_code=400, detail="El rol no pertenece a este cliente")
     user.role_id = role.id
+    if user.portal_user_id is not None:
+        from mind.db.models import Membership
+        membership = (await session.execute(
+            select(Membership).where(
+                Membership.portal_user_id == user.portal_user_id,
+                Membership.tenant_id == tid,
+            )
+        )).scalar_one_or_none()
+        if membership is None:
+            session.add(Membership(
+                portal_user_id=user.portal_user_id, tenant_id=tid,
+                role_id=role.id, is_active=True,
+            ))
+        else:
+            membership.role_id = role.id
     await session.execute(delete(UserRole).where(
         UserRole.tenant_id == tid, UserRole.chat_id == chat_id,
     ))

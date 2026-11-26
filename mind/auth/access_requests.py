@@ -9,7 +9,7 @@ import logging
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from mind.db.models import AccessRequest, Role, RolePermission, User, UserRole
+from mind.db.models import AccessRequest, Membership, PortalUser, Role, RolePermission, User, UserRole
 
 logger = logging.getLogger(__name__)
 
@@ -100,16 +100,58 @@ async def approve_user(chat_id: int, tenant_id: int, session: AsyncSession) -> U
                 session.add(RolePermission(role_id=role.id, permission_name=perm))
         await session.flush()
 
+    # Toda cuenta de Telegram debe tener una cuenta de portal asociada.
+    from mind.auth.portal import create_portal_user
+    portal = (await session.execute(
+        select(PortalUser)
+        .join(User, User.portal_user_id == PortalUser.id)
+        .where(User.chat_id == req.chat_id)
+        .limit(1)
+    )).scalar_one_or_none()
+
+    if portal is None:
+        import re
+        base = re.sub(r"[^A-Za-z0-9_.-]", "_", (req.username or f"tg_{abs(req.chat_id)}"))[:56]
+        if len(base) < 3:
+            base = f"tg_{abs(req.chat_id)}"
+        username = base
+        suffix = 1
+        while True:
+            try:
+                portal, _temp = await create_portal_user(
+                    session, username=username,
+                    full_name=req.username or username,
+                    generate_temp=True,
+                )
+                break
+            except Exception:
+                suffix += 1
+                username = f"{base}_{suffix}"[:64]
+
+    membership = (await session.execute(
+        select(Membership).where(
+            Membership.portal_user_id == portal.id,
+            Membership.tenant_id == tenant_id,
+        )
+    )).scalar_one_or_none()
+    if membership is None:
+        membership = Membership(
+            portal_user_id=portal.id, tenant_id=tenant_id,
+            role_id=role.id, is_active=True,
+        )
+        session.add(membership)
+
     user = User(
         chat_id=req.chat_id,
         tenant_id=tenant_id,
         user_id=req.user_id,
         username=req.username,
-        role_id=role.id,
+        role_id=membership.role_id,
         is_active=True,
+        portal_user_id=portal.id,
     )
     session.add(user)
-    session.add(UserRole(tenant_id=tenant_id, chat_id=req.chat_id, role_id=role.id))
+    session.add(UserRole(tenant_id=tenant_id, chat_id=req.chat_id, role_id=membership.role_id))
 
     await session.execute(
         update(AccessRequest)
