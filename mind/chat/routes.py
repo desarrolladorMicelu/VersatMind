@@ -20,7 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from mind.admin.auth import get_effective_tenant_id, require_admin
 from mind.db.base import get_session
-from mind.db.models import ChatConversation, ConversationMessage
+from mind.db.models import ChatConversation, ConversationMessage, Report
 
 logger = logging.getLogger(__name__)
 
@@ -178,15 +178,42 @@ async def list_messages(
         .order_by(ConversationMessage.created_at.asc())
     )).scalars().all()
 
+    from mind.reports.service import report_meta
+
+    reports = (await session.execute(
+        select(Report)
+        .where(
+            Report.tenant_id == tid,
+            Report.conversation_id == conv.id,
+            Report.owner == _owner(admin),
+        )
+        .order_by(Report.created_at.asc())
+    )).scalars().all()
+    by_message: dict[int, list[dict]] = {}
+    orphans: list[dict] = []
+    for report in reports:
+        meta = report_meta(report)
+        if report.message_id is None:
+            orphans.append(meta)
+        else:
+            by_message.setdefault(report.message_id, []).append(meta)
+
+    visible = [r for r in rows if r.role in ("user", "assistant")]
+    last_assistant_id = next(
+        (r.id for r in reversed(visible) if r.role == "assistant"), None
+    )
+    if orphans and last_assistant_id is not None:
+        by_message.setdefault(last_assistant_id, []).extend(orphans)
+
     return [
         {
             "id": r.id,
             "role": r.role,
             "content": r.content,
             "created_at": r.created_at.isoformat() if r.created_at else None,
+            "reports": by_message.get(r.id, []),
         }
-        for r in rows
-        if r.role in ("user", "assistant")
+        for r in visible
     ]
 
 
@@ -266,6 +293,7 @@ async def chat_stream(
                     tenant=tenant,
                     session=session,
                     owner=owner,
+                    conversation_id=conv.id,
                     source="web_chat",
                     forced_permissions=permissions,
                     source_policy=policy,

@@ -202,6 +202,10 @@ app.include_router(admin_router)
 from mind.chat.routes import router as chat_router
 app.include_router(chat_router)
 
+# Informes HTML del chat web
+from mind.reports.routes import router as reports_router
+app.include_router(reports_router)
+
 # Integraciones OAuth (Outlook / Google: correo y calendario)
 from mind.integrations.routes import router as integrations_router
 app.include_router(integrations_router)

@@ -154,6 +154,13 @@ async def _build_system_prompt(
         )
         if instructions:
             prompt += f"Instrucciones: {instructions}\n"
+        prompt += (
+            "Para tableros o informes visuales, organiza la información en "
+            "secciones con título, encabezados, filas y un resumen ejecutivo, "
+            "y llama 'generar_informe_contable' con el período. En la web se "
+            "mostrará como tarjeta HTML con vista previa y descarga; en "
+            "Telegram se envía como PDF.\n"
+        )
 
     try:
         from mind.scheduler.prompts import build_context
@@ -237,6 +244,7 @@ async def stream_chat(
     tenant: Tenant,
     session: AsyncSession,
     owner: str | None = None,
+    conversation_id: int | None = None,
     source: str = "web_chat",
     forced_permissions: frozenset[str] | None = None,
     source_policy: SourcePolicy | None = None,
@@ -256,6 +264,7 @@ async def stream_chat(
     )
     from mind.auth.context import set_current_permissions
     from mind.auth.data_policy import empty_policy
+    from mind.reports.context import set_report_context
     from mind.tenants.context import set_tenant
     from mind.usage.tracker import record_usage
 
@@ -294,6 +303,13 @@ async def stream_chat(
     permissions = forced_permissions if forced_permissions is not None else frozenset()
     policy = source_policy or empty_policy()
     set_current_permissions(permissions)
+    set_report_context(
+        tenant_id=tenant.id,
+        owner=owner,
+        conversation_id=conversation_id,
+        chat_id=chat_id,
+        channel="web" if source == "web_chat" else "telegram",
+    )
 
     prompt_ctx = build_prompt(history, active_window)
     truncated = truncate_to_token_limit(prompt_ctx.messages, max_tokens=100_000)
@@ -303,6 +319,7 @@ async def stream_chat(
     openai_messages.extend(m.to_openai_dict() for m in truncated)
     openai_messages.append({"role": "user", "content": message})
 
+    report_ids: list[int] = []
     try:
         from mind.integrations.store import get_active_providers
         email_providers = await get_active_providers(session, tenant.id)
@@ -465,6 +482,14 @@ async def stream_chat(
                     "status": "done",
                     "ok": ok,
                 }
+                try:
+                    result_data = json.loads(tool_result_str)
+                except (TypeError, json.JSONDecodeError):
+                    result_data = {}
+                report = result_data.get("report") if isinstance(result_data, dict) else None
+                if isinstance(report, dict) and report.get("id"):
+                    report_ids.append(int(report["id"]))
+                    yield {"type": "report", "report": report}
                 openai_messages.append({
                     "role": "tool",
                     "tool_call_id": a["id"],
@@ -497,6 +522,24 @@ async def stream_chat(
     try:
         await append_messages(chat_id, tenant.id, new_messages, session)
         await session.commit()
+        if report_ids:
+            from sqlalchemy import select
+            from mind.db.models import ConversationMessage
+            from mind.reports.service import link_reports_to_message
+            last_id = (await session.execute(
+                select(ConversationMessage.id)
+                .where(
+                    ConversationMessage.tenant_id == tenant.id,
+                    ConversationMessage.chat_id == chat_id,
+                    ConversationMessage.role == "assistant",
+                )
+                .order_by(ConversationMessage.id.desc())
+                .limit(1)
+            )).scalar()
+            if last_id is not None:
+                await link_reports_to_message(
+                    report_ids, tenant_id=tenant.id, message_id=last_id,
+                )
     except Exception as exc:
         logger.warning(
             "No se pudo persistir historial tenant=%s chat_id=%s: %s",

@@ -743,6 +743,37 @@ class ChatConversation(Base):
         return f"<ChatConversation id={self.id} tenant_id={self.tenant_id} title={self.title!r}>"
 
 
+class Report(Base):
+    """Informe/tablero HTML generado desde el chat web."""
+    __tablename__ = "reports"
+    __table_args__ = (
+        Index("idx_reports_tenant_owner", "tenant_id", "owner", "created_at"),
+        Index("idx_reports_conversation", "conversation_id", "message_id"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    tenant_id: Mapped[int] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
+    )
+    owner: Mapped[str | None] = mapped_column(Text, nullable=True)
+    conversation_id: Mapped[int | None] = mapped_column(
+        ForeignKey("chat_conversations.id", ondelete="CASCADE"), nullable=True
+    )
+    chat_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    message_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    period: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    report_type: Mapped[str] = mapped_column(Text, nullable=False, default="dashboard")
+    html: Mapped[str] = mapped_column(Text, nullable=False)
+    sections: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    def __repr__(self) -> str:
+        return f"<Report id={self.id} tenant_id={self.tenant_id} title={self.title!r}>"
+
+
 # ---------------------------------------------------------------------------
 # Integraciones OAuth (Outlook / Google: correo y calendario)
 # ---------------------------------------------------------------------------

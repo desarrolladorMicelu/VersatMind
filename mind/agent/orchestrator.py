@@ -97,6 +97,7 @@ async def process(
         AuditRecord, log_interaction, log_permission_denied, log_tool_failure,
     )
     from mind.auth.context import set_current_permissions
+    from mind.reports.context import set_report_context
     from mind.tenants.context import set_tenant
 
     # Establecer tenant en el contexto async (para connectors.py)
@@ -120,6 +121,14 @@ async def process(
             active_max_cycles = cfg.max_tool_cycles
     except Exception:
         pass
+
+    set_report_context(
+        tenant_id=tenant.id,
+        owner=None,
+        conversation_id=None,
+        chat_id=chat_id,
+        channel="web" if source == "web_chat" else "telegram",
+    )
 
     # --- Permisos funcionales + política de fuentes ---
     role_ids: frozenset[int] = frozenset()
@@ -244,11 +253,16 @@ async def process(
         if instructions:
             prompt += f"Instrucciones: {instructions}\n"
         prompt += (
-            "Para generar un informe: (1) consulta los datos con 'ejecutar_consulta' o "
-            "'consultar_alegra', (2) organiza los datos en secciones con título, "
-            "encabezados y filas, (3) llama 'generar_informe_contable' con el array "
-            "de secciones y el período.\n"
-            "Ejemplo de sección: {\"title\": \"Balance General\", "
+            "Para generar un informe o tablero: (1) consulta los datos con "
+            "'ejecutar_consulta' o 'consultar_alegra', (2) organiza los datos en "
+            "secciones con título, encabezados y filas, (3) llama "
+            "'generar_informe_contable' con el array de secciones y el período. "
+            "En el chat web se mostrará como tarjeta HTML con vista previa; en "
+            "Telegram se envía como PDF. Si piden un archivo PDF o Excel "
+            "descargable, usa 'generar_informe'.\n"
+            "Para tableros, arma secciones claras con columnas numéricas y "
+            "resúmenes ejecutivos; el sistema genera KPIs y gráficos "
+            "automáticamente. Ejemplo de sección: {\"title\": \"Balance General\", "
             "\"headers\": [\"Cuenta\", \"Valor\"], "
             "\"rows\": [[\"Efectivo\", \"$5.000.000\"]], "
             "\"summary\": \"Total activos: $5.000.000\"}"

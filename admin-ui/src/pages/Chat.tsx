@@ -5,9 +5,9 @@ import { useNavigate } from "react-router-dom";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
-  ArrowLeft, Check, Folder, History, LayoutDashboard, LogOut, Menu,
-  MessageSquare, MoreHorizontal, PanelLeftClose, PanelLeftOpen, Plus,
-  Send, Settings, Square, Trash2, X,
+  ArrowLeft, BarChart3, Check, Download, ExternalLink, Folder, History,
+  LayoutDashboard, LogOut, Menu, MessageSquare, MoreHorizontal,
+  PanelLeftClose, PanelLeftOpen, Plus, Send, Settings, Square, Trash2, X,
 } from "lucide-react";
 import api from "../lib/api";
 import { useAuth } from "../contexts/AuthContext";
@@ -28,19 +28,79 @@ interface ToolEvent {
   ok?: boolean;
 }
 
+interface ReportMeta {
+  id: number;
+  title: string;
+  period: string;
+  type: string;
+  created_at: string | null;
+  html_url: string;
+  download_url: string;
+  pdf_url: string | null;
+  can_pdf: boolean;
+}
+
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   tools?: ToolEvent[];
+  reports?: ReportMeta[];
   streaming?: boolean;
 }
 
 type StreamEvent =
   | { type: "status"; stage?: string }
   | { type: "tool"; name: string; label: string; status: "running" | "done"; ok?: boolean }
+  | { type: "report"; report: ReportMeta }
   | { type: "delta"; text?: string }
   | { type: "done"; text?: string }
   | { type: "error"; message?: string };
+
+function ReportCard({ report }: { report: ReportMeta }) {
+  return (
+    <div className="vc-report">
+      <div className="vc-report-head">
+        <div className="vc-report-icon">
+          <BarChart3 size={16} />
+        </div>
+        <div className="vc-report-copy">
+          <p className="vc-report-title">{report.title}</p>
+          <p className="vc-report-meta">
+            {report.type} · {report.period}
+          </p>
+        </div>
+      </div>
+
+      <iframe
+        className="vc-report-frame"
+        src={report.html_url}
+        title={`Vista previa: ${report.title}`}
+        sandbox="allow-scripts allow-downloads"
+        referrerPolicy="no-referrer"
+        loading="lazy"
+      />
+
+      <div className="vc-report-actions">
+        <a
+          className="vc-report-action"
+          href={report.html_url}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <ExternalLink size={13} /> Abrir
+        </a>
+        <a className="vc-report-action" href={report.download_url}>
+          <Download size={13} /> HTML
+        </a>
+        {report.can_pdf && report.pdf_url && (
+          <a className="vc-report-action" href={report.pdf_url}>
+            <Download size={13} /> PDF
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
 
 type Panel = "config" | "projects" | null;
 
@@ -156,6 +216,12 @@ export default function Chat() {
           }
           return { ...m, tools };
         });
+        break;
+      case "report":
+        updateLastAssistant((m) => ({
+          ...m,
+          reports: [...(m.reports ?? []), evt.report],
+        }));
         break;
       case "delta":
         updateLastAssistant((m) => ({ ...m, content: m.content + (evt.text ?? "") }));
@@ -497,8 +563,14 @@ export default function Chat() {
                           {m.streaming && <span className="vc-cursor" />}
                         </div>
                       ) : (
-                        m.streaming && <p className="vc-thinking-label">{stage || "Pensando…"}</p>
+                        m.streaming && !m.reports?.length && (
+                          <p className="vc-thinking-label">{stage || "Pensando…"}</p>
+                        )
                       )}
+
+                      {m.reports?.map((report) => (
+                        <ReportCard key={report.id} report={report} />
+                      ))}
                     </div>
                   </div>
                 )

@@ -247,7 +247,7 @@ def _register_all_tools() -> None:
         permission=Permission.GENERATE_REPORT,
         schema={
             "name": "generar_informe",
-            "description": "Genera informe PDF o Excel con datos OFIMA.",
+            "description": "Genera un informe o tablero con datos OFIMA. En el chat web se muestra como tarjeta HTML; en Telegram como PDF/Excel.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -630,8 +630,9 @@ def _register_all_tools() -> None:
         permission=Permission.GENERATE_REPORT,
         schema={
             "name": "generar_informe_contable",
-            "description": "Genera un PDF con informe contable personalizado del cliente. "
-                           "Ej: balance general, estado de resultados, flujo de caja.",
+            "description": "Genera un tablero o informe visual personalizado con secciones. "
+                           "En el chat web se muestra como tarjeta HTML; en Telegram como PDF. "
+                           "Úsalo para tableros, dashboards, balance general, estado de resultados o flujo de caja.",
             "parameters": {
                 "type": "object",
                 "properties": {
