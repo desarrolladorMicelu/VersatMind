@@ -66,6 +66,13 @@ REPORT_PERMISSIONS: dict[str, str] = {
     "indicadores": "READ_KPI",
 }
 
+JSON_TOOL_SOURCES = {
+    "consultar_precios_exito": "json:precios",
+    "resumen_precios_exito": "json:precios",
+    "consultar_historial_exito": "json:historial",
+    "resumen_historial_exito": "json:historial",
+}
+
 MAIL_TOOLS = frozenset({
     "correos_recientes", "buscar_correos", "leer_correo", "guardar_borrador_respuesta",
 })
@@ -213,6 +220,8 @@ def tool_source_allowed(
     if tool_name == "generar_informe_contable":
         return True
 
+    if tool_name in JSON_TOOL_SOURCES:
+        return policy.allows(JSON_TOOL_SOURCES[tool_name])
     if tool_name in MAIL_TOOLS:
         return policy.allows("mail")
     if tool_name in CALENDAR_TOOLS:
@@ -329,6 +338,8 @@ def validate_tool_call(
                 if not tables or not set(tables).issubset(allowed):
                     raise PermissionDeniedError("No tienes acceso a una o más tablas de la consulta.")
 
+    if tool_name in JSON_TOOL_SOURCES and policy.restricted and not policy.allows(JSON_TOOL_SOURCES[tool_name]):
+        raise PermissionDeniedError("No tienes acceso a esa fuente JSON.")
     if tool_name in MAIL_TOOLS and policy.restricted and not policy.allows("mail"):
         raise PermissionDeniedError("No tienes acceso al correo.")
     if tool_name in CALENDAR_TOOLS and policy.restricted and not policy.allows("calendar"):
@@ -354,6 +365,8 @@ def validate_tool_call(
 
 def source_key_for_tool(tool_name: str) -> str | None:
     """Clave principal para auditoría/logs."""
+    if tool_name in JSON_TOOL_SOURCES:
+        return JSON_TOOL_SOURCES[tool_name]
     if tool_name in MAIL_TOOLS:
         return "mail"
     if tool_name in CALENDAR_TOOLS:

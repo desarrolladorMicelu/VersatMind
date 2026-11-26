@@ -50,6 +50,15 @@ export interface ExternalSheetsInfo {
   schema_description?: string;
 }
 
+export interface JsonSourceConfig {
+  url?: string;
+  is_active?: boolean;
+}
+
+export interface JsonSourcesPayload {
+  precios?: JsonSourceConfig;
+  historial?: JsonSourceConfig;
+}
 export interface Tenant {
   id: number;
   name: string;
@@ -72,6 +81,8 @@ export interface Tenant {
   external_alegra: AlegraInfo | null;
   external_excel_configured: boolean;
   external_excel: ExternalExcelInfo | null;
+  json_sources_configured: boolean;
+  json_sources: JsonSourcesPayload;
   report_config_configured: boolean;
   report_config: ReportConfigInfo | null;
   created_at: string | null;
@@ -92,6 +103,7 @@ export interface TenantPayload {
   external_sheets?: ExternalSheetsPayload;
   external_alegra?: AlegraPayload;
   external_excel?: ExternalExcelPayload;
+  json_sources?: JsonSourcesPayload;
   report_config?: ReportConfig;
 }
 
@@ -103,6 +115,8 @@ export const tenantsApi = {
   update: (id: number, payload: Partial<TenantPayload> & { is_active?: boolean }) =>
     api.put(`/tenants/${id}`, payload).then((r) => r.data),
   remove: (id: number) => api.delete(`/tenants/${id}`).then((r) => r.data),
+  testJsonSource: (kind: "precios" | "historial", url: string) =>
+    api.post("/tenants/json-sources/test", { kind, url }).then((r) => r.data),
 };
 
 // ── Super admins (acceso total al sistema) ────────────────────────────────────

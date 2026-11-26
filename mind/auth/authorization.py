@@ -26,6 +26,7 @@ class Permission(str, Enum):
     READ_MAIL = "READ_MAIL"
     READ_CALENDAR = "READ_CALENDAR"
     READ_CUSTOMER_PII = "READ_CUSTOMER_PII"
+    READ_JSON_DATA = "READ_JSON_DATA"
 
 
 @dataclass

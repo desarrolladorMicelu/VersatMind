@@ -69,6 +69,9 @@ class Tenant(Base):
     # token_expires_at, file_id, file_name, file_url, schema_description
     external_excel: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
+    # Fuentes JSON R2: {"precios": {url,is_active}, "historial": {url,is_active}}
+    json_sources: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+
     # Configuración de informes contables (JSONB): company_name, company_logo,
     # sections, additional_instructions, template_style
     report_config: Mapped[dict | None] = mapped_column(JSONB, nullable=True)

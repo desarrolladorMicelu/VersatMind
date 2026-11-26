@@ -176,6 +176,20 @@ async def _build_system_prompt(
     except Exception:
         pass
 
+    json_cfg = getattr(tenant, "json_sources", None) or {}
+    json_notes = []
+    if (json_cfg.get("precios") or {}).get("url") and policy.allows("json:precios"):
+        json_notes.append("precios de competencia (consultar_precios_exito / resumen_precios_exito)")
+    if (json_cfg.get("historial") or {}).get("url") and policy.allows("json:historial"):
+        json_notes.append("historial de cambios (consultar_historial_exito / resumen_historial_exito)")
+    if json_notes:
+        prompt += (
+            "\n\n## Fuentes JSON disponibles\n"
+            "Consulta solo con filtros; no intentes leer el archivo completo. "
+            "Usa estas fuentes cuando la pregunta sea de precios, competencia o cambios: "
+            + "; ".join(json_notes) + "."
+        )
+
     try:
         from mind.knowledge.retriever import build_knowledge_context
         knowledge = await build_knowledge_context(
@@ -204,6 +218,9 @@ def _filter_tools(
     tenant_ext_excel = bool(ext_excel and ext_excel.get("access_token"))
     ext_alegra = getattr(tenant, "external_alegra", None)
     tenant_alegra = bool(ext_alegra and ext_alegra.get("token"))
+    json_cfg = getattr(tenant, "json_sources", None) or {}
+    json_precios = bool((json_cfg.get("precios") or {}).get("url")) and bool((json_cfg.get("precios") or {}).get("is_active", True))
+    json_historial = bool((json_cfg.get("historial") or {}).get("url")) and bool((json_cfg.get("historial") or {}).get("is_active", True))
     ofima_tools = {
         "consultar_ventas", "consultar_ventas_detalle", "consultar_indicadores",
         "consultar_finanzas", "consultar_productos", "consultar_cxp", "generar_informe",
@@ -232,6 +249,10 @@ def _filter_tools(
         if name == "consultar_excel" and not tenant_ext_excel:
             continue
         if name == "consultar_alegra" and not tenant_alegra:
+            continue
+        if name in ("consultar_precios_exito", "resumen_precios_exito") and not json_precios:
+            continue
+        if name in ("consultar_historial_exito", "resumen_historial_exito") and not json_historial:
             continue
         result.append(t)
     return result
@@ -289,6 +310,7 @@ async def stream_chat(
     except Exception:
         pass
 
+    policy = source_policy or empty_policy()
     active_system_prompt = await _build_system_prompt(
         session, tenant, message, active_system_prompt, policy
     )
@@ -301,7 +323,6 @@ async def stream_chat(
 
     history = await load_history(chat_id, tenant.id, active_window, session)
     permissions = forced_permissions if forced_permissions is not None else frozenset()
-    policy = source_policy or empty_policy()
     set_current_permissions(permissions)
     set_report_context(
         tenant_id=tenant.id,

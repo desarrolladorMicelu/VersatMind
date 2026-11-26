@@ -145,6 +145,10 @@ def _register_all_tools() -> None:
     from mind.agent.tools.excel_tool import consultar_excel
     from mind.agent.tools.alegra_tool import consultar_alegra
     from mind.agent.tools.report_tool import generar_informe_contable
+    from mind.agent.tools.json_tools import (
+        consultar_precios_exito, consultar_historial_exito,
+        resumen_precios_exito, resumen_historial_exito,
+    )
     from mind.agent.tools.email_tools import (
         correos_recientes,
         buscar_correos,
@@ -767,6 +771,71 @@ def _register_all_tools() -> None:
                 },
                 "required": [],
             },
+        },
+    )
+
+    TOOL_REGISTRY["consultar_precios_exito"] = ToolDefinition(
+        fn=consultar_precios_exito,
+        permission=Permission.READ_JSON_DATA,
+        schema={
+            "name": "consultar_precios_exito",
+            "description": "Consulta precios de competencia del JSON de Éxito (productos, vendedor 1, Micelu y brecha). "
+                           "Filtra siempre; devuelve máximo 20-50 filas. No pide el archivo completo.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "codigo": {"type": "string", "description": "Código exacto del producto"},
+                    "codigo_ofim": {"type": "string", "description": "Código OFIMA"},
+                    "nombre_contiene": {"type": "string", "description": "Texto del nombre del producto"},
+                    "vendedor": {"type": "string", "description": "Nombre del vendedor 1"},
+                    "solo_con_micelu": {"type": "boolean", "description": "Solo productos donde Micelu existe"},
+                    "precio_min": {"type": "number", "description": "Precio mínimo del vendedor 1"},
+                    "precio_max": {"type": "number", "description": "Precio máximo del vendedor 1"},
+                    "limit": {"type": "integer", "description": "Máximo de filas (1-50, default 20)"},
+                },
+                "required": [],
+            },
+        },
+    )
+    TOOL_REGISTRY["consultar_historial_exito"] = ToolDefinition(
+        fn=consultar_historial_exito,
+        permission=Permission.READ_JSON_DATA,
+        schema={
+            "name": "consultar_historial_exito",
+            "description": "Consulta cambios históricos de precios/posiciones del JSON de historial. "
+                           "Filtra por producto, código, fecha o tipo de cambio; devuelve máximo 20-50 filas.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "codigo": {"type": "string", "description": "Código exacto del producto"},
+                    "producto_contiene": {"type": "string", "description": "Texto del nombre del producto"},
+                    "tipo_cambio": {"type": "string", "description": "Ej: Producto nuevo con Micelu, Cambio de posición Micelu"},
+                    "desde": {"type": "string", "description": "Fecha ISO inicial"},
+                    "hasta": {"type": "string", "description": "Fecha ISO final"},
+                    "limit": {"type": "integer", "description": "Máximo de filas (1-50, default 20)"},
+                },
+                "required": [],
+            },
+        },
+    )
+    TOOL_REGISTRY["resumen_precios_exito"] = ToolDefinition(
+        fn=resumen_precios_exito,
+        permission=Permission.READ_JSON_DATA,
+        schema={
+            "name": "resumen_precios_exito",
+            "description": "Resumen agregado del JSON de precios: productos, presencia de Micelu y brechas. "
+                           "Úsalo antes de listar filas para no gastar tokens.",
+            "parameters": {"type": "object", "properties": {}, "required": []},
+        },
+    )
+    TOOL_REGISTRY["resumen_historial_exito"] = ToolDefinition(
+        fn=resumen_historial_exito,
+        permission=Permission.READ_JSON_DATA,
+        schema={
+            "name": "resumen_historial_exito",
+            "description": "Resumen agregado del historial: total de cambios, tipos, productos y fechas. "
+                           "Úsalo para tableros o preguntas generales.",
+            "parameters": {"type": "object", "properties": {}, "required": []},
         },
     )
 

@@ -15,6 +15,7 @@ OFIMA_TABLES = [
 ALL_PERMISSIONS = [
     "READ_SALES", "READ_KPI", "READ_FINANCE", "GENERATE_REPORT", "MANAGE_TASKS",
     "READ_EXTERNAL_DB", "READ_MAIL", "READ_CALENDAR", "READ_CUSTOMER_PII",
+    "READ_JSON_DATA",
 ]
 
 DEFAULT_ROLES: dict[str, dict] = {
@@ -30,25 +31,25 @@ DEFAULT_ROLES: dict[str, dict] = {
     },
     "Comercial": {
         "description": "Ventas, clientes, inventario y KPIs (sin finanzas)",
-        "permissions": ["READ_SALES", "READ_KPI", "GENERATE_REPORT"],
+        "permissions": ["READ_SALES", "READ_KPI", "GENERATE_REPORT", "READ_JSON_DATA"],
         "sources": [
             "ofima:clientes", "ofima:espclientes", "ofima:mtmercia",
             "ofima:mtseries", "ofima:mvprecio", "ofima:mvtrade",
             "ofima:v_clientes_fac", "ofima:ventas_bodega",
-            "ofima:xmyct_tecnico_series", "knowledge",
+            "ofima:xmyct_tecnico_series", "json:precios", "json:historial", "knowledge",
         ],
     },
     "Contabilidad": {
         "description": "Finanzas, contabilidad, cartera y reportes",
         "permissions": [
             "READ_SALES", "READ_KPI", "READ_FINANCE", "GENERATE_REPORT",
-            "READ_EXTERNAL_DB", "READ_CUSTOMER_PII",
+            "READ_EXTERNAL_DB", "READ_CUSTOMER_PII", "READ_JSON_DATA",
         ],
         "sources": [
             "ofima:clientes", "ofima:espclientes", "ofima:mtmedpag", "ofima:mtprocli",
             "ofima:mvtrade", "ofima:mvto", "ofima:mvcuadre",
             "ofima:vabonos", "ofima:vcxp", "ofima:v_clientes_fac",
-            "alegra", "knowledge",
+            "alegra", "json:precios", "json:historial", "knowledge",
         ],
     },
     "Logística": {
@@ -88,6 +89,8 @@ def source_rows_for_tenant(tenant) -> list[tuple[str, str, str, bool]]:
         rows.append(("alegra", "alegra", "Alegra", True))
 
     rows.extend([
+        ("json_r2", "json:precios", "JSON · Precios Éxito", True),
+        ("json_r2", "json:historial", "JSON · Historial de cambios", True),
         ("mail", "mail", "Correo", True),
         ("calendar", "calendar", "Calendario", True),
         ("knowledge", "knowledge", "Base de conocimiento", True),

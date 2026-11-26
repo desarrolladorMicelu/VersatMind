@@ -95,7 +95,7 @@ def main() -> None:
         all_permissions = [
             "READ_SALES", "READ_KPI", "READ_FINANCE", "GENERATE_REPORT",
             "MANAGE_TASKS", "READ_EXTERNAL_DB", "READ_MAIL", "READ_CALENDAR",
-            "READ_CUSTOMER_PII",
+            "READ_CUSTOMER_PII", "READ_JSON_DATA",
         ]
         role_permissions = {
             "admin": all_permissions,

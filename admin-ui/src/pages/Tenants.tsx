@@ -9,6 +9,7 @@ import ExternalDbConfig from "../components/ExternalDbConfig";
 import ExternalSheetsConfig from "../components/ExternalSheetsConfig";
 import ExternalExcelConfig from "../components/ExternalExcelConfig";
 import AlegraConfig from "../components/AlegraConfig";
+import JsonSourcesConfig from "../components/JsonSourcesConfig";
 import ReportConfig from "../components/ReportConfig";
 
 const EMPTY: TenantPayload = {
@@ -22,6 +23,7 @@ const EMPTY: TenantPayload = {
   sqlserver_user: "",
   sqlserver_password: "",
   sqlserver_driver: "ODBC Driver 18 for SQL Server",
+  json_sources: {},
 };
 
 // ── Modal crear / editar ──────────────────────────────────────────────────────
@@ -233,6 +235,13 @@ function TenantModal({
             tenantId={form.id}
           />
 
+          {/* Fuentes JSON R2 */}
+          <JsonSourcesConfig
+            value={form.json_sources ?? {}}
+            onChange={(v) => setForm((f) => ({ ...f, json_sources: v ?? {} }))}
+            tenantId={form.id}
+          />
+
           {/* Google Sheets */}
           <ExternalSheetsConfig
             value={form.external_sheets ?? null}
@@ -344,6 +353,7 @@ export default function Tenants() {
       sqlserver_user: t.sqlserver_user ?? "",
       sqlserver_password: "",   // nunca pre-rellenamos la contraseña
       sqlserver_driver: t.sqlserver_driver ?? "ODBC Driver 18 for SQL Server",
+      json_sources: t.json_sources ?? {},
       external_db: t.external_db_configured && t.external_db
         ? {
             engine: t.external_db.engine ?? "postgresql",

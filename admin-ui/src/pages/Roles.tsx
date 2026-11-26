@@ -1,13 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plus, Lock, Unlock } from "lucide-react";
+import { Plus, Lock, Unlock, ChevronDown } from "lucide-react";
 import api from "../lib/api";
 import PageHeader from "../components/PageHeader";
 import { useTenant } from "../contexts/TenantContext";
 
 const ALL_PERMISSIONS = [
   "READ_SALES", "READ_KPI", "READ_FINANCE", "GENERATE_REPORT", "MANAGE_TASKS",
-  "READ_EXTERNAL_DB", "READ_MAIL", "READ_CALENDAR", "READ_CUSTOMER_PII",
+  "READ_EXTERNAL_DB", "READ_MAIL", "READ_CALENDAR", "READ_CUSTOMER_PII", "READ_JSON_DATA",
 ];
 
 const PERM_LABELS: Record<string, string> = {
@@ -20,6 +20,7 @@ const PERM_LABELS: Record<string, string> = {
   READ_MAIL: "CORREO",
   READ_CALENDAR: "CALENDARIO",
   READ_CUSTOMER_PII: "DATOS PERSONALES",
+  READ_JSON_DATA: "DATOS JSON",
 };
 
 const SOURCE_GROUP_LABELS: Record<string, string> = {
@@ -31,6 +32,7 @@ const SOURCE_GROUP_LABELS: Record<string, string> = {
   alegra: "Alegra",
   mail: "Correo",
   calendar: "Calendario",
+  json_r2: "JSON / R2",
   knowledge: "Base de conocimiento",
 };
 
@@ -57,6 +59,7 @@ export default function Roles() {
   const p = tenantId ? { tenant_id: tenantId } : undefined;
   const [newRole, setNewRole] = useState({ name: "", description: "" });
   const [creating, setCreating] = useState(false);
+  const [openRoleId, setOpenRoleId] = useState<number | null>(null);
 
   const { data: roles = [], isLoading } = useQuery<Role[]>({
     queryKey: ["roles", tenantId],
@@ -189,106 +192,133 @@ export default function Roles() {
           roles.map((role) => {
             const restricted = role.sources_restricted;
             const allowed = new Set(role.source_ids ?? []);
+            const isOpen = openRoleId === role.id;
+            const sourceSummary = restricted
+              ? `${(role.source_ids ?? []).length} fuentes`
+              : "todas las fuentes";
             return (
               <div key={role.id} className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
-                <div className="flex items-center justify-between gap-3 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] px-5 py-3">
+                <button
+                  type="button"
+                  aria-expanded={isOpen}
+                  onClick={() => setOpenRoleId(isOpen ? null : role.id)}
+                  className={`flex w-full items-center justify-between gap-4 px-5 py-3.5 text-left transition-colors ${
+                    isOpen
+                      ? "border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]"
+                      : "hover:bg-[var(--color-bg-elevated)]"
+                  }`}
+                >
                   <div className="min-w-0">
-                    <p className="font-semibold text-[var(--color-text)]">{role.name}</p>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <p className="font-semibold text-[var(--color-text)]">{role.name}</p>
+                      <span className="text-2xs text-[var(--color-text-subtle)]">
+                        {(role.permissions ?? []).length} permisos · {sourceSummary}
+                      </span>
+                    </div>
                     {role.description && (
                       <p className="mt-0.5 text-xs text-[var(--color-text-subtle)]">{role.description}</p>
                     )}
                   </div>
-                </div>
+                  <ChevronDown
+                    className={`h-4 w-4 flex-shrink-0 text-[var(--color-text-subtle)] transition-transform ${
+                      isOpen ? "rotate-180 text-[var(--color-accent-strong)]" : ""
+                    }`}
+                  />
+                </button>
 
-                <div className="border-b border-[var(--color-border-subtle)] p-5">
-                  <p className="mb-3 text-2xs font-semibold uppercase tracking-[0.08em] text-[var(--color-text-subtle)]">
-                    Funciones permitidas
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {ALL_PERMISSIONS.map((perm) => {
-                      const active = (role.permissions ?? []).includes(perm);
-                      return (
-                        <button
-                          key={perm}
-                          onClick={() => toggle(role, perm)}
-                          className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${
-                            active
-                              ? "border-[var(--color-accent-border)] bg-[var(--color-accent-surface)] text-[var(--color-accent-strong)]"
-                              : "border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-border-strong)]"
-                          }`}
-                        >
-                          {PERM_LABELS[perm] ?? perm}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="p-5">
-                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-2xs font-semibold uppercase tracking-[0.08em] text-[var(--color-text-subtle)]">
-                      Fuentes de datos
-                    </p>
-                    {restricted ? (
-                      <button
-                        className="flex items-center gap-1.5 text-xs font-medium text-[var(--color-accent-strong)] hover:underline"
-                        onClick={() => allowAllSources(role)}
-                      >
-                        <Unlock className="h-3.5 w-3.5" /> Permitir todas
-                      </button>
-                    ) : (
-                      <button
-                        className="flex items-center gap-1.5 text-xs font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text)] disabled:cursor-not-allowed disabled:opacity-40"
-                        onClick={() => restrictSources(role)}
-                        disabled={sources.filter((s) => s.is_active).length === 0}
-                      >
-                        <Lock className="h-3.5 w-3.5" /> Restringir fuentes
-                      </button>
-                    )}
-                  </div>
-
-                  {!restricted ? (
-                    <div className="rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg)] px-4 py-3">
-                      <p className="text-xs text-[var(--color-text-muted)]">
-                        Acceso completo a todas las fuentes configuradas del cliente.
-                        Restringe las fuentes para limitar tablas o conectores específicos.
+                {isOpen && (
+                  <>
+                    <div className="border-b border-[var(--color-border-subtle)] p-5">
+                      <p className="mb-3 text-2xs font-semibold uppercase tracking-[0.08em] text-[var(--color-text-subtle)]">
+                        Funciones permitidas
                       </p>
+                      <div className="flex flex-wrap gap-2">
+                        {ALL_PERMISSIONS.map((perm) => {
+                          const active = (role.permissions ?? []).includes(perm);
+                          return (
+                            <button
+                              key={perm}
+                              onClick={() => toggle(role, perm)}
+                              className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${
+                                active
+                                  ? "border-[var(--color-accent-border)] bg-[var(--color-accent-surface)] text-[var(--color-accent-strong)]"
+                                  : "border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-border-strong)]"
+                              }`}
+                            >
+                              {PERM_LABELS[perm] ?? perm}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {groupedSources.map((group) => (
-                        <div key={group.kind}>
-                          <p className="mb-1.5 text-2xs text-[var(--color-text-subtle)]">{group.label}</p>
-                          <div className="flex flex-wrap gap-1.5">
-                            {group.items.map((source) => {
-                              const active = allowed.has(source.id);
-                              return (
-                                <button
-                                  key={source.id}
-                                  onClick={() => toggleSource(role, source.id)}
-                                  disabled={!source.is_active}
-                                  title={source.is_active ? source.source_key : "Integración no configurada"}
-                                  className={`rounded border px-2.5 py-1 text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
-                                    active
-                                      ? "border-[var(--color-accent-border)] bg-[var(--color-accent-surface)] text-[var(--color-accent-strong)]"
-                                      : "border-[var(--color-border)] text-[var(--color-text-subtle)] hover:text-[var(--color-text)]"
-                                  }`}
-                                >
-                                  {source.display_name}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      ))}
-                      {groupedSources.length === 0 && (
-                        <p className="text-xs text-[var(--color-text-subtle)]">
-                          Este cliente todavía no tiene fuentes configuradas.
+
+                    <div className="p-5">
+                      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-2xs font-semibold uppercase tracking-[0.08em] text-[var(--color-text-subtle)]">
+                          Fuentes de datos
                         </p>
+                        {restricted ? (
+                          <button
+                            className="flex items-center gap-1.5 text-xs font-medium text-[var(--color-accent-strong)] hover:underline"
+                            onClick={() => allowAllSources(role)}
+                          >
+                            <Unlock className="h-3.5 w-3.5" /> Permitir todas
+                          </button>
+                        ) : (
+                          <button
+                            className="flex items-center gap-1.5 text-xs font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text)] disabled:cursor-not-allowed disabled:opacity-40"
+                            onClick={() => restrictSources(role)}
+                            disabled={sources.filter((s) => s.is_active).length === 0}
+                          >
+                            <Lock className="h-3.5 w-3.5" /> Restringir fuentes
+                          </button>
+                        )}
+                      </div>
+
+                      {!restricted ? (
+                        <div className="rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg)] px-4 py-3">
+                          <p className="text-xs text-[var(--color-text-muted)]">
+                            Acceso completo a todas las fuentes configuradas del cliente.
+                            Restringe las fuentes para limitar tablas o conectores específicos.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {groupedSources.map((group) => (
+                            <div key={group.kind}>
+                              <p className="mb-1.5 text-2xs text-[var(--color-text-subtle)]">{group.label}</p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {group.items.map((source) => {
+                                  const active = allowed.has(source.id);
+                                  return (
+                                    <button
+                                      key={source.id}
+                                      onClick={() => toggleSource(role, source.id)}
+                                      disabled={!source.is_active}
+                                      title={source.is_active ? source.source_key : "Integración no configurada"}
+                                      className={`rounded border px-2.5 py-1 text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+                                        active
+                                          ? "border-[var(--color-accent-border)] bg-[var(--color-accent-surface)] text-[var(--color-accent-strong)]"
+                                          : "border-[var(--color-border)] text-[var(--color-text-subtle)] hover:text-[var(--color-text)]"
+                                      }`}
+                                    >
+                                      {source.display_name}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ))}
+                          {groupedSources.length === 0 && (
+                            <p className="text-xs text-[var(--color-text-subtle)]">
+                              Este cliente todavía no tiene fuentes configuradas.
+                            </p>
+                          )}
+                        </div>
                       )}
                     </div>
-                  )}
-                </div>
+                  </>
+                )}
               </div>
             );
           })

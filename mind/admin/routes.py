@@ -66,7 +66,12 @@ class TenantCreate(BaseModel):
     external_sheets: dict | None = None
     external_alegra: dict | None = None
     external_excel: dict | None = None
+    json_sources: dict | None = None
     report_config: dict | None = None
+
+class JsonSourceTest(BaseModel):
+    kind: str
+    url: str
 
 class TenantUpdate(BaseModel):
     name: str | None = None
@@ -83,6 +88,7 @@ class TenantUpdate(BaseModel):
     external_sheets: dict | None = None
     external_alegra: dict | None = None
     external_excel: dict | None = None
+    json_sources: dict | None = None
     report_config: dict | None = None
 
 class ExternalDbPayload(BaseModel):
@@ -688,6 +694,8 @@ async def tenants_list(
                 if t.external_alegra
                 else None
             ),
+            "json_sources_configured": t.json_sources is not None,
+            "json_sources": t.json_sources or {},
             "external_excel_configured": t.external_excel is not None,
             "external_excel": (
                 {
@@ -713,6 +721,18 @@ async def tenants_list(
         }
         for t in tenants
     ]
+
+
+@router.post("/tenants/json-sources/test")
+async def test_json_source(
+    body: JsonSourceTest,
+    admin=Depends(require_superadmin),
+):
+    from mind.data.json_source import JsonSourceError, validate_json_source
+    try:
+        return await validate_json_source(body.kind, body.url)
+    except JsonSourceError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
 
 
 @router.post("/tenants")
@@ -809,7 +829,7 @@ async def tenant_update(
         raise HTTPException(status_code=404, detail="Tenant no encontrado")
 
     old_token = tenant.bot_token
-    updates = body.model_dump(exclude_none=True, exclude={"external_db", "external_sheets", "external_alegra", "external_excel", "report_config"})
+    updates = body.model_dump(exclude_none=True, exclude={"external_db", "external_sheets", "external_alegra", "external_excel", "json_sources", "report_config"})
     for key, val in updates.items():
         setattr(tenant, key, val)
 
@@ -893,6 +913,28 @@ async def tenant_update(
         if schema_desc:
             merged["schema_description"] = schema_desc
         tenant.external_excel = merged
+
+    # json_sources: precios e historial (R2)
+    if body.json_sources is not None:
+        from mind.data.json_source import clear_cache
+        if not body.json_sources:
+            tenant.json_sources = None
+            clear_cache(tenant.id)
+        else:
+            merged = dict(tenant.json_sources or {})
+            for kind in ("precios", "historial"):
+                val = body.json_sources.get(kind)
+                if val is None:
+                    continue
+                url = str(val.get("url") or "").strip()
+                merged[kind] = {
+                    "url": url,
+                    "is_active": bool(val.get("is_active", True)),
+                }
+            tenant.json_sources = merged if any(
+                (v or {}).get("url") for v in merged.values()
+            ) else None
+            clear_cache(tenant.id)
 
     # report_config: merge sobre lo almacenado
     if body.report_config is not None:
