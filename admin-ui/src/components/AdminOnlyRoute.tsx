@@ -1,8 +1,10 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { useTenant } from "../contexts/TenantContext";
 
 export default function AdminOnlyRoute({ children }: { children: React.ReactNode }) {
   const { role, loading } = useAuth();
+  const { isPortalAdmin } = useTenant();
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-[var(--color-bg)]">
@@ -10,7 +12,7 @@ export default function AdminOnlyRoute({ children }: { children: React.ReactNode
       </div>
     );
   }
-  if (role !== "superadmin" && role !== "tenant_admin") {
+  if (role !== "superadmin" && role !== "tenant_admin" && !isPortalAdmin) {
     return <Navigate to="/chat" replace />;
   }
   return <>{children}</>;

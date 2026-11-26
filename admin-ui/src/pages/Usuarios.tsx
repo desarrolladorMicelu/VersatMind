@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQueries, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Copy, KeyRound, Pencil, Plus, Send, Trash2, UserCheck, UserX, X } from "lucide-react";
+import { Copy, KeyRound, Pencil, Plus, Trash2, UserCheck, UserX, X } from "lucide-react";
 import api, { tenantsApi } from "../lib/api";
 import PageHeader from "../components/PageHeader";
 import { useTenant } from "../contexts/TenantContext";
@@ -235,7 +235,7 @@ function PortalUserModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-2xl">
+      <div className="flex max-h-[90vh] w-full max-w-xl flex-col overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-2xl">
         <div className="flex items-start justify-between border-b border-[var(--color-border-subtle)] px-6 py-4">
           <div>
             <p className="section-tag mb-1">{isEdit ? "EDITAR USUARIO" : "NUEVO USUARIO"}</p>
@@ -246,7 +246,7 @@ function PortalUserModal({
           <button className="vc-icon-btn" onClick={onClose}><X className="h-4 w-4" /></button>
         </div>
 
-        <div className="flex-1 space-y-4 overflow-y-auto px-6 py-5">
+        <div className="flex-1 space-y-3 overflow-y-auto px-5 py-4">
           {!isEdit && (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
@@ -323,7 +323,7 @@ function PortalUserModal({
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-2 border-t border-[var(--color-border-subtle)] px-6 py-4">
+        <div className="flex items-center justify-end gap-2 border-t border-[var(--color-border-subtle)] px-5 py-3">
           <button className="btn-ghost" onClick={onClose}>CANCELAR</button>
           <button className="btn-primary" onClick={submit} disabled={saving}>
             {saving ? "GUARDANDO..." : isEdit ? "GUARDAR" : "CREAR USUARIO"}
@@ -398,7 +398,7 @@ export default function Usuarios() {
         title="Usuarios"
         description={isSuperAdmin ? "Usuarios, tiendas y roles del portal" : "Usuarios de tu tienda"}
         action={
-          <button className="btn-primary flex items-center gap-2" onClick={() => setModal({ user: null })}>
+          <button className="btn-primary flex items-center gap-1.5 px-3 py-2 text-2xs" onClick={() => setModal({ user: null })}>
             <Plus className="h-3.5 w-3.5" /> NUEVO USUARIO
           </button>
         }
@@ -407,11 +407,10 @@ export default function Usuarios() {
       <div className="px-5 py-6 sm:px-8 sm:py-8">
         <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
           <div className="grid grid-cols-12 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]">
-            <div className="col-span-3 th">Usuario</div>
-            <div className="col-span-4 th">Tiendas y roles</div>
-            <div className="col-span-2 th">Telegram</div>
-            <div className="col-span-2 th">Acceso</div>
-            <div className="col-span-1 th text-right">Acciones</div>
+            <div className="col-span-4 th px-3 py-2">Usuario</div>
+            <div className="col-span-5 th px-3 py-2">Tiendas y roles</div>
+            <div className="col-span-2 th px-3 py-2">Acceso</div>
+            <div className="col-span-1 th px-3 py-2 text-right">Acciones</div>
           </div>
 
           {isLoading && Array(4).fill(0).map((_, i) => (
@@ -420,28 +419,36 @@ export default function Usuarios() {
 
           {!isLoading && users.map((u) => (
             <div key={u.id} className="grid grid-cols-12 border-b border-[var(--color-border-subtle)] transition-colors last:border-b-0 hover:bg-[var(--color-bg-elevated)]">
-              <div className="col-span-3 td">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-[var(--color-accent)] bg-[var(--color-accent)]">
+              <div className="col-span-4 td px-3 py-2">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-[var(--color-accent)] bg-[var(--color-accent)]">
                     <span className="text-xs font-semibold text-[var(--color-accent-contrast)]">
                       {(u.full_name || u.username)[0]?.toUpperCase()}
                     </span>
                   </div>
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-[var(--color-text)]">{u.username}</p>
+                    <p className="truncate text-xs font-medium text-[var(--color-text)]">{u.username}</p>
                     <p className="truncate text-2xs text-[var(--color-text-subtle)]">
                       {u.full_name || "Sin nombre"}
+                      {u.telegram_links.length > 0 && (
+                        <span className="ml-1.5 text-[var(--color-text-subtle)]">
+                          · Telegram {u.telegram_links.map((t) => t.chat_id).join(", ")}
+                        </span>
+                      )}
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="col-span-4 td">
-                <div className="flex flex-wrap gap-1">
+              <div className="col-span-5 td px-3 py-2">
+                <div className="space-y-0.5">
                   {u.memberships.map((m) => (
-                    <span key={`${m.tenant_id}-${m.role_id}`} className="rounded border border-[var(--color-border)] bg-[var(--color-bg)] px-2 py-0.5 text-2xs text-[var(--color-text-muted)]">
-                      {m.tenant_name} · {m.role_description || m.role_name}
-                    </span>
+                    <div key={`${m.tenant_id}-${m.role_id}`} className="flex items-baseline gap-2 text-xs text-[var(--color-text-muted)]">
+                      <span className="truncate">{m.tenant_name}</span>
+                      <span className="text-2xs text-[var(--color-text-subtle)]">
+                        {m.role_description || m.role_name}
+                      </span>
+                    </div>
                   ))}
                   {u.memberships.length === 0 && (
                     <span className="text-2xs text-[var(--color-text-subtle)]">Sin tiendas</span>
@@ -449,18 +456,7 @@ export default function Usuarios() {
                 </div>
               </div>
 
-              <div className="col-span-2 td">
-                {u.telegram_links.length > 0 ? (
-                  <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-muted)]">
-                    <Send className="h-3 w-3" />
-                    {u.telegram_links.map((t) => t.chat_id).join(", ")}
-                  </div>
-                ) : (
-                  <span className="text-2xs text-[var(--color-text-subtle)]">Sin Telegram</span>
-                )}
-              </div>
-
-              <div className="col-span-2 td">
+              <div className="col-span-2 td px-3 py-2">
                 <div className="flex flex-col gap-1">
                   <span className={`badge w-fit ${(u.store_active ?? u.is_active) ? "badge-green" : "badge-slate"}`}>
                     {(u.store_active ?? u.is_active) ? "Activo" : "Inactivo"}
@@ -471,7 +467,7 @@ export default function Usuarios() {
                 </div>
               </div>
 
-              <div className="col-span-1 td">
+              <div className="col-span-1 td px-3 py-2">
                 <div className="flex items-center justify-end gap-0.5">
                   <button
                     className="p-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-accent-strong)]"
@@ -536,7 +532,7 @@ export default function Usuarios() {
 
       {tempInfo && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-2xl">
+          <div className="w-full max-w-sm rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-2xl">
             <p className="section-tag mb-2">CONTRASEÑA TEMPORAL</p>
             <h2 className="text-lg font-semibold tracking-tight text-[var(--color-text)]">
               {tempInfo.username}

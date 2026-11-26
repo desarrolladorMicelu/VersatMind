@@ -121,7 +121,7 @@ export default function Chat() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const { username, role, logout } = useAuth();
-  const { tenantId, activeTenant, tenants, setActiveTenant, isSuperAdmin, isPortalUser } = useTenant();
+  const { tenantId, activeTenant, tenants, adminTenants, setActiveTenant, isSuperAdmin, isPortalUser, isPortalAdmin } = useTenant();
 
   const [activeId, setActiveId] = useState<number | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -358,6 +358,13 @@ export default function Chat() {
 
   const activeConversation = conversations.find((c) => c.id === activeId);
   const showEmpty = messages.length === 0;
+  const showPanel = !isPortalUser || isPortalAdmin;
+  const goToPanel = () => {
+    if (isPortalAdmin && activeTenant && !(activeTenant as any).is_admin && adminTenants[0]) {
+      setActiveTenant(adminTenants[0]);
+    }
+    navigate("/");
+  };
 
   if (!tenantId) {
     return (
@@ -436,10 +443,10 @@ export default function Chat() {
               <Settings className="vc-nav-icon" size={16} />
               <span className="vc-nav-label">Configuración</span>
             </button>
-            {!isPortalUser && (
+            {showPanel && (
               <>
                 <div className="vc-nav-sep" />
-                <button className="vc-nav-item" onClick={() => navigate("/")} title="Volver al panel">
+                <button className="vc-nav-item" onClick={goToPanel} title="Volver al panel">
                   <LayoutDashboard className="vc-nav-icon" size={16} />
                   <span className="vc-nav-label">Panel de administración</span>
                 </button>
@@ -490,8 +497,8 @@ export default function Chat() {
             <Menu size={18} />
           </button>
 
-          {!isPortalUser && (
-            <button className="vc-back" onClick={() => navigate("/")} title="Volver al panel de administración">
+          {showPanel && (
+            <button className="vc-back" onClick={goToPanel} title="Volver al panel de administración">
               <ArrowLeft size={16} />
               <span>Panel</span>
             </button>
@@ -689,10 +696,10 @@ export default function Chat() {
                 </div>
 
                 <div className="vc-modal-actions">
-                  {!isPortalUser && (
+                  {showPanel && (
                     <button
                       className="btn-primary"
-                      onClick={() => { setPanel(null); setSidebarOpen(false); navigate("/"); }}
+                      onClick={() => { setPanel(null); setSidebarOpen(false); goToPanel(); }}
                     >
                       <LayoutDashboard size={14} /> Ir al panel
                     </button>

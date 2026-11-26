@@ -84,7 +84,7 @@ const NAV_GROUPS_TENANT = [
 // ── Selector de tenant ────────────────────────────────────────────────────────
 
 function TenantSelector() {
-  const { tenants, activeTenant, setActiveTenant, isSuperAdmin } = useTenant();
+  const { tenants, adminTenants, activeTenant, setActiveTenant, isSuperAdmin, isPortalAdmin } = useTenant();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -96,7 +96,13 @@ function TenantSelector() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  if (!isSuperAdmin) {
+  useEffect(() => {
+    if (isPortalAdmin && activeTenant && !(activeTenant as any).is_admin && adminTenants[0]) {
+      setActiveTenant(adminTenants[0]);
+    }
+  }, [isPortalAdmin, activeTenant, adminTenants, setActiveTenant]);
+
+  if (!isSuperAdmin && !isPortalAdmin) {
     // Tenant admin: muestra su tenant fijo, sin selector
     return (
       <div className="rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] px-3 py-2.5">
@@ -107,6 +113,8 @@ function TenantSelector() {
       </div>
     );
   }
+
+  const list = isSuperAdmin ? tenants : adminTenants;
 
   return (
     <div ref={ref} className="relative">
@@ -126,15 +134,17 @@ function TenantSelector() {
       {open && (
         <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-y-auto rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-1 shadow-2xl">
           {/* Opción "todos" solo para superadmin */}
-          <button
-            onClick={() => { setActiveTenant(null); setOpen(false); }}
-            className={`w-full rounded-md px-2.5 py-2 text-left transition-colors hover:bg-black/5 ${
-              activeTenant === null ? "text-[var(--color-accent-strong)]" : "text-[var(--color-text-muted)]"
-            }`}
-          >
-            <p className="text-xs font-medium">Todos los clientes</p>
-          </button>
-          {tenants.map((t: Tenant) => (
+          {isSuperAdmin && (
+            <button
+              onClick={() => { setActiveTenant(null); setOpen(false); }}
+              className={`w-full rounded-md px-2.5 py-2 text-left transition-colors hover:bg-black/5 ${
+                activeTenant === null ? "text-[var(--color-accent-strong)]" : "text-[var(--color-text-muted)]"
+              }`}
+            >
+              <p className="text-xs font-medium">Todos los clientes</p>
+            </button>
+          )}
+          {list.map((t: Tenant) => (
             <button
               key={t.id}
               onClick={() => { setActiveTenant(t); setOpen(false); }}
@@ -153,7 +163,7 @@ function TenantSelector() {
               </div>
             </button>
           ))}
-          {tenants.length === 0 && (
+          {list.length === 0 && (
             <p className="px-3 py-3 text-center text-xs text-[var(--color-text-subtle)]">Sin clientes</p>
           )}
         </div>

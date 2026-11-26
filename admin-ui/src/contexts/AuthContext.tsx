@@ -34,9 +34,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         slug: m.tenant_slug,
         role_id: m.role_id,
         role_name: m.role_name,
+        is_admin: Boolean(m.is_admin),
       }));
       setTenants(list as any);
-      setActiveTenant((list[0] as any) ?? null);
+      const firstAdmin = list.find((t: any) => t.is_admin);
+      setActiveTenant(((firstAdmin || list[0]) as any) ?? null);
       return;
     }
 

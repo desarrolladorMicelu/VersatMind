@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plus, Pencil, Trash2, Power, X, Eye, EyeOff, Database, Bot, Users, KeyRound } from "lucide-react";
-import api, { tenantsApi } from "../lib/api";
+import { Plus, Pencil, Trash2, Power, X, Eye, EyeOff, Database, Bot } from "lucide-react";
+import { tenantsApi } from "../lib/api";
 import type { Tenant, TenantPayload } from "../lib/api";
 import { activeLabel, engineLabel } from "../lib/labels";
 import PageHeader from "../components/PageHeader";
@@ -282,170 +282,9 @@ function TenantModal({
 
 // ── Gestión de admins del tenant ─────────────────────────────────────────────
 
-function TenantAdmins({ tenantId, tenantName }: { tenantId: number; tenantName: string }) {
-  const qc = useQueryClient();
-  const [newUsername, setNewUsername] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [showPass, setShowPass] = useState(false);
-  const [creating, setCreating] = useState(false);
-
-  const { data: admins = [], isLoading } = useQuery({
-    queryKey: ["tenant-admins", tenantId],
-    queryFn: () => api.get(`/tenants/${tenantId}/admins`).then((r) => r.data),
-  });
-
-  const create = useMutation({
-    mutationFn: () => api.post(`/tenants/${tenantId}/admins`, { username: newUsername, password: newPassword }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["tenant-admins", tenantId] });
-      setNewUsername("");
-      setNewPassword("");
-      setCreating(false);
-    },
-  });
-
-  const toggleAdmin = useMutation({
-    mutationFn: ({ adminId, is_active }: { adminId: number; is_active: boolean }) =>
-      api.patch(`/tenants/${tenantId}/admins/${adminId}`, { is_active }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["tenant-admins", tenantId] }),
-  });
-
-  const removeAdmin = useMutation({
-    mutationFn: (adminId: number) => api.delete(`/tenants/${tenantId}/admins/${adminId}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["tenant-admins", tenantId] }),
-  });
-
-  return (
-    <div className="border-t border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]">
-      <div className="px-6 py-4">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <KeyRound className="w-3.5 h-3.5 text-[var(--color-accent-strong)]" />
-            <span className="section-tag">ACCESOS AL PANEL — {tenantName}</span>
-          </div>
-          <button
-            onClick={() => setCreating((v) => !v)}
-            className="btn-primary flex items-center gap-1.5 text-xs py-1 px-3"
-          >
-            <Plus className="w-3 h-3" /> NUEVA CUENTA
-          </button>
-        </div>
-
-        {/* Formulario nueva cuenta */}
-        {creating && (
-          <div className="mb-4 border border-[var(--color-accent-border)] bg-[var(--color-surface)] p-4 flex flex-wrap gap-3 items-end">
-            <div>
-              <label className="label">Usuario</label>
-              <input
-                className="input w-44"
-                placeholder="admin_cliente"
-                value={newUsername}
-                onChange={(e) => setNewUsername(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="label">Contraseña</label>
-              <div className="relative">
-                <input
-                  className="input w-44 pr-9 "
-                  placeholder="••••••••"
-                  type={showPass ? "text" : "password"}
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPass((v) => !v)}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
-                >
-                  {showPass ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                </button>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <button
-                className="btn-primary py-1 px-3 text-xs"
-                disabled={!newUsername || !newPassword || create.isPending}
-                onClick={() => create.mutate()}
-              >
-                {create.isPending ? "CREANDO..." : "CREAR →"}
-              </button>
-              <button className="btn-ghost py-1 px-3 text-xs" onClick={() => setCreating(false)}>
-                CANCELAR
-              </button>
-            </div>
-            {create.isError && (
-              <p className="w-full text-xs text-red-700">
-                {(create.error as any)?.response?.data?.detail ?? "Error al crear la cuenta"}
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* Lista de admins */}
-        {isLoading ? (
-          <div className="h-10 animate-pulse border border-[var(--color-border-subtle)]" />
-        ) : admins.length === 0 ? (
-          <p className="text-xs text-[var(--color-text-muted)] py-3">Sin cuentas creadas — este cliente no puede entrar al panel.</p>
-        ) : (
-          <div className="overflow-hidden rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface)]">
-            <div className="grid grid-cols-12 bg-[var(--color-bg-elevated)] border-b border-[var(--color-border-subtle)]">
-              <div className="col-span-4 th">Usuario</div>
-              <div className="col-span-3 th">Estado</div>
-              <div className="col-span-3 th">Creado</div>
-              <div className="col-span-2 th" />
-            </div>
-            {admins.map((a: any) => (
-              <div key={a.id} className="grid grid-cols-12 border-b border-[var(--color-border-subtle)] hover:bg-[var(--color-bg-elevated)] transition-colors">
-                <div className="col-span-4 td">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 border border-[var(--color-border)] flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs text-[var(--color-accent-strong)]">{a.username[0]?.toUpperCase()}</span>
-                    </div>
-                    <span className="text-xs text-[var(--color-text)]">{a.username}</span>
-                  </div>
-                </div>
-                <div className="col-span-3 td">
-                  <span className={`badge ${a.is_active ? "badge-green" : "badge-slate"}`}>
-                    {a.is_active ? "ACTIVO" : "INACTIVO"}
-                  </span>
-                </div>
-                <div className="col-span-3 td text-xs text-[var(--color-text-subtle)]">
-                  {a.created_at ? new Date(a.created_at).toLocaleDateString("es-CO") : "—"}
-                </div>
-                <div className="col-span-2 td">
-                  <div className="flex items-center gap-1 justify-end">
-                    <button
-                      onClick={() => toggleAdmin.mutate({ adminId: a.id, is_active: !a.is_active })}
-                      className={`p-1.5 transition-colors ${a.is_active ? "text-[var(--color-text-muted)] hover:text-amber-700" : "text-[var(--color-text-muted)] hover:text-[var(--color-accent-strong)]"}`}
-                      title={a.is_active ? "Desactivar" : "Activar"}
-                    >
-                      <Power className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => window.confirm(`¿Eliminar la cuenta "${a.username}"?`) && removeAdmin.mutate(a.id)}
-                      className="p-1.5 text-[var(--color-text-muted)] hover:text-red-700 transition-colors"
-                      title="Eliminar"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── Página principal ──────────────────────────────────────────────────────────
-
 export default function Tenants() {
   const qc = useQueryClient();
   const [modal, setModal] = useState<(TenantPayload & { id?: number }) | null>(null);
-  const [expandedId, setExpandedId] = useState<number | null>(null);
 
   const { data: tenants = [], isLoading } = useQuery<Tenant[]>({
     queryKey: ["tenants"],
@@ -680,13 +519,6 @@ password: "", // nunca pre-rellenamos la contraseña
               <div className="col-span-2 td">
                 <div className="flex items-center gap-1 justify-end">
                   <button
-                    onClick={() => setExpandedId(expandedId === t.id ? null : t.id)}
-                    className={`p-1.5 transition-colors ${expandedId === t.id ? "text-[var(--color-accent-strong)]" : "text-[var(--color-text)] hover:text-[var(--color-accent-strong)]"}`}
-                    title="Gestionar accesos al panel"
-                  >
-                    <Users className="w-3.5 h-3.5" />
-                  </button>
-                  <button
                     onClick={() => openEdit(t)}
                     className="p-1.5 text-[var(--color-text)] hover:text-[var(--color-accent-strong)] transition-colors"
                     title="Editar"
@@ -717,10 +549,6 @@ password: "", // nunca pre-rellenamos la contraseña
                 </div>
               </div>
             </div>
-            {/* Panel de admins expandible */}
-            {expandedId === t.id && (
-              <TenantAdmins tenantId={t.id} tenantName={t.name} />
-            )}
           </div>
           ))}
 

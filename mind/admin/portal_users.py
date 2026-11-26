@@ -52,7 +52,18 @@ class TelegramLinkUpdate(BaseModel):
 
 
 def _tenant_scope(auth: dict) -> int | None:
-    return None if auth.get("role") == "superadmin" else int(auth.get("tenant_id"))
+    role = auth.get("role")
+    if role == "superadmin":
+        return None
+    if role == "portal_user":
+        ids = [int(x) for x in (auth.get("admin_tenant_ids") or [])]
+        effective = auth.get("_effective_tenant_id")
+        if effective is not None:
+            return int(effective)
+        if len(ids) == 1:
+            return ids[0]
+        raise HTTPException(status_code=422, detail="tenant_id requerido")
+    return int(auth.get("tenant_id"))
 
 
 async def _load_portal(session: AsyncSession, portal_id: int) -> PortalUser:

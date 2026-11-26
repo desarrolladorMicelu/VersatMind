@@ -240,28 +240,9 @@ async def login(
         )
         return {"token": token, "username": body.username, "role": "superadmin", "tenant_id": None}
 
-    # 3. Tenant admin
-    result = await session.execute(
-        select(TenantAdmin).where(
-            TenantAdmin.username == body.username,
-            TenantAdmin.is_active.is_(True),
-        )
-    )
-    ta = result.scalar_one_or_none()
-    if ta is not None:
-        if not verify_password(body.password, ta.password_hash):
-            raise HTTPException(status_code=401, detail="Credenciales inválidas")
-        token = create_access_token(body.username, role="tenant_admin", tenant_id=ta.tenant_id)
-        response.set_cookie(
-            "admin_token", token,
-            httponly=True, samesite="lax",
-            max_age=86400, path="/",
-        )
-        return {"token": token, "username": body.username, "role": "tenant_admin", "tenant_id": ta.tenant_id}
-
-    # 4. Usuario de portal (usuario/contraseña, multi-tienda)
+    # 3. Usuario de portal (cuenta unificada; incluye admins migrados)
     from mind.auth.portal import clear_temp_after_login
-    from mind.db.models import PortalUser
+    from mind.db.models import Membership, PortalUser, Role as RoleModel, Tenant
 
     portal = (await session.execute(
         select(PortalUser).where(
@@ -269,18 +250,63 @@ async def login(
             PortalUser.is_active.is_(True),
         )
     )).scalar_one_or_none()
-    if (
-        portal is None
-        or not portal.password_hash
-        or not verify_password(body.password, portal.password_hash)
-    ):
+    if portal is not None:
+        if (
+            not portal.password_hash
+            or not verify_password(body.password, portal.password_hash)
+        ):
+            raise HTTPException(status_code=401, detail="Credenciales inválidas")
+
+        admin_tenant_ids = list((await session.execute(
+            select(Membership.tenant_id)
+            .join(RoleModel, RoleModel.id == Membership.role_id)
+            .join(Tenant, Tenant.id == Membership.tenant_id)
+            .where(
+                Membership.portal_user_id == portal.id,
+                Membership.is_active.is_(True),
+                Tenant.is_active.is_(True),
+                RoleModel.is_admin.is_(True),
+            )
+            .distinct()
+        )).scalars().all())
+
+        clear_temp_after_login(portal)
+        await session.commit()
+        ids = [int(x) for x in admin_tenant_ids]
+        token = create_access_token(
+            body.username,
+            role="portal_user",
+            portal_user_id=portal.id,
+            admin_tenant_ids=ids or None,
+        )
+        response.set_cookie(
+            "admin_token", token,
+            httponly=True, samesite="lax",
+            max_age=86400, path="/",
+        )
+        return {
+            "token": token,
+            "username": body.username,
+            "role": "portal_user",
+            "user_id": portal.id,
+            "tenant_id": None,
+            "must_change_password": portal.must_change_password,
+            "has_admin_access": bool(ids),
+            "admin_tenant_ids": ids,
+        }
+
+    # 4. Compatibilidad: TenantAdmin aún no migrado.
+    result = await session.execute(
+        select(TenantAdmin).where(
+            TenantAdmin.username == body.username,
+            TenantAdmin.is_active.is_(True),
+        )
+    )
+    ta = result.scalar_one_or_none()
+    if ta is None or not verify_password(body.password, ta.password_hash):
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
 
-    clear_temp_after_login(portal)
-    await session.commit()
-    token = create_access_token(
-        body.username, role="portal_user", portal_user_id=portal.id,
-    )
+    token = create_access_token(body.username, role="tenant_admin", tenant_id=ta.tenant_id)
     response.set_cookie(
         "admin_token", token,
         httponly=True, samesite="lax",
@@ -289,12 +315,11 @@ async def login(
     return {
         "token": token,
         "username": body.username,
-        "role": "portal_user",
-        "user_id": portal.id,
-        "tenant_id": None,
-        "must_change_password": portal.must_change_password,
+        "role": "tenant_admin",
+        "tenant_id": ta.tenant_id,
+        "has_admin_access": True,
+        "admin_tenant_ids": [ta.tenant_id],
     }
-
 
 @router.post("/logout")
 async def logout(response: Response):
@@ -311,11 +336,14 @@ async def me(
     if role == "portal_user":
         from mind.auth.portal import resolve_memberships
         rows = await resolve_memberships(session, int(admin["portal_user_id"]))
+        admin_ids = [int(tenant.id) for _m, tenant, role_obj in rows if role_obj.is_admin]
         return {
             "username": admin.get("sub"),
             "role": "portal_user",
             "user_id": admin.get("portal_user_id"),
             "tenant_id": None,
+            "has_admin_access": bool(admin_ids),
+            "admin_tenant_ids": admin_ids,
             "memberships": [
                 {
                     "tenant_id": tenant.id,
@@ -324,6 +352,7 @@ async def me(
                     "role_id": role_obj.id,
                     "role_name": role_obj.name,
                     "role_description": role_obj.description,
+                    "is_admin": bool(role_obj.is_admin),
                 }
                 for _membership, tenant, role_obj in rows
             ],
@@ -332,6 +361,8 @@ async def me(
         "username": admin.get("sub"),
         "role": role,
         "tenant_id": admin.get("tenant_id"),
+        "has_admin_access": True,
+        "admin_tenant_ids": [int(admin["tenant_id"])] if admin.get("tenant_id") else [],
         "memberships": [],
     }
 

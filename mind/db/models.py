@@ -106,6 +106,9 @@ class Role(Base):
     )
     name: Mapped[str] = mapped_column(Text, nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_admin: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False, server_default="false"
+    )
 
     tenant: Mapped[Tenant] = relationship("Tenant", back_populates="roles")
     users: Mapped[list[User]] = relationship("User", back_populates="role")
@@ -492,6 +495,9 @@ class TenantAdmin(Base):
     # bcrypt hash de la contraseña
     password_hash: Mapped[str] = mapped_column(Text, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    portal_user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("portal_users.id", ondelete="SET NULL"), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         nullable=False, server_default=func.now()
     )

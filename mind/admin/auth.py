@@ -35,6 +35,7 @@ def create_access_token(
     role: Literal["superadmin", "tenant_admin", "portal_user"] = "superadmin",
     tenant_id: int | None = None,
     portal_user_id: int | None = None,
+    admin_tenant_ids: list[int] | None = None,
 ) -> str:
     payload: dict = {
         "sub": username,
@@ -45,6 +46,8 @@ def create_access_token(
         payload["tenant_id"] = tenant_id
     if portal_user_id is not None:
         payload["portal_user_id"] = portal_user_id
+    if admin_tenant_ids:
+        payload["admin_tenant_ids"] = admin_tenant_ids
     return jwt.encode(payload, _secret(), algorithm=ALGORITHM)
 
 
@@ -105,8 +108,20 @@ def require_admin(request: Request) -> dict:
     payload = decode_token(token)
     if payload is None:
         raise HTTPException(status_code=401, detail="Token inválido o expirado")
-    if payload.get("role") not in ("superadmin", "tenant_admin"):
+    role = payload.get("role")
+    if role not in ("superadmin", "tenant_admin", "portal_user"):
         raise HTTPException(status_code=403, detail="Requiere acceso de administrador")
+    if role == "portal_user":
+        ids = [int(x) for x in (payload.get("admin_tenant_ids") or [])]
+        if not ids:
+            raise HTTPException(status_code=403, detail="Requiere rol administrador en una tienda")
+        requested = request.query_params.get("tenant_id")
+        if requested is not None:
+            if int(requested) not in ids:
+                raise HTTPException(status_code=403, detail="No tienes acceso a esa tienda")
+            payload["_effective_tenant_id"] = int(requested)
+        elif len(ids) == 1:
+            payload["_effective_tenant_id"] = ids[0]
     return payload
 
 
@@ -151,6 +166,18 @@ def get_effective_tenant_id(payload: dict, tenant_id_param: int | None) -> int:
         if tenant_id_param is None:
             raise HTTPException(status_code=422, detail="tenant_id requerido para superadmin")
         return tenant_id_param
+    if role == "portal_user":
+        ids = [int(x) for x in (payload.get("admin_tenant_ids") or [])]
+        if tenant_id_param is not None:
+            if int(tenant_id_param) not in ids:
+                raise HTTPException(status_code=403, detail="No tienes acceso a esa tienda")
+            return int(tenant_id_param)
+        effective = payload.get("_effective_tenant_id")
+        if effective is not None:
+            return int(effective)
+        if len(ids) == 1:
+            return ids[0]
+        raise HTTPException(status_code=422, detail="tenant_id requerido")
     # tenant_admin
     tid = payload.get("tenant_id")
     if tid is None:
