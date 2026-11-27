@@ -103,6 +103,12 @@ async def _build_system_prompt(
                 "Usa 'ejecutar_consulta' únicamente con esas tablas."
             )
 
+    try:
+        from mind.data.external.prompt import build_extra_databases_prompt
+        prompt += await build_extra_databases_prompt(session, tenant.id, policy)
+    except Exception:
+        pass
+
     sheets_description = (getattr(tenant, "external_sheets", None) or {}).get("schema_description")
     if sheets_description and policy.allows("sheets"):
         prompt += (
@@ -209,7 +215,8 @@ async def _build_system_prompt(
 
 
 def _filter_tools(
-    tools: list[dict], tenant: Tenant, email_providers: frozenset[str] | set[str] = frozenset()
+    tools: list[dict], tenant: Tenant, email_providers: frozenset[str] | set[str] = frozenset(),
+    has_extra_db: bool = False,
 ) -> list[dict]:
     tenant_ofima = bool(getattr(tenant, "sqlserver_host", None))
     tenant_ext_db = bool(getattr(tenant, "external_db", None))
@@ -242,7 +249,7 @@ def _filter_tools(
             continue
         if (name in mail_tools or name in calendar_tools) and not email_providers:
             continue
-        if name == "ejecutar_consulta" and not tenant_ext_db:
+        if name == "ejecutar_consulta" and not (tenant_ext_db or has_extra_db):
             continue
         if name == "consultar_sheet" and not tenant_ext_sheets:
             continue
@@ -346,8 +353,21 @@ async def stream_chat(
         email_providers = await get_active_providers(session, tenant.id)
     except Exception:
         email_providers = set()
+    has_extra_db = False
+    try:
+        from sqlalchemy import select
+        from mind.db.models import TenantDatabase
+        has_extra_db = (await session.execute(
+            select(TenantDatabase.id).where(
+                TenantDatabase.tenant_id == tenant.id,
+                TenantDatabase.is_active.is_(True),
+            ).limit(1)
+        )).first() is not None
+    except Exception:
+        pass
     tools = _filter_tools(
-        get_allowed_tool_schemas(permissions, policy), tenant, email_providers
+        get_allowed_tool_schemas(permissions, policy), tenant, email_providers,
+        has_extra_db=has_extra_db,
     )
     active_system_prompt += "\n\n" + tool_catalog(tools)
     openai_messages[0] = {"role": "system", "content": active_system_prompt}

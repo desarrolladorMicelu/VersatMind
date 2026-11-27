@@ -221,6 +221,10 @@ app.include_router(reports_router)
 from mind.admin.portal_users import router as portal_users_router
 app.include_router(portal_users_router)
 
+# Bases de datos adicionales por cliente
+from mind.admin.tenant_databases import router as tenant_databases_router
+app.include_router(tenant_databases_router)
+
 # Integraciones OAuth (Outlook / Google: correo y calendario)
 from mind.integrations.routes import router as integrations_router
 app.include_router(integrations_router)

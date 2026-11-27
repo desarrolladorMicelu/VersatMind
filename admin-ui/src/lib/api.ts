@@ -109,6 +109,37 @@ export interface TenantPayload {
 
 // ── Tenants API ───────────────────────────────────────────────────────────────
 
+
+export interface TenantDatabaseInfo {
+  id: number;
+  alias: string;
+  label: string;
+  engine: string;
+  is_active: boolean;
+  host: string;
+  port: number;
+  database: string;
+  user: string;
+  schema_name: string;
+  tables: string[];
+  schema_description: string | null;
+}
+
+export interface TenantDatabasePayload {
+  alias: string;
+  label: string;
+  engine: string;
+  host: string;
+  port: number;
+  database: string;
+  user: string;
+  password: string;
+  schema_name: string;
+  tables: string[];
+  schema_description?: string | null;
+  is_active: boolean;
+}
+
 export const tenantsApi = {
   list: () => api.get<Tenant[]>("/tenants").then((r) => r.data),
   create: (payload: TenantPayload) => api.post("/tenants", payload).then((r) => r.data),
@@ -117,6 +148,21 @@ export const tenantsApi = {
   remove: (id: number) => api.delete(`/tenants/${id}`).then((r) => r.data),
   testJsonSource: (kind: "precios" | "historial", url: string) =>
     api.post("/tenants/json-sources/test", { kind, url }).then((r) => r.data),
+};
+
+
+export const tenantDatabasesApi = {
+  list: (tenantId: number) => api.get<TenantDatabaseInfo[]>(`/tenants/${tenantId}/databases`).then((r) => r.data),
+  create: (tenantId: number, payload: TenantDatabasePayload) =>
+    api.post(`/tenants/${tenantId}/databases`, payload).then((r) => r.data),
+  update: (tenantId: number, id: number, payload: TenantDatabasePayload) =>
+    api.put(`/tenants/${tenantId}/databases/${id}`, payload).then((r) => r.data),
+  remove: (tenantId: number, id: number) =>
+    api.delete(`/tenants/${tenantId}/databases/${id}`).then((r) => r.data),
+  test: (tenantId: number, payload: TenantDatabasePayload) =>
+    api.post(`/tenants/${tenantId}/databases/test`, payload).then((r) => r.data),
+  discover: (tenantId: number, payload: TenantDatabasePayload) =>
+    api.post(`/tenants/${tenantId}/databases/discover`, payload).then((r) => r.data),
 };
 
 // ── Super admins (acceso total al sistema) ────────────────────────────────────

@@ -6,6 +6,7 @@ import type { Tenant, TenantPayload } from "../lib/api";
 import { activeLabel, engineLabel } from "../lib/labels";
 import PageHeader from "../components/PageHeader";
 import ExternalDbConfig from "../components/ExternalDbConfig";
+import TenantDatabasesConfig from "../components/TenantDatabasesConfig";
 import ExternalSheetsConfig from "../components/ExternalSheetsConfig";
 import ExternalExcelConfig from "../components/ExternalExcelConfig";
 import AlegraConfig from "../components/AlegraConfig";
@@ -234,6 +235,9 @@ function TenantModal({
             onChange={(v) => setForm((f) => ({ ...f, external_db: v ?? undefined }))}
             tenantId={form.id}
           />
+
+          {/* Bases de datos adicionales */}
+          <TenantDatabasesConfig tenantId={form.id} />
 
           {/* Fuentes JSON R2 */}
           <JsonSourcesConfig

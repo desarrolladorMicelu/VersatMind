@@ -191,6 +191,31 @@ class RoleSourcePermission(Base):
 # Usuarios
 # ---------------------------------------------------------------------------
 
+class TenantDatabase(Base):
+    """Base de datos externa adicional de un tenant."""
+    __tablename__ = "tenant_databases"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "alias", name="uq_tenant_database_alias"),
+        Index("idx_tenant_databases_tenant", "tenant_id", "is_active"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    tenant_id: Mapped[int] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
+    )
+    alias: Mapped[str] = mapped_column(Text, nullable=False)
+    label: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    engine: Mapped[str] = mapped_column(Text, nullable=False, default="postgresql")
+    config: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    def __repr__(self) -> str:
+        return f"<TenantDatabase tenant={self.tenant_id} alias={self.alias!r}>"
+
+
 class PortalUser(Base):
     """Cuenta global de negocio: usuario/contraseña y pertenencias por tienda."""
     __tablename__ = "portal_users"

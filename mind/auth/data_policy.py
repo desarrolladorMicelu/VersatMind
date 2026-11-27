@@ -102,6 +102,23 @@ class SourcePolicy:
     def allows_all(self, source_keys: Iterable[str]) -> bool:
         return all(self.allows(k) for k in source_keys)
 
+    def allows_db(self, alias: str) -> bool:
+        if not self.restricted:
+            return True
+        alias = (alias or "principal").strip().lower()
+        if alias in ("", "principal"):
+            return self.allows("external_db") or bool(self.allowed_tables())
+        if self.allowed.__contains__(f"db:{alias}"):
+            return True
+        return any(k.startswith(f"db:{alias}:") for k in self.allowed)
+
+    def allowed_db_tables(self, alias: str) -> frozenset[str]:
+        alias = (alias or "principal").strip().lower()
+        if alias in ("", "principal"):
+            return self.allowed_tables()
+        prefix = f"db:{alias}:"
+        return frozenset(k[len(prefix):] for k in self.allowed if k.startswith(prefix))
+
     def allowed_tables(self) -> frozenset[str]:
         return frozenset(
             k.split(":", 1)[1].lower()
@@ -246,7 +263,11 @@ def tool_source_allowed(
 
     if tool_name == "ejecutar_consulta":
         # La validación real se hace con las tablas extraídas del SQL.
-        return policy.allows("external_db") or bool(policy.allowed_tables())
+        return (
+            policy.allows("external_db")
+            or bool(policy.allowed_tables())
+            or any(k.startswith("db:") for k in policy.allowed)
+        )
 
     tables = tool_tables(tool_name)
     if not tables:
@@ -322,6 +343,7 @@ def validate_tool_call(
 
     if tool_name == "ejecutar_consulta":
         sql = str(params.get("sql") or "")
+        base = str(params.get("base") or "principal").strip().lower()
         try:
             tables, schemas = extract_sql_tables(sql)
         except ValueError:
@@ -333,8 +355,14 @@ def validate_tool_call(
             raise PermissionDeniedError("No tienes acceso a esa información.")
 
         if policy.restricted:
-            allowed = policy.allowed_tables()
-            if not policy.allows("external_db"):
+            if not policy.allows_db(base):
+                raise PermissionDeniedError("No tienes acceso a esa base de datos.")
+            allowed = policy.allowed_db_tables(base)
+            if base in ("", "principal"):
+                generic = policy.allows("external_db")
+            else:
+                generic = policy.allows(f"db:{base}")
+            if not generic:
                 if not tables or not set(tables).issubset(allowed):
                     raise PermissionDeniedError("No tienes acceso a una o más tablas de la consulta.")
 

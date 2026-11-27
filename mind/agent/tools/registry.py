@@ -541,6 +541,10 @@ def _register_all_tools() -> None:
             "parameters": {
                 "type": "object",
                 "properties": {
+                    "base": {
+                        "type": "string",
+                        "description": "Alias de la base de datos externa. Usa 'principal' si no se indica otra."
+                    },
                     "sql": {
                         "type": "string",
                         "description": "Consulta SQL SELECT. Ej: SELECT * FROM clientes LIMIT 10"

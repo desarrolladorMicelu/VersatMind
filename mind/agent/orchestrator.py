@@ -194,6 +194,12 @@ async def process(
                 "Si la pregunta requiere otra tabla, indica que no tiene acceso."
             )
 
+    try:
+        from mind.data.external.prompt import build_extra_databases_prompt
+        active_system_prompt += await build_extra_databases_prompt(session, tenant.id, policy)
+    except Exception:
+        pass
+
     # Inyectar la descripción de Google Sheets del cliente si existe
     ext_sheets = getattr(tenant, "external_sheets", None)
     sheets_description = (ext_sheets or {}).get("schema_description")
@@ -373,6 +379,18 @@ async def process(
     # Tools de correo/calendario — solo si hay una cuenta vinculada
     mail_tools = {"correos_recientes", "buscar_correos", "leer_correo", "guardar_borrador_respuesta"}
     calendar_tools = {"eventos_calendario", "proximos_eventos"}
+    has_extra_db = False
+    try:
+        from sqlalchemy import select
+        from mind.db.models import TenantDatabase
+        has_extra_db = (await session.execute(
+            select(TenantDatabase.id).where(
+                TenantDatabase.tenant_id == tenant.id,
+                TenantDatabase.is_active.is_(True),
+            ).limit(1)
+        )).first() is not None
+    except Exception:
+        pass
     filtered_tools = []
     for t in tools:
         name = t["function"]["name"]
@@ -382,7 +400,7 @@ async def process(
             continue
         if (name in mail_tools or name in calendar_tools) and not email_providers:
             continue
-        if name == "ejecutar_consulta" and not tenant_ext_db:
+        if name == "ejecutar_consulta" and not (tenant_ext_db or has_extra_db):
             continue
         if name == "consultar_sheet" and not tenant_ext_sheets:
             continue

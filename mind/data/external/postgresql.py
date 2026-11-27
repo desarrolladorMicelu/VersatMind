@@ -210,12 +210,12 @@ async def test_connection(creds: dict) -> None:
 # Ejecución de consultas
 # ---------------------------------------------------------------------------
 
-async def execute_query(tenant: Any, sql: str) -> list[dict]:
+async def execute_query(tenant: Any, sql: str, creds: dict | None = None) -> list[dict]:
     """
     Conecta a la base externa del tenant, ejecuta un SELECT y retorna
     list[dict] con claves en minúsculas (máximo 200 filas).
     """
-    creds = getattr(tenant, "external_db", None)
+    creds = creds if creds is not None else getattr(tenant, "external_db", None)
     final_sql = _validate_and_clamp(sql)
     try:
         conn = await _connect(creds)

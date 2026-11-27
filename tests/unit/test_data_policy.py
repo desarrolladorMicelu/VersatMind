@@ -184,3 +184,36 @@ async def test_sales_hide_cost_without_finance(monkeypatch):
     set_current_permissions({"READ_SALES", "READ_FINANCE"})
     summary = await data_tools.consultar_ventas("2026-01-01", "2026-01-31")
     assert "total_costo" in summary["resumen_mensual"][0]
+
+def test_extra_database_alias_policy_and_sql():
+    from mind.auth.data_policy import SourcePolicy, tool_source_allowed, validate_tool_call
+    policy = SourcePolicy(
+        restricted=True,
+        allowed=frozenset({"db:qa_pg:ventas"}),
+    )
+    perms = frozenset({"READ_EXTERNAL_DB"})
+    assert policy.allows_db("qa_pg")
+    assert policy.allowed_db_tables("qa_pg") == frozenset({"ventas"})
+    assert tool_source_allowed("ejecutar_consulta", perms, policy)
+    validate_tool_call(
+        "ejecutar_consulta",
+        {"base": "qa_pg", "sql": "SELECT * FROM ventas"},
+        perms,
+        policy,
+    )
+    import pytest
+    from mind.agent.tools.registry import PermissionDeniedError
+    with pytest.raises(PermissionDeniedError):
+        validate_tool_call(
+            "ejecutar_consulta",
+            {"base": "qa_pg", "sql": "SELECT * FROM contabilidad"},
+            perms,
+            policy,
+        )
+    with pytest.raises(PermissionDeniedError):
+        validate_tool_call(
+            "ejecutar_consulta",
+            {"base": "otra", "sql": "SELECT * FROM ventas"},
+            perms,
+            policy,
+        )
